@@ -1,0 +1,10 @@
+com\basados\api\controller\NotificacionController.class
+com\basados\api\config\WebConfig.class
+com\basados\api\dto\ResumenEventoRequest.class
+com\basados\api\config\WebConfig$1.class
+com\basados\api\service\WhatsAppService.class
+com\basados\api\service\EmailService.class
+com\basados\api\BasadosApiApplication.class
+com\basados\api\dto\DestinatarioDto.class
+com\basados\api\dto\NotificacionResponse.class
+com\basados\api\service\NotificacionService.class
