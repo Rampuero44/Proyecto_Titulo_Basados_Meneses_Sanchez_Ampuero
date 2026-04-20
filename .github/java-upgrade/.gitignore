@@ -1,0 +1,19 @@
+# ===== JAVA =====
+target/
+*.class
+*.jar
+
+# ===== IDE =====
+.idea/
+.vscode/
+
+# ===== FRONTEND =====
+node_modules/
+dist/
+
+# ===== LOGS =====
+*.log
+
+# ===== OS =====
+.DS_Store
+Thumbs.db

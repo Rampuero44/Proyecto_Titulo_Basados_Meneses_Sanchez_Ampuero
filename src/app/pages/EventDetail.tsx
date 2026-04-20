@@ -137,6 +137,9 @@ export function EventDetail() {
         return;
       }
 
+      console.log("🔍 DEBUG - Participantes en evento:", evento.participantes);
+      console.log("🔍 DEBUG - Payload destinatarios:", payload.destinatarios);
+
       if (payload.destinatarios.length === 0) {
         toast.error("No hay participantes con correo o teléfono configurado");
         return;
