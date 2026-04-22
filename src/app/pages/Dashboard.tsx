@@ -90,8 +90,7 @@ export function Dashboard() {
             {eventos.map((evento) => (
               <Card
                 key={evento.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/event/${evento.id}`)}
+                className="hover:shadow-lg transition-shadow"
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">

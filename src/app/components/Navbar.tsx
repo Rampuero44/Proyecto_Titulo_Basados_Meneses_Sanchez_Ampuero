@@ -4,14 +4,6 @@ import { LogOut, User, Shield } from "lucide-react";
 import { storage } from "../utils/localStorage";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -65,54 +57,6 @@ export function Navbar() {
                 <LogOut className="h-4 w-4 mr-2" />
                 Salir
               </Button>
-              <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2" aria-label="Abrir menú de usuario">
-                  <User className="h-5 w-5" />
-                  {currentUsuario.rol === 'admin' && (
-                    <Badge variant="destructive" className="text-xs">
-                      Admin
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  {currentUsuario.nombre}
-                  {currentUsuario.rol === 'admin' && (
-                    <Badge variant="destructive" className="text-xs">
-                      Administrador
-                    </Badge>
-                  )}
-                </DropdownMenuLabel>
-                <DropdownMenuLabel className="font-normal text-sm text-muted-foreground">
-                  {currentUsuario.email}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    Ver perfil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {currentUsuario.rol === 'admin' && (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center cursor-pointer">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Panel de Administrador
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Cerrar sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             </>
           ) : (
             <Button asChild>

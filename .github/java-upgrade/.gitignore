@@ -1,19 +1,16 @@
-# ===== JAVA =====
+# Maven
 target/
+
+# Java
 *.class
 *.jar
 
-# ===== IDE =====
-.idea/
-.vscode/
-
-# ===== FRONTEND =====
-node_modules/
-dist/
-
-# ===== LOGS =====
+# Logs
 *.log
 
-# ===== OS =====
+# VSCode
+.vscode/
+
+# OS
 .DS_Store
 Thumbs.db
