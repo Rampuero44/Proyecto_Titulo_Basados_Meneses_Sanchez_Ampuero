@@ -25,7 +25,7 @@ export function Home() {
               <Link to="/login">Iniciar Sesión</Link>
             </Button>
             <Button asChild>
-              <Link to="/register">Comenzar Gratis</Link>
+              <Link to="/create-event">Comenzar Gratis</Link>
             </Button>
           </div>
         </div>
@@ -198,6 +198,60 @@ export function Home() {
           </CardContent>
         </Card>
       </section>
+
+      <footer className="border-t bg-muted/50">
+        <div className="container mx-auto max-w-6xl px-4 py-12">
+          <div className="grid gap-8 md:grid-cols-4 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center justify-center w-8 h-8 bg-orange-500 rounded-lg">
+                  <span className="text-white text-lg">🔥</span>
+                </div>
+                <span className="font-semibold">BASADOS</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Planificación inteligente para tus asados
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4 text-sm">Producto</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/" className="hover:text-foreground transition">Inicio</Link></li>
+                <li><Link to="/price-comparison" className="hover:text-foreground transition">Demo</Link></li>
+                <li><Link to="/login" className="hover:text-foreground transition">Iniciar Sesión</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4 text-sm">Recursos</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Ayuda</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Contacto</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4 text-sm">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition">Privacidad</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Términos</a></li>
+                <li><a href="#" className="hover:text-foreground transition">Cookies</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
+            <p>&copy; 2026 BASADOS. Todos los derechos reservados.</p>
+            <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="hover:text-foreground transition">Twitter</a>
+              <a href="#" className="hover:text-foreground transition">Instagram</a>
+              <a href="#" className="hover:text-foreground transition">LinkedIn</a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { Navbar } from "../components/Navbar";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -53,7 +54,10 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/50">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <div className="min-h-screen flex items-center justify-center p-4 bg-muted/50">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <Button
@@ -114,6 +118,7 @@ export function Login() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
