@@ -13,6 +13,8 @@ import { generarCotizacionesSimuladas } from "../utils/calculator";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
 import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductCatalogStep";
+import { AsadorStep } from "../components/AsadorStep";
+import { Asador } from "../data/mockAsadores";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -103,7 +105,7 @@ export function CreateEvent() {
   );
 
   // Wizard: catalog → [age-check] → config → quote → cost
-  const [step, setStep] = useState<"catalog" | "config" | "quote" | "cost">("catalog");
+  const [step, setStep] = useState<"catalog" | "asador" | "config" | "quote" | "cost">("catalog");
 
   // Control del modal de verificación de edad
   const [mostrarModalEdad, setMostrarModalEdad] = useState(false);
@@ -111,6 +113,7 @@ export function CreateEvent() {
   const [esMayor, setEsMayor] = useState<boolean | null>(null);
 
   const [seleccionados, setSeleccionados] = useState<ProductoSeleccionado[]>([]);
+  const [asadorSeleccionado, setAsadorSeleccionado] = useState<Asador | null>(null);
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState(formatDateForInput(new Date()));
   const [participantes, setParticipantes] = useState<Participante[]>([]);
@@ -160,6 +163,9 @@ export function CreateEvent() {
   const insumos      = getByCategory("insumo");
 
   const costoTotal = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
+  const costoAsador = asadorSeleccionado
+    ? asadorSeleccionado.tarifaBase + asadorSeleccionado.tarifaPorPersona * participantes.length
+    : 0;
   const caloriasTotales = seleccionados.reduce((sum, s) => sum + s.product.calorias * s.cantidad, 0);
   const caloriasPorPersona = participantes.length > 0 ? caloriasTotales / participantes.length : 0;
 
@@ -195,7 +201,7 @@ export function CreateEvent() {
       toast.success("Edad verificada. Puedes continuar con tu selección.");
     }
 
-    setStep("config");
+    setStep("asador");
   };
 
   const validarCatalogo = () => {
@@ -226,7 +232,7 @@ export function CreateEvent() {
         }
         setEsMayor(mayor);
         setEdadVerificada(true);
-        setStep("config");
+        setStep("asador");
         return;
       }
 
@@ -237,7 +243,7 @@ export function CreateEvent() {
       }
     }
 
-    setStep("config");
+    setStep("asador");
   };
 
   // ── Participantes ─────────────────────────────────────────────────────────
@@ -304,6 +310,14 @@ export function CreateEvent() {
       caloriasPorPersona: Math.round(caloriasPorPersona),
       cotizaciones,
       cotizacionSeleccionada: cotizacionActiva.supermercado,
+      costoAsador: costoAsador,
+      asador: asadorSeleccionado ? {
+        id: asadorSeleccionado.id,
+        nombre: asadorSeleccionado.nombre,
+        telefono: asadorSeleccionado.telefono,
+        correo: asadorSeleccionado.correo,
+        tarifa: costoAsador,
+      } : null,
       createdAt: new Date().toISOString(),
     };
 
@@ -426,6 +440,20 @@ export function CreateEvent() {
             </div>
           </div>
 
+        /* ── STEP: maestro asador ───────────────────────────── */
+        ) : step === "asador" ? (
+          <div className="space-y-6">
+            <AsadorStep
+              cantParticipantes={Math.max(participantes.length, 1)}
+              asadorSeleccionado={asadorSeleccionado}
+              onChange={setAsadorSeleccionado}
+            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setStep("catalog")}>Volver al catálogo</Button>
+              <Button onClick={() => setStep("config")}>Continuar a configuración</Button>
+            </div>
+          </div>
+
         /* ── STEP: configuración ─────────────────────────────── */
         ) : step === "config" ? (
           <div className="space-y-6">
@@ -529,12 +557,21 @@ export function CreateEvent() {
 
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-base">Costo estimado</CardTitle></CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Costo productos</CardTitle></CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold text-primary">{formatPrice(costoTotal)}</p>
                   <p className="text-sm text-muted-foreground">Base antes de cotizar</p>
                 </CardContent>
               </Card>
+              {asadorSeleccionado && (
+                <Card className="border-amber-200 bg-amber-50/30">
+                  <CardHeader className="pb-2"><CardTitle className="text-base">Maestro asador</CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-amber-700">{formatPrice(costoAsador)}</p>
+                    <p className="text-sm text-muted-foreground">{asadorSeleccionado.nombre}</p>
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Calorías totales</CardTitle></CardHeader>
                 <CardContent>
