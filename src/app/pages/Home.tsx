@@ -1,3 +1,4 @@
+import { Footer } from "../components/Footer";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -51,8 +52,8 @@ export function Home() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/price-comparison">
-                  Ver Demo
+                <Link to="/create-event">
+                  Comenzar Gratis
                 </Link>
               </Button>
             </div>
@@ -204,9 +205,11 @@ export function Home() {
           <div className="grid gap-8 md:grid-cols-4 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 bg-orange-500 rounded-lg">
-                  <span className="text-white text-lg">🔥</span>
-                </div>
+                <img
+                  src="/logo-basados.jpg"
+                  alt="BASADOS"
+                  className="w-8 h-8 rounded-lg object-cover"
+                />
                 <span className="font-semibold">BASADOS</span>
               </div>
               <p className="text-sm text-muted-foreground">

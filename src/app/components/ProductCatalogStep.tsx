@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, Filter, Flame, Store, Plus, Minus, Check, ClipboardList } from "lucide-react";
 import { mockProducts } from "../data/mockData";
 import { ProductCategory, ProductWithPrice } from "../types/product";
@@ -8,8 +8,6 @@ import { Badge } from "./ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-
-// ─── tipos ───────────────────────────────────────────────────────────────────
 
 export interface ProductoSeleccionado {
   product: ProductWithPrice;
@@ -21,23 +19,44 @@ interface Props {
   onChange: (seleccionados: ProductoSeleccionado[]) => void;
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
 
 const CATEGORY_BADGE: Record<string, string> = {
-  proteina: "bg-red-100 text-red-800 hover:bg-red-100",
+  proteina:   "bg-red-100 text-red-800 hover:bg-red-100",
   bebestible: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-  insumo: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-  ensalada: "bg-green-100 text-green-800 hover:bg-green-100",
+  insumo:     "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+  ensalada:   "bg-green-100 text-green-800 hover:bg-green-100",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
-  proteina: "Proteína",
+  proteina:   "Proteína",
   bebestible: "Bebestible",
-  insumo: "Insumo",
-  ensalada: "Ensalada",
+  insumo:     "Insumo",
+  ensalada:   "Ensalada",
+};
+
+// Grupos de proteínas por animal
+const GRUPOS_PROTEINA: Record<string, string[]> = {
+  "Vacuno":     ["Vacuno magro", "Vacuno intermedio", "Vacuno premium", "Vacuno otros"],
+  "Cerdo":      ["Cerdo magro", "Cerdo intermedio", "Cerdo premium", "Cerdo otros"],
+  "Pollo":      ["Pollo magro", "Pollo intermedio", "Pollo premium", "Pollo otros"],
+  "Cordero":    ["Cordero magro", "Cordero intermedio", "Cordero premium", "Cordero otros"],
+  "Pescados":   ["Pescado magro", "Pescado intermedio", "Pescado graso"],
+  "Mariscos":   ["Marisco magro", "Marisco intermedio"],
+  "Embutidos":  ["Embutidos"],
+  "Interiores": ["Interiores magros", "Interiores intermedios", "Interiores parrilleros"],
+};
+
+// Grupos de bebestibles
+const GRUPOS_BEBESTIBLE: Record<string, string> = {
+  "Gaseosas":  "Gaseosa",
+  "Jugos":     "Jugo",
+  "Aguas":     "Agua",
+  "Cervezas":  "Cerveza",
+  "Vinos":     "Vino",
+  "Pisco":     "Pisco",
+  "Licores":   "Licor",
 };
 
 // ─── ProductCard ─────────────────────────────────────────────────────────────
@@ -56,11 +75,7 @@ function ProductCard({
   const isSelected = !!seleccionado;
 
   return (
-    <Card
-      className={`flex flex-col transition-all ${
-        isSelected ? "border-primary ring-1 ring-primary" : "hover:shadow-md"
-      }`}
-    >
+    <Card className={`flex flex-col transition-all ${isSelected ? "border-primary ring-1 ring-primary" : "hover:shadow-md"}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base leading-tight">{product.nombre}</CardTitle>
@@ -72,12 +87,23 @@ function ProductCard({
       </CardHeader>
 
       <CardContent className="flex-1 space-y-2">
-        <p className="text-xl font-bold">{formatPrice(product.precio.valor)}</p>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Flame className="size-4 text-orange-500" />
-            {product.calorias} cal
+        <div className="flex items-baseline gap-1">
+          <p className="text-xl font-bold">{formatPrice(product.precio.valor)}</p>
+          <span className="text-xs text-muted-foreground">
+            {product.category === "bebestible"
+              ? ("formato" in product && (product as any).formato === "lata" ? "/lata" : "/botella")
+              : product.category === "insumo" || product.category === "ensalada"
+              ? "/un."
+              : "/kg"}
           </span>
+        </div>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          {product.calorias > 0 && (
+            <span className="flex items-center gap-1">
+              <Flame className="size-4 text-orange-500" />
+              {product.calorias} cal
+            </span>
+          )}
           <span className="flex items-center gap-1">
             <Store className="size-4" />
             {product.comercio.nombre}
@@ -97,21 +123,11 @@ function ProductCard({
             <div className="flex items-center justify-between w-full">
               <span className="text-sm text-muted-foreground">Cantidad:</span>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-7"
-                  onClick={() => onCantidadChange(-1)}
-                >
+                <Button variant="outline" size="icon" className="size-7" onClick={() => onCantidadChange(-1)}>
                   <Minus className="size-3" />
                 </Button>
                 <span className="w-8 text-center font-semibold">{seleccionado.cantidad}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-7"
-                  onClick={() => onCantidadChange(1)}
-                >
+                <Button variant="outline" size="icon" className="size-7" onClick={() => onCantidadChange(1)}>
                   <Plus className="size-3" />
                 </Button>
               </div>
@@ -120,9 +136,7 @@ function ProductCard({
               Subtotal: {formatPrice(product.precio.valor * seleccionado.cantidad)}
             </p>
             <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-destructive border-destructive hover:bg-destructive/10"
+              variant="outline" size="sm" className="w-full text-destructive border-destructive hover:bg-destructive/10"
               onClick={onToggle}
             >
               Quitar del evento
@@ -139,17 +153,11 @@ function ProductCard({
   );
 }
 
-// ─── Resumen de seleccionados ─────────────────────────────────────────────────
+// ─── Resumen seleccionados ────────────────────────────────────────────────────
 
 function ResumenSeleccion({ seleccionados }: { seleccionados: ProductoSeleccionado[] }) {
-  const total = seleccionados.reduce(
-    (sum, s) => sum + s.product.precio.valor * s.cantidad,
-    0
-  );
-  const calorias = seleccionados.reduce(
-    (sum, s) => sum + s.product.calorias * s.cantidad,
-    0
-  );
+  const total = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
+  const calorias = seleccionados.reduce((sum, s) => sum + s.product.calorias * s.cantidad, 0);
 
   if (seleccionados.length === 0) {
     return (
@@ -180,30 +188,58 @@ function ResumenSeleccion({ seleccionados }: { seleccionados: ProductoSelecciona
         <span className="text-muted-foreground">Costo estimado</span>
         <span className="font-bold">{formatPrice(total)}</span>
       </div>
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Calorías totales</span>
-        <span className="font-medium">{Math.round(calorias).toLocaleString()} kcal</span>
-      </div>
+      {calorias > 0 && (
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Calorías totales</span>
+          <span className="font-medium">{Math.round(calorias).toLocaleString()} kcal</span>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Componente principal ────────────────────────────────────────────────────
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export function ProductCatalogStep({ seleccionados, onChange }: Props) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery]       = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all");
-  const [sortBy, setSortBy] = useState<"name" | "price-asc" | "price-desc" | "calories">("name");
+  const [selectedGrupo, setSelectedGrupo]       = useState<string>("all");
+  const [selectedBebGrupo, setSelectedBebGrupo] = useState<string>("all");
+  const [selectedSubtipo, setSelectedSubtipo]   = useState<string>("all");
+  const [sortBy, setSortBy]                 = useState<"name" | "price-asc" | "price-desc" | "calories">("name");
+
+  // Subcategorías del grupo seleccionado
+  const subtipesDelGrupo = useMemo(() => {
+    if (selectedCategory !== "proteina" || selectedGrupo === "all") return [];
+    return GRUPOS_PROTEINA[selectedGrupo] ?? [];
+  }, [selectedCategory, selectedGrupo]);
+
+  // Resetear subtipo al cambiar categoría
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat as ProductCategory | "all");
+    setSelectedGrupo("all");
+    setSelectedSubtipo("all");
+    setSelectedBebGrupo("all");
+  };
 
   const getCategoryCount = (category: ProductCategory) =>
     mockProducts.filter((p) => p.category === category).length;
+
+  const getGrupoCount = (grupo: string) =>
+    mockProducts.filter((p) => p.category === "proteina" && GRUPOS_PROTEINA[grupo]?.includes(p.tipo)).length;
+
+  const getSubtipoCount = (subtipo: string) =>
+    mockProducts.filter((p) => p.category === "proteina" && p.tipo === subtipo).length;
 
   const filteredProducts = mockProducts.filter((p) => {
     const matchesSearch =
       p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.tipo.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || p.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesGrupo    = selectedGrupo === "all" || GRUPOS_PROTEINA[selectedGrupo]?.includes(p.tipo);
+    const matchesBebGrupo = selectedBebGrupo === "all" || GRUPOS_BEBESTIBLE[selectedBebGrupo] === p.tipo;
+    const matchesSubtipo  = selectedSubtipo === "all" || p.tipo === selectedSubtipo;
+    return matchesSearch && matchesCategory && matchesGrupo && matchesSubtipo && matchesBebGrupo;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -226,13 +262,9 @@ export function ProductCatalogStep({ seleccionados, onChange }: Props) {
   };
 
   const cambiarCantidad = (product: ProductWithPrice, delta: number) => {
-    onChange(
-      seleccionados.map((s) =>
-        s.product.id === product.id
-          ? { ...s, cantidad: Math.max(1, s.cantidad + delta) }
-          : s
-      )
-    );
+    onChange(seleccionados.map((s) =>
+      s.product.id === product.id ? { ...s, cantidad: Math.max(1, s.cantidad + delta) } : s
+    ));
   };
 
   return (
@@ -246,6 +278,7 @@ export function ProductCatalogStep({ seleccionados, onChange }: Props) {
 
       <ResumenSeleccion seleccionados={seleccionados} />
 
+      {/* Búsqueda y ordenamiento */}
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
@@ -270,10 +303,8 @@ export function ProductCatalogStep({ seleccionados, onChange }: Props) {
         </Select>
       </div>
 
-      <Tabs
-        value={selectedCategory}
-        onValueChange={(v) => setSelectedCategory(v as typeof selectedCategory)}
-      >
+      {/* Tabs de categoría */}
+      <Tabs value={selectedCategory} onValueChange={handleCategoryChange}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Todos ({mockProducts.length})</TabsTrigger>
           <TabsTrigger value="proteina">Proteínas ({getCategoryCount("proteina")})</TabsTrigger>
@@ -282,7 +313,79 @@ export function ProductCatalogStep({ seleccionados, onChange }: Props) {
           <TabsTrigger value="ensalada">Ensaladas ({getCategoryCount("ensalada")})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedCategory} className="mt-6">
+        <TabsContent value={selectedCategory} className="mt-4 space-y-4">
+
+          {/* Filtro de bebestibles */}
+          {selectedCategory === "bebestible" && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedBebGrupo === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedBebGrupo("all")}
+              >
+                Todos
+              </Button>
+              {Object.keys(GRUPOS_BEBESTIBLE).map((grupo) => (
+                <Button
+                  key={grupo}
+                  variant={selectedBebGrupo === grupo ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedBebGrupo(grupo)}
+                >
+                  {grupo} ({mockProducts.filter(p => p.category === "bebestible" && p.tipo === GRUPOS_BEBESTIBLE[grupo]).length})
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {/* Filtro de proteínas: nivel 1 — tipo de animal */}
+          {selectedCategory === "proteina" && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedGrupo === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => { setSelectedGrupo("all"); setSelectedSubtipo("all"); }}
+                >
+                  Todos
+                </Button>
+                {Object.keys(GRUPOS_PROTEINA).map((grupo) => (
+                  <Button
+                    key={grupo}
+                    variant={selectedGrupo === grupo ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => { setSelectedGrupo(grupo); setSelectedSubtipo("all"); }}
+                  >
+                    {grupo} ({getGrupoCount(grupo)})
+                  </Button>
+                ))}
+              </div>
+
+              {/* Nivel 2 — subcategoría dentro del animal (solo si tiene más de un subtipo) */}
+              {selectedGrupo !== "all" && subtipesDelGrupo.length > 1 && (
+                <div className="flex flex-wrap gap-2 pl-2 border-l-2 border-primary/30">
+                  <Button
+                    variant={selectedSubtipo === "all" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setSelectedSubtipo("all")}
+                  >
+                    Todos los cortes
+                  </Button>
+                  {subtipesDelGrupo.map((sub) => (
+                    <Button
+                      key={sub}
+                      variant={selectedSubtipo === sub ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setSelectedSubtipo(sub)}
+                    >
+                      {sub.replace(selectedGrupo + " ", "")} ({getSubtipoCount(sub)})
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {sortedProducts.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               No se encontraron productos

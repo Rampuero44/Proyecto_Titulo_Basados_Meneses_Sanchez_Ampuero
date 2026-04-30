@@ -19,12 +19,10 @@ export function Navbar() {
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between px-4 mx-auto max-w-7xl">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-orange-500 rounded-lg">
-            <span className="text-white text-2xl font-bold">🔥</span>
-          </div>
+          <img src="/logo-basados.jpg" alt="BASADOS" className="w-10 h-10 rounded-lg object-cover" />
           <span className="text-xl font-semibold">BASADOS</span>
         </Link>
-        
+
         <nav className="flex items-center gap-4">
           {currentUsuario?.rol === 'admin' && (
             <Button variant="ghost" asChild>
@@ -44,7 +42,7 @@ export function Navbar() {
               </Button>
             </>
           )}
-          
+
           {currentUsuario ? (
             <>
               <Button variant="ghost" asChild>

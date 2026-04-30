@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Navbar } from "../components/Navbar";
+import { NavbarAdmin } from "../components/NavbarAdmin";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -124,7 +124,7 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <NavbarAdmin />
       
       <div className="container mx-auto px-4 py-8">
         <Button

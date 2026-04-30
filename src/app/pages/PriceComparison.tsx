@@ -1,3 +1,4 @@
+import { Footer } from "../components/Footer";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Navbar } from "../components/Navbar";
@@ -166,6 +167,9 @@ export function PriceComparison() {
           </Card>
         )}
       </div>
+      <Footer />
     </div>
   );
+  
 }
+

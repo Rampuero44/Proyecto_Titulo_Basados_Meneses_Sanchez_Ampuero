@@ -6,6 +6,7 @@ export interface Usuario {
   email: string;
   password: string;
   rol: 'usuario' | 'admin';
+  fechaNacimiento?: string; // formato YYYY-MM-DD
 }
 
 export interface ContactoParticipante {
@@ -20,7 +21,7 @@ export interface Participante {
   contactos: ContactoParticipante[];
   metodoContacto?: 'sin_notificacion' | 'correo' | 'telefono';
   contacto?: string;
-  aceptaNotificaciones?: boolean; //agregado RA 15-04
+  aceptaNotificaciones?: boolean;
   monto?: number;
   montoManual?: boolean;
   sinAlcohol?: boolean;
@@ -127,31 +128,50 @@ export interface Evento {
   createdAt: string;
 }
 
-// Funciones de almacenamiento
+// ── Utilidad de edad ─────────────────────────────────────────────────────────
+
+export const calcularEdad = (fechaNacimiento: string): number => {
+  const hoy = new Date();
+  const nacimiento = new Date(fechaNacimiento);
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mesActual = hoy.getMonth();
+  const mesNacimiento = nacimiento.getMonth();
+  if (
+    mesActual < mesNacimiento ||
+    (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())
+  ) {
+    edad--;
+  }
+  return edad;
+};
+
+export const esMayorDeEdad = (fechaNacimiento: string): boolean =>
+  calcularEdad(fechaNacimiento) >= 18;
+
+// ── Storage ──────────────────────────────────────────────────────────────────
+
 export const storage = {
-  // Usuarios
   getUsuarios: (): Usuario[] => {
     const usuarios = localStorage.getItem('usuarios');
     return usuarios ? JSON.parse(usuarios) : [];
   },
-  
+
   saveUsuario: (usuario: Usuario): void => {
     const usuarios = storage.getUsuarios();
     usuarios.push(usuario);
     localStorage.setItem('usuarios', JSON.stringify(usuarios));
   },
-  
+
   getUsuarioByEmail: (email: string): Usuario | undefined => {
     const usuarios = storage.getUsuarios();
     return usuarios.find(u => u.email === email);
   },
-  
-  // Usuario actual
+
   getCurrentUsuario: (): Usuario | null => {
     const usuario = localStorage.getItem('currentUsuario');
     return usuario ? JSON.parse(usuario) : null;
   },
-  
+
   setCurrentUsuario: (usuario: Usuario | null): void => {
     if (usuario) {
       localStorage.setItem('currentUsuario', JSON.stringify(usuario));
@@ -159,19 +179,18 @@ export const storage = {
       localStorage.removeItem('currentUsuario');
     }
   },
-  
-  // Eventos
+
   getEventos: (): Evento[] => {
     const eventos = localStorage.getItem('eventos');
     return eventos ? JSON.parse(eventos) : [];
   },
-  
+
   saveEvento: (evento: Evento): void => {
     const eventos = storage.getEventos();
     eventos.push(evento);
     localStorage.setItem('eventos', JSON.stringify(eventos));
   },
-  
+
   updateEvento: (eventoId: number, updatedEvento: Evento): void => {
     const eventos = storage.getEventos();
     const index = eventos.findIndex(e => e.id === eventoId);
@@ -180,24 +199,23 @@ export const storage = {
       localStorage.setItem('eventos', JSON.stringify(eventos));
     }
   },
-  
+
   getEventoById: (id: number): Evento | undefined => {
     const eventos = storage.getEventos();
     return eventos.find(e => e.id === id);
   },
-  
+
   getUsuarioEventos: (usuarioId: number): Evento[] => {
     const eventos = storage.getEventos();
     return eventos.filter(e => e.usuarioId === usuarioId);
   },
-  
+
   deleteEvento: (eventoId: number): void => {
     const eventos = storage.getEventos();
     const filtered = eventos.filter(e => e.id !== eventoId);
     localStorage.setItem('eventos', JSON.stringify(filtered));
   },
 
-  // Comercios
   getComercios: (): Comercio[] => {
     const comercios = localStorage.getItem('comercios');
     return comercios ? JSON.parse(comercios) : [];
@@ -209,7 +227,6 @@ export const storage = {
     localStorage.setItem('comercios', JSON.stringify(comercios));
   },
 
-  // Asadores
   getAsadores: (): Asador[] => {
     const asadores = localStorage.getItem('asadores');
     return asadores ? JSON.parse(asadores) : [];
@@ -222,7 +239,5 @@ export const storage = {
   },
 };
 
-// Generar ID único
-export const generateId = (): number => {
-  return Date.now() + Math.floor(Math.random() * 1000);
-};
+export const generateId = (): number =>
+  Date.now() + Math.floor(Math.random() * 1000);

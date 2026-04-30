@@ -7,8 +7,8 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
-import { ArrowLeft, Calendar, Plus, ShoppingCart, Trophy, X } from "lucide-react";
-import { storage, generateId, Participante } from "../utils/localStorage";
+import { ArrowLeft, Calendar, Plus, ShoppingCart, Trophy, X, AlertTriangle, Wine } from "lucide-react";
+import { storage, generateId, Participante, esMayorDeEdad } from "../utils/localStorage";
 import { generarCotizacionesSimuladas } from "../utils/calculator";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
@@ -26,6 +26,73 @@ const formatCalories = (value: number) => `${Math.round(value).toLocaleString()}
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
 
+// Tipos de bebestibles que se consideran alcohólicos
+const TIPOS_ALCOHOL = ["cerveza", "vino", "licor", "pisco", "ron", "vodka", "whisky", "champagne", "sidra"];
+
+const esAlcohol = (tipo: string): boolean =>
+  TIPOS_ALCOHOL.some((a) => tipo.toLowerCase().includes(a));
+
+const tieneAlcohol = (seleccionados: ProductoSeleccionado[]): boolean =>
+  seleccionados.some(
+    (s) => s.product.category === "bebestible" && esAlcohol(s.product.tipo)
+  );
+
+// ─── Modal verificación de edad ───────────────────────────────────────────────
+
+interface ModalEdadProps {
+  onConfirmar: (esMayor: boolean, fechaNacimiento: string) => void;
+}
+
+function ModalVerificacionEdad({ onConfirmar }: ModalEdadProps) {
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [error, setError] = useState("");
+  const fechaMaxima = new Date().toISOString().split("T")[0];
+
+  const handleVerificar = () => {
+    if (!fechaNacimiento) {
+      setError("Debes ingresar tu fecha de nacimiento");
+      return;
+    }
+    const mayor = esMayorDeEdad(fechaNacimiento);
+    onConfirmar(mayor, fechaNacimiento);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <Card className="w-full max-w-sm mx-4">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+            <Wine className="h-7 w-7 text-amber-600" />
+          </div>
+          <CardTitle>Verificación de edad</CardTitle>
+          <CardDescription>
+            Tu selección incluye bebidas alcohólicas. Necesitamos verificar tu edad para continuar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fecha-modal">Fecha de nacimiento</Label>
+            <Input
+              id="fecha-modal"
+              type="date"
+              max={fechaMaxima}
+              value={fechaNacimiento}
+              onChange={(e) => { setFechaNacimiento(e.target.value); setError(""); }}
+            />
+            {error && <p className="text-xs text-destructive">{error}</p>}
+          </div>
+          <Button className="w-full" onClick={handleVerificar}>
+            Verificar edad
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Solo usamos esta fecha para verificar tu edad. No se almacena si no estás registrado.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export function CreateEvent() {
@@ -35,20 +102,21 @@ export function CreateEvent() {
     () => storage.getCurrentUsuario() || storage.getUsuarioByEmail("juan@gmail.com") || null
   );
 
-  // Wizard: catalog → config → quote → cost
+  // Wizard: catalog → [age-check] → config → quote → cost
   const [step, setStep] = useState<"catalog" | "config" | "quote" | "cost">("catalog");
 
-  // Estado de selección de productos (reemplaza el antiguo sistema de checkboxes)
-  const [seleccionados, setSeleccionados] = useState<ProductoSeleccionado[]>([]);
+  // Control del modal de verificación de edad
+  const [mostrarModalEdad, setMostrarModalEdad] = useState(false);
+  const [edadVerificada, setEdadVerificada] = useState(false);
+  const [esMayor, setEsMayor] = useState<boolean | null>(null);
 
-  // Datos del evento
+  const [seleccionados, setSeleccionados] = useState<ProductoSeleccionado[]>([]);
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState(formatDateForInput(new Date()));
   const [participantes, setParticipantes] = useState<Participante[]>([]);
   const [nuevoParticipante, setNuevoParticipante] = useState("");
   const [selectedSupermercado, setSelectedSupermercado] = useState<string>("");
 
-  // Inicialización de usuario
   useEffect(() => {
     if (!currentUsuario) { navigate("/login"); return; }
     if (!storage.getCurrentUsuario()) storage.setCurrentUsuario(currentUsuario);
@@ -72,7 +140,7 @@ export function CreateEvent() {
     });
   }, [currentUsuario, navigate]);
 
-  // ── Derivar listas por categoría desde seleccionados ─────────────────────
+  // ── Derivar listas por categoría ──────────────────────────────────────────
 
   const getByCategory = (category: string) =>
     seleccionados
@@ -91,20 +159,9 @@ export function CreateEvent() {
   const ensaladas    = getByCategory("ensalada");
   const insumos      = getByCategory("insumo");
 
-  const costoTotal = seleccionados.reduce(
-    (sum, s) => sum + s.product.precio.valor * s.cantidad, 0
-  );
-  const caloriasTotales = seleccionados.reduce(
-    (sum, s) => sum + s.product.calorias * s.cantidad, 0
-  );
-  const caloriasPorPersona =
-    participantes.length > 0 ? caloriasTotales / participantes.length : 0;
-  const costoAlcoholTotal = seleccionados
-    .filter((s) =>
-      s.product.tipo.toLowerCase().includes("cerveza") ||
-      s.product.tipo.toLowerCase().includes("vino")
-    )
-    .reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
+  const costoTotal = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
+  const caloriasTotales = seleccionados.reduce((sum, s) => sum + s.product.calorias * s.cantidad, 0);
+  const caloriasPorPersona = participantes.length > 0 ? caloriasTotales / participantes.length : 0;
 
   const cotizaciones = generarCotizacionesSimuladas(proteinas, bebestibles, ensaladas, insumos);
   const mejorCotizacion = cotizaciones[0] || null;
@@ -116,6 +173,72 @@ export function CreateEvent() {
       setSelectedSupermercado(mejorCotizacion.supermercado);
     }
   }, [mejorCotizacion, selectedSupermercado]);
+
+  // ── Verificación de edad ──────────────────────────────────────────────────
+
+  const handleConfirmarEdad = (mayor: boolean, fechaNac: string) => {
+    setMostrarModalEdad(false);
+    setEdadVerificada(true);
+    setEsMayor(mayor);
+
+    if (!mayor) {
+      // Eliminar alcohol del carrito
+      const sinAlcohol = seleccionados.filter(
+        (s) => !(s.product.category === "bebestible" && esAlcohol(s.product.tipo))
+      );
+      setSeleccionados(sinAlcohol);
+      toast.warning(
+        "Como eres menor de edad, las bebidas alcohólicas fueron retiradas de tu selección.",
+        { duration: 5000 }
+      );
+    } else {
+      toast.success("Edad verificada. Puedes continuar con tu selección.");
+    }
+
+    setStep("config");
+  };
+
+  const validarCatalogo = () => {
+    if (seleccionados.length === 0) {
+      toast.error("Selecciona al menos un producto para continuar");
+      return false;
+    }
+    return true;
+  };
+
+  const handleContinuarDesdeCatalogo = () => {
+    if (!validarCatalogo()) return;
+
+    // Si hay alcohol, verificar edad
+    if (tieneAlcohol(seleccionados)) {
+      // Si el usuario tiene fecha de nacimiento guardada, usar esa
+      if (currentUsuario?.fechaNacimiento) {
+        const mayor = esMayorDeEdad(currentUsuario.fechaNacimiento);
+        if (!mayor) {
+          const sinAlcohol = seleccionados.filter(
+            (s) => !(s.product.category === "bebestible" && esAlcohol(s.product.tipo))
+          );
+          setSeleccionados(sinAlcohol);
+          toast.warning(
+            "Como eres menor de edad, las bebidas alcohólicas fueron retiradas de tu selección.",
+            { duration: 5000 }
+          );
+        }
+        setEsMayor(mayor);
+        setEdadVerificada(true);
+        setStep("config");
+        return;
+      }
+
+      // Si no está verificado aún, mostrar modal
+      if (!edadVerificada) {
+        setMostrarModalEdad(true);
+        return;
+      }
+    }
+
+    setStep("config");
+  };
 
   // ── Participantes ─────────────────────────────────────────────────────────
 
@@ -138,16 +261,6 @@ export function CreateEvent() {
       toast.error("El organizador siempre participa en el evento"); return;
     }
     setParticipantes((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  // ── Validaciones ──────────────────────────────────────────────────────────
-
-  const validarCatalogo = () => {
-    if (seleccionados.length === 0) {
-      toast.error("Selecciona al menos un producto para continuar");
-      return false;
-    }
-    return true;
   };
 
   const validarConfiguracion = () => {
@@ -207,13 +320,17 @@ export function CreateEvent() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
+      {mostrarModalEdad && (
+        <ModalVerificacionEdad onConfirmar={handleConfirmarEdad} />
+      )}
+
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver al Dashboard
         </Button>
 
-        {/* ── STEP: reparto de costos ───────────────────────────── */}
+        {/* ── STEP: reparto ────────────────────────────────────── */}
         {step === "cost" && cotizacionActiva ? (
           <CostSplitStep
             participantes={participantes}
@@ -229,8 +346,7 @@ export function CreateEvent() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Cotización simulada</h1>
               <p className="mt-2 text-muted-foreground">
-                Compara supermercados para los productos seleccionados y usa la opción más
-                económica como base del reparto.
+                Compara supermercados y elige la mejor opción para tu asado.
               </p>
             </div>
 
@@ -247,11 +363,7 @@ export function CreateEvent() {
                           <CardDescription>Simulación de canasta para este asado</CardDescription>
                         </div>
                         <div className="flex flex-col gap-2 items-end">
-                          {esMejor && (
-                            <Badge className="gap-1">
-                              <Trophy className="h-3.5 w-3.5" /> Más económico
-                            </Badge>
-                          )}
+                          {esMejor && <Badge className="gap-1"><Trophy className="h-3.5 w-3.5" /> Más económico</Badge>}
                           {esSeleccionada && <Badge variant="outline">Seleccionado</Badge>}
                         </div>
                       </div>
@@ -259,19 +371,14 @@ export function CreateEvent() {
                     <CardContent className="space-y-4">
                       <div className="rounded-lg bg-muted p-4">
                         <p className="text-sm text-muted-foreground">Total supermercado</p>
-                        <p className="text-3xl font-bold text-primary">
-                          {formatPrice(Math.round(cotizacion.total))}
-                        </p>
+                        <p className="text-3xl font-bold text-primary">{formatPrice(Math.round(cotizacion.total))}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Alcohol incluido: {formatPrice(Math.round(cotizacion.totalAlcohol))}
                         </p>
                       </div>
                       <div className="space-y-2 text-sm">
                         {cotizacion.detalles.slice(0, 5).map((detalle) => (
-                          <div
-                            key={`${cotizacion.supermercado}-${detalle.nombre}`}
-                            className="flex items-center justify-between"
-                          >
+                          <div key={`${cotizacion.supermercado}-${detalle.nombre}`} className="flex items-center justify-between">
                             <span className="text-muted-foreground">{detalle.nombre}</span>
                             <span className="font-medium">{formatPrice(Math.round(detalle.subtotal))}</span>
                           </div>
@@ -296,10 +403,6 @@ export function CreateEvent() {
                   <ShoppingCart className="h-5 w-5" />
                   Resumen de la cotización activa
                 </CardTitle>
-                <CardDescription>
-                  Actualmente usarás {cotizacionActiva?.supermercado}. Puedes cambiarlo antes de
-                  pasar al reparto.
-                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border p-4">
@@ -307,38 +410,46 @@ export function CreateEvent() {
                   <p className="text-2xl font-bold">{formatPrice(Math.round(cotizacionActiva?.total || 0))}</p>
                 </div>
                 <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Calorías totales estimadas</p>
+                  <p className="text-sm text-muted-foreground">Calorías totales</p>
                   <p className="text-2xl font-bold">{formatCalories(caloriasTotales)}</p>
                 </div>
                 <div className="rounded-lg border p-4">
-                  <p className="text-sm text-muted-foreground">Calorías por participante</p>
+                  <p className="text-sm text-muted-foreground">Calorías por persona</p>
                   <p className="text-2xl font-bold">{formatCalories(caloriasPorPersona)}</p>
                 </div>
               </CardContent>
             </Card>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => setStep("config")}>
-                Volver a la configuración
-              </Button>
+              <Button variant="outline" onClick={() => setStep("config")}>Volver a la configuración</Button>
               <Button onClick={() => setStep("cost")}>Continuar a reparto de montos</Button>
             </div>
           </div>
 
-        /* ── STEP: configuración del evento ───────────────────── */
+        /* ── STEP: configuración ─────────────────────────────── */
         ) : step === "config" ? (
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Configuración del evento</h1>
-              <p className="mt-2 text-muted-foreground">
-                Ponle nombre, fecha y agrega a los participantes de tu asado.
-              </p>
+              <p className="mt-2 text-muted-foreground">Ponle nombre, fecha y agrega participantes.</p>
             </div>
 
-            {/* Resumen de productos seleccionados */}
+            {/* Aviso si se eliminó el alcohol */}
+            {edadVerificada && esMayor === false && (
+              <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Alcohol restringido</p>
+                  <p className="text-sm text-amber-700">
+                    Las bebidas alcohólicas fueron retiradas de tu selección por ser menor de edad.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Productos seleccionados para el evento</CardTitle>
+                <CardTitle className="text-base">Productos seleccionados</CardTitle>
                 <CardDescription>
                   {seleccionados.length} productos · {formatPrice(costoTotal)} estimado
                 </CardDescription>
@@ -358,11 +469,8 @@ export function CreateEvent() {
               </CardContent>
             </Card>
 
-            {/* Nombre y fecha */}
             <Card>
-              <CardHeader>
-                <CardTitle>Datos del evento</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Datos del evento</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
@@ -384,11 +492,10 @@ export function CreateEvent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold">Participantes</h3>
-                      <p className="text-sm text-muted-foreground">El usuario organizador siempre participa.</p>
+                      <p className="text-sm text-muted-foreground">El organizador siempre participa.</p>
                     </div>
                     <Badge variant="secondary">{participantes.length} asistentes</Badge>
                   </div>
-
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Input
                       value={nuevoParticipante}
@@ -398,10 +505,9 @@ export function CreateEvent() {
                     />
                     <Button type="button" onClick={handleAgregarParticipante}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Agregar participante
+                      Agregar
                     </Button>
                   </div>
-
                   <div className="grid gap-3 md:grid-cols-2">
                     {participantes.map((p) => (
                       <div key={p.id} className="flex items-center justify-between rounded-lg border p-3">
@@ -421,7 +527,6 @@ export function CreateEvent() {
               </CardContent>
             </Card>
 
-            {/* Estadísticas */}
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Costo estimado</CardTitle></CardHeader>
@@ -434,14 +539,12 @@ export function CreateEvent() {
                 <CardHeader className="pb-2"><CardTitle className="text-base">Calorías totales</CardTitle></CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{formatCalories(caloriasTotales)}</p>
-                  <p className="text-sm text-muted-foreground">Estimado de los productos</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Calorías por persona</CardTitle></CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{formatCalories(caloriasPorPersona)}</p>
-                  <p className="text-sm text-muted-foreground">Promedio individual</p>
                 </CardContent>
               </Card>
             </div>
@@ -454,7 +557,7 @@ export function CreateEvent() {
             </div>
           </div>
 
-        /* ── STEP: catálogo de productos (primer paso) ────────── */
+        /* ── STEP: catálogo ──────────────────────────────────── */
         ) : (
           <div className="space-y-6">
             <div>
@@ -467,7 +570,7 @@ export function CreateEvent() {
             <ProductCatalogStep seleccionados={seleccionados} onChange={setSeleccionados} />
 
             <div className="flex justify-end">
-              <Button size="lg" onClick={() => { if (validarCatalogo()) setStep("config"); }}>
+              <Button size="lg" onClick={handleContinuarDesdeCatalogo}>
                 Continuar a configuración
               </Button>
             </div>
