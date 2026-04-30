@@ -8,6 +8,7 @@ import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Image;
@@ -25,10 +26,12 @@ import java.io.ByteArrayOutputStream;
 @Service
 public class PdfService {
 
-    private static final DeviceRgb COLOR_PRIMARIO = new DeviceRgb(120, 0, 20);
-    private static final DeviceRgb COLOR_SECUNDARIO = new DeviceRgb(230, 95, 0);
-    private static final DeviceRgb COLOR_FONDO = new DeviceRgb(248, 248, 248);
-    private static final DeviceRgb COLOR_BORDE = new DeviceRgb(220, 220, 220);
+    // Paleta naranja/negro que coincide con el nuevo logo BASADOS
+    private static final DeviceRgb COLOR_NEGRO      = new DeviceRgb(18, 18, 18);
+    private static final DeviceRgb COLOR_NARANJA     = new DeviceRgb(220, 80, 0);
+    private static final DeviceRgb COLOR_NARANJA_CLARO = new DeviceRgb(255, 120, 30);
+    private static final DeviceRgb COLOR_FONDO      = new DeviceRgb(248, 248, 248);
+    private static final DeviceRgb COLOR_BORDE      = new DeviceRgb(220, 220, 220);
 
     public byte[] generarPdfResumen(ResumenEventoRequest request, DestinatarioDto destinatario) {
         try {
@@ -61,11 +64,25 @@ public class PdfService {
             byte[] logoBytes = logoResource.getInputStream().readAllBytes();
 
             Image logo = new Image(ImageDataFactory.create(logoBytes));
-            logo.setWidth(110);
+            logo.setWidth(150);
             logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
 
-            document.add(logo);
+            // Celda con fondo negro para que el logo (fondo negro) se vea bien
+            Table logoTable = new Table(UnitValue.createPercentArray(new float[]{1}))
+                    .useAllAvailableWidth();
+
+            Cell logoCell = new Cell()
+                    .add(logo)
+                    .setBackgroundColor(COLOR_NEGRO)
+                    .setBorder(Border.NO_BORDER)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setPaddingTop(16)
+                    .setPaddingBottom(16);
+
+            logoTable.addCell(logoCell);
+            document.add(logoTable);
             document.add(new Paragraph(" "));
+
         } catch (Exception e) {
             System.out.println("⚠️ No se encontró logo.png, se genera PDF sin logo");
         }
@@ -75,12 +92,12 @@ public class PdfService {
         Paragraph titulo = new Paragraph("BASADOS")
                 .setBold()
                 .setFontSize(22)
-                .setFontColor(COLOR_PRIMARIO)
+                .setFontColor(COLOR_NARANJA)
                 .setTextAlignment(TextAlignment.CENTER);
 
         Paragraph subtitulo = new Paragraph("Resumen personalizado del evento")
                 .setFontSize(12)
-                .setFontColor(COLOR_SECUNDARIO)
+                .setFontColor(COLOR_NARANJA_CLARO)
                 .setTextAlignment(TextAlignment.CENTER);
 
         document.add(titulo);
@@ -113,8 +130,8 @@ public class PdfService {
                         .setFontSize(20)
                         .setBold()
                         .setFontColor(ColorConstants.WHITE))
-                .setBackgroundColor(COLOR_PRIMARIO)
-                .setBorder(new SolidBorder(COLOR_PRIMARIO, 1))
+                .setBackgroundColor(COLOR_NARANJA)
+                .setBorder(new SolidBorder(COLOR_NARANJA, 1))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setVerticalAlignment(VerticalAlignment.MIDDLE)
                 .setPaddingTop(12)
@@ -167,8 +184,8 @@ public class PdfService {
     private Cell crearHeader(String texto) {
         return new Cell()
                 .add(new Paragraph(texto).setBold().setFontColor(ColorConstants.WHITE))
-                .setBackgroundColor(COLOR_SECUNDARIO)
-                .setBorder(new SolidBorder(COLOR_SECUNDARIO, 1))
+                .setBackgroundColor(COLOR_NARANJA)
+                .setBorder(new SolidBorder(COLOR_NARANJA, 1))
                 .setPadding(8)
                 .setTextAlignment(TextAlignment.CENTER);
     }
@@ -189,7 +206,7 @@ public class PdfService {
     }
 
     private void agregarPie(Document document) {
-        Paragraph pie = new Paragraph("Gracias por usar BASADOS 🔥")
+        Paragraph pie = new Paragraph("Gracias por usar BASADOS")
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(10)
                 .setFontColor(ColorConstants.DARK_GRAY);

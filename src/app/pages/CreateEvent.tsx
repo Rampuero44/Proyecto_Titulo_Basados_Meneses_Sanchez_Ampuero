@@ -1,96 +1,63 @@
-import { useEffect, useMemo, useState, type ReactNode, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navbar } from "../components/Navbar";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Checkbox } from "../components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
-import { ArrowLeft, Beef, Beer, Calendar, Flame, Plus, Salad, ShoppingCart, Trophy, X } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, ShoppingCart, Trophy, X } from "lucide-react";
 import { storage, generateId, Participante } from "../utils/localStorage";
-import { calcularInsumos, generarCotizacionesSimuladas } from "../utils/calculator";
+import { generarCotizacionesSimuladas } from "../utils/calculator";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
+import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductCatalogStep";
 
-type ItemTemplate = {
-  key: string;
-  nombre: string;
-  tipo: string;
-  porPrecio: number;
-  calorias: number;
-};
-
-const PROTEINAS_BASE: ItemTemplate[] = [
-  { key: "lomo-vetado", nombre: "Lomo Vetado (kg)", tipo: "carne", porPrecio: 8000, calorias: 2500 },
-  { key: "pollo", nombre: "Pollo (kg)", tipo: "pollo", porPrecio: 3500, calorias: 1900 },
-  { key: "chorizo", nombre: "Chorizo", tipo: "chorizo", porPrecio: 800, calorias: 280 },
-];
-
-const BEBESTIBLES_BASE: ItemTemplate[] = [
-  { key: "cerveza", nombre: "Cerveza (pack 6)", tipo: "cerveza", porPrecio: 6000, calorias: 900 },
-  { key: "gaseosa", nombre: "Gaseosa 2L", tipo: "gaseosa", porPrecio: 2500, calorias: 840 },
-  { key: "agua", nombre: "Agua mineral 2L", tipo: "agua", porPrecio: 1500, calorias: 0 },
-];
-
-const ENSALADAS_BASE: ItemTemplate[] = [
-  { key: "mixta", nombre: "Ensalada mixta", tipo: "mixta", porPrecio: 4000, calorias: 250 },
-  { key: "tomate", nombre: "Tomate (kg)", tipo: "tomate", porPrecio: 2000, calorias: 180 },
-];
-
-const INSUMOS_BASE: ItemTemplate[] = [
-  { key: "carbon", nombre: "Carbón", tipo: "carbon", porPrecio: 5000, calorias: 0 },
-  { key: "pan", nombre: "Pan (bolsa 10)", tipo: "pan", porPrecio: 2000, calorias: 2650 },
-  { key: "chimichurri", nombre: "Chimichurri", tipo: "condimento", porPrecio: 3000, calorias: 180 },
-];
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 const formatDateForInput = (date: Date) => {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return offsetDate.toISOString().split("T")[0];
 };
 
-const findTemplateByName = (templates: ItemTemplate[], nombre: string) =>
-  templates.find((item) => item.nombre === nombre);
-
 const formatCalories = (value: number) => `${Math.round(value).toLocaleString()} kcal`;
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
+
+// ─── Página principal ─────────────────────────────────────────────────────────
 
 export function CreateEvent() {
   const navigate = useNavigate();
-  const [currentUsuario] = useState(() => storage.getCurrentUsuario() || storage.getUsuarioByEmail("juan@gmail.com") || null);
-  const [step, setStep] = useState<"config" | "quote" | "cost">("config");
 
+  const [currentUsuario] = useState(
+    () => storage.getCurrentUsuario() || storage.getUsuarioByEmail("juan@gmail.com") || null
+  );
+
+  // Wizard: catalog → config → quote → cost
+  const [step, setStep] = useState<"catalog" | "config" | "quote" | "cost">("catalog");
+
+  // Estado de selección de productos (reemplaza el antiguo sistema de checkboxes)
+  const [seleccionados, setSeleccionados] = useState<ProductoSeleccionado[]>([]);
+
+  // Datos del evento
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState(formatDateForInput(new Date()));
   const [participantes, setParticipantes] = useState<Participante[]>([]);
   const [nuevoParticipante, setNuevoParticipante] = useState("");
-
-  const [selectedProteinas, setSelectedProteinas] = useState<string[]>(PROTEINAS_BASE.map((item) => item.key));
-  const [selectedBebestibles, setSelectedBebestibles] = useState<string[]>(BEBESTIBLES_BASE.map((item) => item.key));
-  const [selectedEnsaladas, setSelectedEnsaladas] = useState<string[]>(ENSALADAS_BASE.map((item) => item.key));
-  const [selectedInsumos, setSelectedInsumos] = useState<string[]>(INSUMOS_BASE.map((item) => item.key));
   const [selectedSupermercado, setSelectedSupermercado] = useState<string>("");
 
+  // Inicialización de usuario
   useEffect(() => {
-    if (!currentUsuario) {
-      navigate("/login");
-      return;
-    }
-
-    if (!storage.getCurrentUsuario()) {
-      storage.setCurrentUsuario(currentUsuario);
-    }
-
-    const nombreSugerido = `Evento de ${currentUsuario.nombre}`;
-    setNombre((prev) => prev || nombreSugerido);
-
+    if (!currentUsuario) { navigate("/login"); return; }
+    if (!storage.getCurrentUsuario()) storage.setCurrentUsuario(currentUsuario);
+    setNombre((prev) => prev || `Evento de ${currentUsuario.nombre}`);
     setParticipantes((prev) => {
-      const existeUsuario = prev.some(
-        (participante) => participante.nombre.trim().toLowerCase() === currentUsuario.nombre.trim().toLowerCase(),
+      const exists = prev.some(
+        (p) => p.nombre.trim().toLowerCase() === currentUsuario.nombre.trim().toLowerCase()
       );
-
-      if (existeUsuario) return prev;
-
+      if (exists) return prev;
       return [
         {
           id: generateId(),
@@ -105,61 +72,44 @@ export function CreateEvent() {
     });
   }, [currentUsuario, navigate]);
 
-  const resumenBase = useMemo(() => {
-    const calculoBase = calcularInsumos(0, participantes.length || 1);
+  // ── Derivar listas por categoría desde seleccionados ─────────────────────
 
-    const proteinas = calculoBase.proteinas.filter((item) => {
-      const template = findTemplateByName(PROTEINAS_BASE, item.nombre);
-      return template ? selectedProteinas.includes(template.key) : false;
-    });
+  const getByCategory = (category: string) =>
+    seleccionados
+      .filter((s) => s.product.category === category)
+      .map((s) => ({
+        id: generateId(),
+        nombre: s.product.nombre,
+        tipo: s.product.tipo,
+        cantidad: s.cantidad,
+        porPrecio: s.product.precio.valor,
+        calorias: s.product.calorias,
+      }));
 
-    const bebestibles = calculoBase.bebestibles.filter((item) => {
-      const template = findTemplateByName(BEBESTIBLES_BASE, item.nombre);
-      return template ? selectedBebestibles.includes(template.key) : false;
-    });
+  const proteinas    = getByCategory("proteina");
+  const bebestibles  = getByCategory("bebestible");
+  const ensaladas    = getByCategory("ensalada");
+  const insumos      = getByCategory("insumo");
 
-    const ensaladas = calculoBase.ensaladas.filter((item) => {
-      const template = findTemplateByName(ENSALADAS_BASE, item.nombre);
-      return template ? selectedEnsaladas.includes(template.key) : false;
-    });
-
-    const insumos = calculoBase.insumos.filter((item) => {
-      const template = findTemplateByName(INSUMOS_BASE, item.nombre);
-      return template ? selectedInsumos.includes(template.key) : false;
-    });
-
-    const costoTotal = [...proteinas, ...bebestibles, ...ensaladas, ...insumos].reduce(
-      (sum, item) => sum + item.cantidad * item.porPrecio,
-      0,
-    );
-
-    const costoAlcoholTotal = bebestibles
-      .filter((item) => item.tipo === "cerveza")
-      .reduce((sum, item) => sum + item.cantidad * item.porPrecio, 0);
-
-    const caloriasTotales = [...proteinas, ...bebestibles, ...ensaladas, ...insumos]
-      .reduce((sum, item) => sum + item.cantidad * (item.calorias || 0), 0);
-
-    return {
-      proteinas,
-      bebestibles,
-      ensaladas,
-      insumos,
-      costoTotal,
-      costoAlcoholTotal,
-      costoPorPersona: participantes.length > 0 ? costoTotal / participantes.length : 0,
-      caloriasTotales,
-      caloriasPorPersona: participantes.length > 0 ? caloriasTotales / participantes.length : 0,
-    };
-  }, [participantes.length, selectedProteinas, selectedBebestibles, selectedEnsaladas, selectedInsumos]);
-
-  const cotizaciones = useMemo(
-    () => generarCotizacionesSimuladas(resumenBase.proteinas, resumenBase.bebestibles, resumenBase.ensaladas, resumenBase.insumos),
-    [resumenBase],
+  const costoTotal = seleccionados.reduce(
+    (sum, s) => sum + s.product.precio.valor * s.cantidad, 0
   );
+  const caloriasTotales = seleccionados.reduce(
+    (sum, s) => sum + s.product.calorias * s.cantidad, 0
+  );
+  const caloriasPorPersona =
+    participantes.length > 0 ? caloriasTotales / participantes.length : 0;
+  const costoAlcoholTotal = seleccionados
+    .filter((s) =>
+      s.product.tipo.toLowerCase().includes("cerveza") ||
+      s.product.tipo.toLowerCase().includes("vino")
+    )
+    .reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
 
+  const cotizaciones = generarCotizacionesSimuladas(proteinas, bebestibles, ensaladas, insumos);
   const mejorCotizacion = cotizaciones[0] || null;
-  const cotizacionActiva = cotizaciones.find((item) => item.supermercado === selectedSupermercado) || mejorCotizacion;
+  const cotizacionActiva =
+    cotizaciones.find((c) => c.supermercado === selectedSupermercado) || mejorCotizacion;
 
   useEffect(() => {
     if (mejorCotizacion && !selectedSupermercado) {
@@ -167,123 +117,78 @@ export function CreateEvent() {
     }
   }, [mejorCotizacion, selectedSupermercado]);
 
-  const toggleSelection = (key: string, values: string[], setter: Dispatch<SetStateAction<string[]>>) => {
-    setter(values.includes(key) ? values.filter((value) => value !== key) : [...values, key]);
-  };
+  // ── Participantes ─────────────────────────────────────────────────────────
 
   const handleAgregarParticipante = () => {
-    const nombreParticipante = nuevoParticipante.trim();
-
-    if (!nombreParticipante) {
-      toast.error("Ingresa un nombre para el participante");
-      return;
+    const nombreP = nuevoParticipante.trim();
+    if (!nombreP) { toast.error("Ingresa un nombre para el participante"); return; }
+    if (participantes.some((p) => p.nombre.trim().toLowerCase() === nombreP.toLowerCase())) {
+      toast.error("Ese participante ya fue agregado"); return;
     }
-
-    const yaExiste = participantes.some(
-      (participante) => participante.nombre.trim().toLowerCase() === nombreParticipante.toLowerCase(),
-    );
-
-    if (yaExiste) {
-      toast.error("Ese participante ya fue agregado");
-      return;
-    }
-
     setParticipantes((prev) => [
       ...prev,
-      {
-        id: generateId(),
-        nombre: nombreParticipante,
-        contactos: [],
-        metodoContacto: "sin_notificacion",
-        contacto: "",
-        esOrganizador: false,
-      },
+      { id: generateId(), nombre: nombreP, contactos: [], metodoContacto: "sin_notificacion", contacto: "", esOrganizador: false },
     ]);
     setNuevoParticipante("");
     toast.success("Participante agregado");
   };
 
-  const handleEliminarParticipante = (participanteId: number) => {
-    const participante = participantes.find((item) => item.id === participanteId);
-
-    if (participante?.esOrganizador) {
-      toast.error("El organizador siempre participa en el evento");
-      return;
+  const handleEliminarParticipante = (id: number) => {
+    if (participantes.find((p) => p.id === id)?.esOrganizador) {
+      toast.error("El organizador siempre participa en el evento"); return;
     }
-
-    setParticipantes((prev) => prev.filter((item) => item.id !== participanteId));
+    setParticipantes((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const validarConfiguracion = () => {
-    if (!nombre.trim()) {
-      toast.error("Debes ingresar un nombre para el evento");
+  // ── Validaciones ──────────────────────────────────────────────────────────
+
+  const validarCatalogo = () => {
+    if (seleccionados.length === 0) {
+      toast.error("Selecciona al menos un producto para continuar");
       return false;
     }
-
-    if (!fecha) {
-      toast.error("Debes seleccionar una fecha");
-      return false;
-    }
-
-    if (participantes.length === 0) {
-      toast.error("Debes agregar al menos un participante");
-      return false;
-    }
-
-    if (
-      selectedProteinas.length === 0 &&
-      selectedBebestibles.length === 0 &&
-      selectedEnsaladas.length === 0 &&
-      selectedInsumos.length === 0
-    ) {
-      toast.error("Selecciona al menos un ítem para el asado");
-      return false;
-    }
-
     return true;
   };
 
-  const handleIrACotizacion = () => {
-    if (!validarConfiguracion()) return;
-    setStep("quote");
+  const validarConfiguracion = () => {
+    if (!nombre.trim()) { toast.error("Debes ingresar un nombre para el evento"); return false; }
+    if (!fecha) { toast.error("Debes seleccionar una fecha"); return false; }
+    if (participantes.length === 0) { toast.error("Debes agregar al menos un participante"); return false; }
+    return true;
   };
+
+  // ── Guardar evento ────────────────────────────────────────────────────────
 
   const handleGuardarEvento = (participantesConCostos: CostSplitParticipant[]) => {
     if (!currentUsuario || !cotizacionActiva) return;
-
     const eventoId = generateId();
-
-    const proteinas = resumenBase.proteinas.map((item) => ({ ...item, id: generateId(), eventoId }));
-    const bebestibles = resumenBase.bebestibles.map((item) => ({ ...item, id: generateId(), eventoId }));
-    const ensaladas = resumenBase.ensaladas.map((item) => ({ ...item, id: generateId(), eventoId }));
-    const insumos = resumenBase.insumos.map((item) => ({ ...item, id: generateId(), eventoId }));
 
     const evento = {
       id: eventoId,
       nombre: nombre.trim(),
       fecha,
-      presupuesto: Math.round(participantesConCostos.reduce((sum, participante) => sum + participante.monto, 0)),
+      presupuesto: Math.round(participantesConCostos.reduce((sum, p) => sum + p.monto, 0)),
       estado: "planificado" as const,
       usuarioId: currentUsuario.id,
-      participantes: participantesConCostos.map((participante) => ({
-        id: participante.id,
-        nombre: participante.nombre,
-        contactos: participante.metodoContacto === "sin_notificacion"
+      participantes: participantesConCostos.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        contactos: p.metodoContacto === "sin_notificacion"
           ? []
-          : [{ id: generateId(), metodo: participante.metodoContacto, valor: participante.contacto }],
-        metodoContacto: participante.metodoContacto,
-        contacto: participante.contacto,
-        monto: Math.round(participante.monto),
-        montoManual: participante.montoManual,
-        sinAlcohol: participante.sinAlcohol,
-        esOrganizador: participante.esOrganizador,
+          : [{ id: generateId(), metodo: p.metodoContacto, valor: p.contacto }],
+        metodoContacto: p.metodoContacto,
+        contacto: p.contacto,
+        monto: Math.round(p.monto),
+        montoManual: p.montoManual,
+        sinAlcohol: p.sinAlcohol,
+        esOrganizador: p.esOrganizador,
       })),
-      proteinas,
-      bebestibles,
-      insumos,
-      ensaladas,
-      caloriasTotales: Math.round(resumenBase.caloriasTotales),
-      caloriasPorPersona: Math.round(resumenBase.caloriasPorPersona),
+      proteinas:   proteinas.map((item) => ({ ...item, id: generateId(), eventoId })),
+      bebestibles: bebestibles.map((item) => ({ ...item, id: generateId(), eventoId })),
+      ensaladas:   ensaladas.map((item) => ({ ...item, id: generateId(), eventoId })),
+      insumos:     insumos.map((item) => ({ ...item, id: generateId(), eventoId })),
+      caloriasTotales: Math.round(caloriasTotales),
+      caloriasPorPersona: Math.round(caloriasPorPersona),
       cotizaciones,
       cotizacionSeleccionada: cotizacionActiva.supermercado,
       createdAt: new Date().toISOString(),
@@ -294,50 +199,9 @@ export function CreateEvent() {
     navigate(`/event/${eventoId}`);
   };
 
-  const renderSelectionList = (
-    title: string,
-    description: string,
-    icon: ReactNode,
-    items: ItemTemplate[],
-    selected: string[],
-    setter: Dispatch<SetStateAction<string[]>>,
-  ) => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {icon}
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item) => (
-          <div key={item.key} className="flex items-center justify-between rounded-lg border p-3">
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={selected.includes(item.key)}
-                onCheckedChange={() => toggleSelection(item.key, selected, setter)}
-                id={`${title}-${item.key}`}
-              />
-              <div>
-                <Label htmlFor={`${title}-${item.key}`} className="cursor-pointer font-medium">
-                  {item.nombre}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  ${item.porPrecio.toLocaleString()} base · {item.calorias > 0 ? `${item.calorias.toLocaleString()} kcal` : "0 kcal"}
-                </p>
-              </div>
-            </div>
-            {selected.includes(item.key) && <Badge>Incluido</Badge>}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
+  if (!currentUsuario) return null;
 
-  if (!currentUsuario) {
-    return null;
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-background">
@@ -349,6 +213,7 @@ export function CreateEvent() {
           Volver al Dashboard
         </Button>
 
+        {/* ── STEP: reparto de costos ───────────────────────────── */}
         {step === "cost" && cotizacionActiva ? (
           <CostSplitStep
             participantes={participantes}
@@ -357,12 +222,15 @@ export function CreateEvent() {
             onBack={() => setStep("quote")}
             onConfirm={handleGuardarEvento}
           />
+
+        /* ── STEP: cotización ────────────────────────────────── */
         ) : step === "quote" ? (
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Cotización simulada</h1>
               <p className="mt-2 text-muted-foreground">
-                Compara supermercados para los productos seleccionados y usa la opción más económica como base del reparto.
+                Compara supermercados para los productos seleccionados y usa la opción más
+                económica como base del reparto.
               </p>
             </div>
 
@@ -370,7 +238,6 @@ export function CreateEvent() {
               {cotizaciones.map((cotizacion, index) => {
                 const esSeleccionada = cotizacion.supermercado === cotizacionActiva?.supermercado;
                 const esMejor = index === 0;
-
                 return (
                   <Card key={cotizacion.supermercado} className={esSeleccionada ? "border-primary shadow-sm" : ""}>
                     <CardHeader>
@@ -380,7 +247,11 @@ export function CreateEvent() {
                           <CardDescription>Simulación de canasta para este asado</CardDescription>
                         </div>
                         <div className="flex flex-col gap-2 items-end">
-                          {esMejor && <Badge className="gap-1"><Trophy className="h-3.5 w-3.5" /> Más económico</Badge>}
+                          {esMejor && (
+                            <Badge className="gap-1">
+                              <Trophy className="h-3.5 w-3.5" /> Más económico
+                            </Badge>
+                          )}
                           {esSeleccionada && <Badge variant="outline">Seleccionado</Badge>}
                         </div>
                       </div>
@@ -388,14 +259,21 @@ export function CreateEvent() {
                     <CardContent className="space-y-4">
                       <div className="rounded-lg bg-muted p-4">
                         <p className="text-sm text-muted-foreground">Total supermercado</p>
-                        <p className="text-3xl font-bold text-primary">${Math.round(cotizacion.total).toLocaleString()}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">Alcohol incluido: ${Math.round(cotizacion.totalAlcohol).toLocaleString()}</p>
+                        <p className="text-3xl font-bold text-primary">
+                          {formatPrice(Math.round(cotizacion.total))}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Alcohol incluido: {formatPrice(Math.round(cotizacion.totalAlcohol))}
+                        </p>
                       </div>
                       <div className="space-y-2 text-sm">
                         {cotizacion.detalles.slice(0, 5).map((detalle) => (
-                          <div key={`${cotizacion.supermercado}-${detalle.nombre}`} className="flex items-center justify-between">
+                          <div
+                            key={`${cotizacion.supermercado}-${detalle.nombre}`}
+                            className="flex items-center justify-between"
+                          >
                             <span className="text-muted-foreground">{detalle.nombre}</span>
-                            <span className="font-medium">${Math.round(detalle.subtotal).toLocaleString()}</span>
+                            <span className="font-medium">{formatPrice(Math.round(detalle.subtotal))}</span>
                           </div>
                         ))}
                       </div>
@@ -419,99 +297,83 @@ export function CreateEvent() {
                   Resumen de la cotización activa
                 </CardTitle>
                 <CardDescription>
-                  Actualmente usarás {cotizacionActiva?.supermercado}. Puedes cambiarlo antes de pasar al reparto.
+                  Actualmente usarás {cotizacionActiva?.supermercado}. Puedes cambiarlo antes de
+                  pasar al reparto.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Total elegido</p>
-                  <p className="text-2xl font-bold">${Math.round(cotizacionActiva?.total || 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatPrice(Math.round(cotizacionActiva?.total || 0))}</p>
                 </div>
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Calorías totales estimadas</p>
-                  <p className="text-2xl font-bold">{formatCalories(resumenBase.caloriasTotales)}</p>
+                  <p className="text-2xl font-bold">{formatCalories(caloriasTotales)}</p>
                 </div>
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Calorías por participante</p>
-                  <p className="text-2xl font-bold">{formatCalories(resumenBase.caloriasPorPersona)}</p>
+                  <p className="text-2xl font-bold">{formatCalories(caloriasPorPersona)}</p>
                 </div>
               </CardContent>
             </Card>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => setStep("config")}>Volver a la configuración</Button>
+              <Button variant="outline" onClick={() => setStep("config")}>
+                Volver a la configuración
+              </Button>
               <Button onClick={() => setStep("cost")}>Continuar a reparto de montos</Button>
             </div>
           </div>
-        ) : (
+
+        /* ── STEP: configuración del evento ───────────────────── */
+        ) : step === "config" ? (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Crear evento</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Configuración del evento</h1>
               <p className="mt-2 text-muted-foreground">
-                Selecciona productos, revisa calorías simuladas y prepara el asado antes de repartir el costo.
+                Ponle nombre, fecha y agrega a los participantes de tu asado.
               </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              {renderSelectionList(
-                "Proteínas",
-                "Selecciona las proteínas que quieres incluir en el asado.",
-                <Beef className="h-5 w-5" />,
-                PROTEINAS_BASE,
-                selectedProteinas,
-                setSelectedProteinas,
-              )}
-
-              {renderSelectionList(
-                "Bebestibles",
-                "Incluye bebidas alcohólicas y sin alcohol.",
-                <Beer className="h-5 w-5" />,
-                BEBESTIBLES_BASE,
-                selectedBebestibles,
-                setSelectedBebestibles,
-              )}
-
-              {renderSelectionList(
-                "Ensaladas",
-                "Acompañamientos frescos para equilibrar el menú.",
-                <Salad className="h-5 w-5" />,
-                ENSALADAS_BASE,
-                selectedEnsaladas,
-                setSelectedEnsaladas,
-              )}
-
-              {renderSelectionList(
-                "Insumos",
-                "Pan, carbón y extras básicos para el evento.",
-                <Flame className="h-5 w-5" />,
-                INSUMOS_BASE,
-                selectedInsumos,
-                setSelectedInsumos,
-              )}
-            </div>
-
+            {/* Resumen de productos seleccionados */}
             <Card>
               <CardHeader>
-                <CardTitle>Configuración del evento</CardTitle>
-                <CardDescription>Debajo de la selección puedes ajustar nombre, fecha y participantes.</CardDescription>
+                <CardTitle className="text-base">Productos seleccionados para el evento</CardTitle>
+                <CardDescription>
+                  {seleccionados.length} productos · {formatPrice(costoTotal)} estimado
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {seleccionados.map((s) => (
+                    <div key={s.product.id} className="flex items-center justify-between rounded-lg border p-2 text-sm">
+                      <span className="font-medium truncate flex-1 mr-2">{s.product.nombre}</span>
+                      <span className="text-muted-foreground shrink-0">×{s.cantidad}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="ghost" size="sm" className="mt-3 text-muted-foreground" onClick={() => setStep("catalog")}>
+                  Editar productos
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Nombre y fecha */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Datos del evento</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="nombre-evento">Nombre del evento</Label>
-                    <Input id="nombre-evento" value={nombre} onChange={(event) => setNombre(event.target.value)} />
+                    <Input id="nombre-evento" value={nombre} onChange={(e) => setNombre(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="fecha-evento">Fecha</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="fecha-evento"
-                        type="date"
-                        value={fecha}
-                        onChange={(event) => setFecha(event.target.value)}
-                        className="pl-9"
-                      />
+                      <Input id="fecha-evento" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="pl-9" />
                     </div>
                   </div>
                 </div>
@@ -530,8 +392,9 @@ export function CreateEvent() {
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Input
                       value={nuevoParticipante}
-                      onChange={(event) => setNuevoParticipante(event.target.value)}
+                      onChange={(e) => setNuevoParticipante(e.target.value)}
                       placeholder="Nombre del participante"
+                      onKeyDown={(e) => e.key === "Enter" && handleAgregarParticipante()}
                     />
                     <Button type="button" onClick={handleAgregarParticipante}>
                       <Plus className="mr-2 h-4 w-4" />
@@ -540,16 +403,14 @@ export function CreateEvent() {
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
-                    {participantes.map((participante) => (
-                      <div key={participante.id} className="flex items-center justify-between rounded-lg border p-3">
+                    {participantes.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between rounded-lg border p-3">
                         <div>
-                          <p className="font-medium">{participante.nombre}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {participante.esOrganizador ? "Organizador" : "Participante"}
-                          </p>
+                          <p className="font-medium">{p.nombre}</p>
+                          <p className="text-sm text-muted-foreground">{p.esOrganizador ? "Organizador" : "Participante"}</p>
                         </div>
-                        {!participante.esOrganizador && (
-                          <Button variant="ghost" size="icon" onClick={() => handleEliminarParticipante(participante.id)}>
+                        {!p.esOrganizador && (
+                          <Button variant="ghost" size="icon" onClick={() => handleEliminarParticipante(p.id)}>
                             <X className="h-4 w-4" />
                           </Button>
                         )}
@@ -560,38 +421,55 @@ export function CreateEvent() {
               </CardContent>
             </Card>
 
+            {/* Estadísticas */}
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Costo estimado</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Costo estimado</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-primary">${Math.round(resumenBase.costoTotal).toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">Base simulada antes de cotizar</p>
+                  <p className="text-2xl font-bold text-primary">{formatPrice(costoTotal)}</p>
+                  <p className="text-sm text-muted-foreground">Base antes de cotizar</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Calorías totales</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Calorías totales</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{formatCalories(resumenBase.caloriasTotales)}</p>
-                  <p className="text-sm text-muted-foreground">Suma estimada de los productos elegidos</p>
+                  <p className="text-2xl font-bold">{formatCalories(caloriasTotales)}</p>
+                  <p className="text-sm text-muted-foreground">Estimado de los productos</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Calorías por persona</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Calorías por persona</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{formatCalories(resumenBase.caloriasPorPersona)}</p>
-                  <p className="text-sm text-muted-foreground">Promedio individual según asistentes</p>
+                  <p className="text-2xl font-bold">{formatCalories(caloriasPorPersona)}</p>
+                  <p className="text-sm text-muted-foreground">Promedio individual</p>
                 </CardContent>
               </Card>
             </div>
 
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setStep("catalog")}>Volver al catálogo</Button>
+              <Button onClick={() => { if (validarConfiguracion()) setStep("quote"); }}>
+                Continuar a cotización
+              </Button>
+            </div>
+          </div>
+
+        /* ── STEP: catálogo de productos (primer paso) ────────── */
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Crear evento</h1>
+              <p className="mt-2 text-muted-foreground">
+                Elige los productos para tu asado, luego configura el evento y reparte el costo.
+              </p>
+            </div>
+
+            <ProductCatalogStep seleccionados={seleccionados} onChange={setSeleccionados} />
+
             <div className="flex justify-end">
-              <Button onClick={handleIrACotizacion}>Continuar a cotización</Button>
+              <Button size="lg" onClick={() => { if (validarCatalogo()) setStep("config"); }}>
+                Continuar a configuración
+              </Button>
             </div>
           </div>
         )}
