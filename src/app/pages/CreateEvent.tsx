@@ -16,8 +16,6 @@ import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductC
 import { AsadorStep } from "../components/AsadorStep";
 import { Asador } from "../data/mockAsadores";
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
 const formatDateForInput = (date: Date) => {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return offsetDate.toISOString().split("T")[0];
@@ -28,8 +26,7 @@ const formatCalories = (value: number) => `${Math.round(value).toLocaleString()}
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
 
-// Tipos de bebestibles que se consideran alcohólicos
-const TIPOS_ALCOHOL = ["cerveza", "vino", "licor", "pisco", "ron", "vodka", "whisky", "champagne", "sidra"];
+const TIPOS_ALCOHOL = ["cerveza", "vino", "destilado", "licor", "pisco", "ron", "vodka", "whisky", "champagne", "sidra"];
 
 const esAlcohol = (tipo: string): boolean =>
   TIPOS_ALCOHOL.some((a) => tipo.toLowerCase().includes(a));
@@ -38,8 +35,6 @@ const tieneAlcohol = (seleccionados: ProductoSeleccionado[]): boolean =>
   seleccionados.some(
     (s) => s.product.category === "bebestible" && esAlcohol(s.product.tipo)
   );
-
-// ─── Modal verificación de edad ───────────────────────────────────────────────
 
 interface ModalEdadProps {
   onConfirmar: (esMayor: boolean, fechaNacimiento: string) => void;
@@ -95,8 +90,6 @@ function ModalVerificacionEdad({ onConfirmar }: ModalEdadProps) {
   );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
-
 export function CreateEvent() {
   const navigate = useNavigate();
 
@@ -104,14 +97,10 @@ export function CreateEvent() {
     () => storage.getCurrentUsuario() || storage.getUsuarioByEmail("juan@gmail.com") || null
   );
 
-  // Wizard: catalog → [age-check] → config → quote → cost
   const [step, setStep] = useState<"catalog" | "asador" | "config" | "quote" | "cost">("catalog");
-
-  // Control del modal de verificación de edad
   const [mostrarModalEdad, setMostrarModalEdad] = useState(false);
   const [edadVerificada, setEdadVerificada] = useState(false);
   const [esMayor, setEsMayor] = useState<boolean | null>(null);
-
   const [seleccionados, setSeleccionados] = useState<ProductoSeleccionado[]>([]);
   const [asadorSeleccionado, setAsadorSeleccionado] = useState<Asador | null>(null);
   const [nombre, setNombre] = useState("");
@@ -143,8 +132,6 @@ export function CreateEvent() {
     });
   }, [currentUsuario, navigate]);
 
-  // ── Derivar listas por categoría ──────────────────────────────────────────
-
   const getByCategory = (category: string) =>
     seleccionados
       .filter((s) => s.product.category === category)
@@ -157,10 +144,10 @@ export function CreateEvent() {
         calorias: s.product.calorias,
       }));
 
-  const proteinas    = getByCategory("proteina");
-  const bebestibles  = getByCategory("bebestible");
-  const ensaladas    = getByCategory("ensalada");
-  const insumos      = getByCategory("insumo");
+  const proteinas = getByCategory("proteina");
+  const bebestibles = getByCategory("bebestible");
+  const ensaladas = getByCategory("ensalada");
+  const insumos = getByCategory("insumo");
 
   const costoTotal = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
   const costoAsador = asadorSeleccionado
@@ -187,18 +174,25 @@ export function CreateEvent() {
     setEdadVerificada(true);
     setEsMayor(mayor);
 
+    let productosFinales = seleccionados;
+
     if (!mayor) {
-      // Eliminar alcohol del carrito
-      const sinAlcohol = seleccionados.filter(
+      productosFinales = seleccionados.filter(
         (s) => !(s.product.category === "bebestible" && esAlcohol(s.product.tipo))
       );
-      setSeleccionados(sinAlcohol);
+      setSeleccionados(productosFinales);
       toast.warning(
         "Como eres menor de edad, las bebidas alcohólicas fueron retiradas de tu selección.",
         { duration: 5000 }
       );
     } else {
       toast.success("Edad verificada. Puedes continuar con tu selección.");
+    }
+
+    // Validar que queden productos después de la restricción
+    if (productosFinales.length === 0) {
+      toast.error("No quedan productos en tu selección. Agrega al menos un producto no alcohólico para continuar.", { duration: 6000 });
+      return;
     }
 
     setStep("asador");
@@ -215,15 +209,20 @@ export function CreateEvent() {
   const handleContinuarDesdeCatalogo = () => {
     if (!validarCatalogo()) return;
 
-    // Si hay alcohol, verificar edad
     if (tieneAlcohol(seleccionados)) {
-      // Si el usuario tiene fecha de nacimiento guardada, usar esa
       if (currentUsuario?.fechaNacimiento) {
         const mayor = esMayorDeEdad(currentUsuario.fechaNacimiento);
         if (!mayor) {
           const sinAlcohol = seleccionados.filter(
             (s) => !(s.product.category === "bebestible" && esAlcohol(s.product.tipo))
           );
+
+          // Validar que queden productos después de eliminar alcohol
+          if (sinAlcohol.length === 0) {
+            toast.error("No puedes continuar: eres menor de edad y solo seleccionaste bebidas alcohólicas. Agrega otros productos.", { duration: 6000 });
+            return;
+          }
+
           setSeleccionados(sinAlcohol);
           toast.warning(
             "Como eres menor de edad, las bebidas alcohólicas fueron retiradas de tu selección.",
@@ -236,7 +235,6 @@ export function CreateEvent() {
         return;
       }
 
-      // Si no está verificado aún, mostrar modal
       if (!edadVerificada) {
         setMostrarModalEdad(true);
         return;
@@ -245,8 +243,6 @@ export function CreateEvent() {
 
     setStep("asador");
   };
-
-  // ── Participantes ─────────────────────────────────────────────────────────
 
   const handleAgregarParticipante = () => {
     const nombreP = nuevoParticipante.trim();
@@ -276,8 +272,6 @@ export function CreateEvent() {
     return true;
   };
 
-  // ── Guardar evento ────────────────────────────────────────────────────────
-
   const handleGuardarEvento = (participantesConCostos: CostSplitParticipant[]) => {
     if (!currentUsuario || !cotizacionActiva) return;
     const eventoId = generateId();
@@ -302,10 +296,10 @@ export function CreateEvent() {
         sinAlcohol: p.sinAlcohol,
         esOrganizador: p.esOrganizador,
       })),
-      proteinas:   proteinas.map((item) => ({ ...item, id: generateId(), eventoId })),
+      proteinas: proteinas.map((item) => ({ ...item, id: generateId(), eventoId })),
       bebestibles: bebestibles.map((item) => ({ ...item, id: generateId(), eventoId })),
-      ensaladas:   ensaladas.map((item) => ({ ...item, id: generateId(), eventoId })),
-      insumos:     insumos.map((item) => ({ ...item, id: generateId(), eventoId })),
+      ensaladas: ensaladas.map((item) => ({ ...item, id: generateId(), eventoId })),
+      insumos: insumos.map((item) => ({ ...item, id: generateId(), eventoId })),
       caloriasTotales: Math.round(caloriasTotales),
       caloriasPorPersona: Math.round(caloriasPorPersona),
       cotizaciones,
@@ -328,8 +322,6 @@ export function CreateEvent() {
 
   if (!currentUsuario) return null;
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -341,10 +333,10 @@ export function CreateEvent() {
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver al Dashboard
+          Volver
         </Button>
 
-        {/* ── STEP: reparto ────────────────────────────────────── */}
+        {/* ── STEP: reparto ── */}
         {step === "cost" && cotizacionActiva ? (
           <CostSplitStep
             participantes={participantes}
@@ -354,7 +346,7 @@ export function CreateEvent() {
             onConfirm={handleGuardarEvento}
           />
 
-        /* ── STEP: cotización ────────────────────────────────── */
+          /* ── STEP: cotización ── */
         ) : step === "quote" ? (
           <div className="space-y-6">
             <div>
@@ -434,27 +426,28 @@ export function CreateEvent() {
               </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("config")}>Volver a la configuración</Button>
               <Button onClick={() => setStep("cost")}>Continuar a reparto de montos</Button>
             </div>
           </div>
 
-        /* ── STEP: maestro asador ───────────────────────────── */
+          /* ── STEP: maestro asador ── */
         ) : step === "asador" ? (
           <div className="space-y-6">
             <AsadorStep
               cantParticipantes={Math.max(participantes.length, 1)}
               asadorSeleccionado={asadorSeleccionado}
               onChange={setAsadorSeleccionado}
+              seleccionados={seleccionados}
             />
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("catalog")}>Volver al catálogo</Button>
-              <Button onClick={() => setStep("config")}>Continuar a configuración</Button>
+              <Button onClick={() => setStep("config")}>Siguiente Paso</Button>
             </div>
           </div>
 
-        /* ── STEP: configuración ─────────────────────────────── */
+          /* ── STEP: configuración ── */
         ) : step === "config" ? (
           <div className="space-y-6">
             <div>
@@ -462,7 +455,6 @@ export function CreateEvent() {
               <p className="mt-2 text-muted-foreground">Ponle nombre, fecha y agrega participantes.</p>
             </div>
 
-            {/* Aviso si se eliminó el alcohol */}
             {edadVerificada && esMayor === false && (
               <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
@@ -586,15 +578,15 @@ export function CreateEvent() {
               </Card>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => setStep("catalog")}>Volver al catálogo</Button>
+            <div className="fixed bottom-6 right-6 z-50 flex gap-3">
+              <Button variant="outline" onClick={() => setStep("asador")}>Volver</Button>
               <Button onClick={() => { if (validarConfiguracion()) setStep("quote"); }}>
-                Continuar a cotización
+                Siguiente paso
               </Button>
             </div>
           </div>
 
-        /* ── STEP: catálogo ──────────────────────────────────── */
+          /* ── STEP: catálogo ── */
         ) : (
           <div className="space-y-6">
             <div>
@@ -606,9 +598,9 @@ export function CreateEvent() {
 
             <ProductCatalogStep seleccionados={seleccionados} onChange={setSeleccionados} />
 
-            <div className="flex justify-end">
-              <Button size="lg" onClick={handleContinuarDesdeCatalogo}>
-                Continuar a configuración
+            <div className="fixed bottom-6 right-6 z-50">
+              <Button size="lg" onClick={handleContinuarDesdeCatalogo} className="shadow-lg shadow-primary/30">
+                Siguiente paso →
               </Button>
             </div>
           </div>

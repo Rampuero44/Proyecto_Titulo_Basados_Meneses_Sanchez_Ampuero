@@ -26,7 +26,7 @@ export function Home() {
               <Link to="/login">Iniciar Sesión</Link>
             </Button>
             <Button asChild>
-              <Link to="/create-event">Comenzar Gratis</Link>
+              <Link to="/seleccion-servicio"> Comenzar Gratis</Link>
             </Button>
           </div>
         </div>
@@ -40,7 +40,7 @@ export function Home() {
               Planificación inteligente de asados
             </div>
             <h1 className="text-5xl font-bold tracking-tight">
-              Organiza tus asados con cotización, calorías y reparto automático
+              Planifica, cotiza y disfruta tu asado
             </h1>
             <p className="max-w-2xl text-xl text-muted-foreground">
               BASADOS centraliza participantes, insumos, comparación simulada entre supermercados y reparto de costos en una sola experiencia de demo.
@@ -52,7 +52,7 @@ export function Home() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/create-event">
+                <Link to="/seleccion-servicio">
                   Comenzar Gratis
                 </Link>
               </Button>

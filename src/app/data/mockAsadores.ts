@@ -15,8 +15,8 @@ export interface Asador {
   descripcion: string;
   formasPago: string[];
   zonas: ZonaOperacion[];
-  tarifaBase: number;        // precio base por evento
-  tarifaPorPersona: number;  // costo adicional por persona
+  tarifaBase: number;
+  tarifaPorPersona: number;
 }
 
 export const mockAsadores: Asador[] = [
@@ -30,7 +30,7 @@ export const mockAsadores: Asador[] = [
     redSocial: "@carlos_parrillero",
     calificacion: 4.8,
     descripcion: "Maestro asador con más de 15 años de experiencia. Especialista en cortes premium de vacuno y cordero magallánico. Incluye todo el equipamiento necesario.",
-    formasPago: ["Efectivo", "Transferencia", "Débito"],
+    formasPago: ["Efectivo", "Transferencia"],
     zonas: [
       { region: "Metropolitana", comunas: ["Las Condes", "Providencia", "Ñuñoa", "La Reina", "Vitacura"] }
     ],
@@ -64,7 +64,7 @@ export const mockAsadores: Asador[] = [
     redSocial: "@ana_grill_bbq",
     calificacion: 4.9,
     descripcion: "Primera maestra asadora certificada de la región. Especialista en técnicas BBQ americano y fusión. Incluye mise en place completo y presentación gourmet.",
-    formasPago: ["Efectivo", "Transferencia", "Débito", "Crédito"],
+    formasPago: ["Efectivo", "Transferencia"],
     zonas: [
       { region: "Metropolitana", comunas: ["Santiago Centro", "Recoleta", "Independencia", "Conchalí", "Renca"] }
     ],
@@ -98,7 +98,7 @@ export const mockAsadores: Asador[] = [
     redSocial: "@nacho_premium_bbq",
     calificacion: 5.0,
     descripcion: "El mejor parrillero de Santiago según ranking 2025. Trabaja exclusivamente con cortes importados y nacionales premium. Incluye sommelier de vinos para maridaje.",
-    formasPago: ["Transferencia", "Débito", "Crédito"],
+    formasPago: ["Efectivo", "Transferencia"],
     zonas: [
       { region: "Metropolitana", comunas: ["Las Condes", "Vitacura", "Lo Barnechea", "Providencia", "La Reina"] }
     ],

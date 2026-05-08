@@ -177,6 +177,24 @@ export const mockProducts: ProductWithPrice[] = [
   { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Interiores parrilleros', nombre: 'Chunchules',          cantidad: 1, idPrecio: 97, calorias: 275, ...p(97,  5500, J) },
 
   // ──────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────
+  // PROTEÍNAS — VEGANAS
+  // ──────────────────────────────────────────────────────────────
+  // Hamburguesas veganas
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Hamburguesa Rikü Parrillera',       cantidad: 1, idPrecio: 98, calorias: 180, ...p(98,  3990, J) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Hamburguesa Not Burger (NotCo)',    cantidad: 1, idPrecio: 99, calorias: 220, ...p(99,  4990, L) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Hamburguesa Futuro Burger',         cantidad: 1, idPrecio: 100, calorias: 230, ...p(100, 5990, J) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Hamburguesa vegetal de Soya Mister Veggie', cantidad: 1, idPrecio: 101, calorias: 160, ...p(101, 2990, L) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Hamburguesa vegana Receta del Abuelo', cantidad: 1, idPrecio: 102, calorias: 170, ...p(102, 3490, L) },
+  // Salchichas y chorizos veganos
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Salchicha vegana Verdi (6 un.)',    cantidad: 1, idPrecio: 103, calorias: 140, ...p(103, 3600, J) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Chorizo vegano Hojaral (5 un.)',    cantidad: 1, idPrecio: 104, calorias: 200, ...p(104, 4200, S) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Future Sausage Fazenda Futuro',     cantidad: 1, idPrecio: 105, calorias: 210, ...p(105, 5990, J) },
+  // Tofu y otros
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Tofu firme para parrilla 300g',    cantidad: 1, idPrecio: 106, calorias: 120, ...p(106, 3490, J) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Albóndigas veganas Rikü',          cantidad: 1, idPrecio: 107, calorias: 160, ...p(107, 3990, J) },
+  { id: id(), idProteina: id(), idEvento: 1, category: 'proteina', tipo: 'Vegano',  nombre: 'Soya texturizada 500g',            cantidad: 1, idPrecio: 108, calorias: 330, ...p(108, 2490, S) },
+
   // BEBESTIBLES
   // ──────────────────────────────────────────────────────────────
 
@@ -222,17 +240,17 @@ export const mockProducts: ProductWithPrice[] = [
   { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Vino', nombre: 'Arboleda Cabernet Sauvignon 750cc',    formato: 'botella', cantidad: 1, idPrecio: 245, calorias: 520, ...p(245, 9990, J) },
 
   // Pisco y destilados chilenos
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Pisco', nombre: 'Pisco Control 35° 750cc',      formato: 'botella', cantidad: 1, idPrecio: 250, calorias: 1590, ...p(250, 6990, J) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Pisco', nombre: 'Pisco Alto del Carmen 35° 750cc',formato: 'botella',cantidad: 1, idPrecio: 251, calorias: 1590, ...p(251, 6490, L) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Pisco', nombre: 'Pisco Mistral Nobel 40° 750cc', formato: 'botella', cantidad: 1, idPrecio: 252, calorias: 1820, ...p(252, 8490, S) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Pisco', nombre: 'Valle Luna Artesanal 35° 750cc',formato: 'botella', cantidad: 1, idPrecio: 253, calorias: 1590, ...p(253, 6990, U) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Pisco Control 35° 750cc',      formato: 'botella', cantidad: 1, idPrecio: 250, calorias: 1590, ...p(250, 6990, J) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Pisco Alto del Carmen 35° 750cc',formato: 'botella',cantidad: 1, idPrecio: 251, calorias: 1590, ...p(251, 6490, L) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Pisco Mistral Nobel 40° 750cc', formato: 'botella', cantidad: 1, idPrecio: 252, calorias: 1820, ...p(252, 8490, S) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Valle Luna Artesanal 35° 750cc',formato: 'botella', cantidad: 1, idPrecio: 253, calorias: 1590, ...p(253, 6990, U) },
 
   // Licores y destilados importados
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Licor', nombre: 'Whisky Johnnie Walker Red 750cc',  formato: 'botella', cantidad: 1, idPrecio: 260, calorias: 1785, ...p(260,  9990, J) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Licor', nombre: 'Ron Bacardí Blanco 750cc',         formato: 'botella', cantidad: 1, idPrecio: 261, calorias: 1650, ...p(261,  8990, L) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Licor', nombre: 'Tequila Jose Cuervo Silver 700cc', formato: 'botella', cantidad: 1, idPrecio: 262, calorias: 1540, ...p(262, 10880, J) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Licor', nombre: 'Gin Bombay Sapphire 750cc',        formato: 'botella', cantidad: 1, idPrecio: 263, calorias: 1575, ...p(263, 14990, S) },
-  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Licor', nombre: 'Vodka Stolichnaya 750cc',          formato: 'botella', cantidad: 1, idPrecio: 264, calorias: 1540, ...p(264, 11990, L) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Whisky Johnnie Walker Red 750cc',  formato: 'botella', cantidad: 1, idPrecio: 260, calorias: 1785, ...p(260,  9990, J) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Ron Bacardí Blanco 750cc',         formato: 'botella', cantidad: 1, idPrecio: 261, calorias: 1650, ...p(261,  8990, L) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Tequila Jose Cuervo Silver 700cc', formato: 'botella', cantidad: 1, idPrecio: 262, calorias: 1540, ...p(262, 10880, J) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Gin Bombay Sapphire 750cc',        formato: 'botella', cantidad: 1, idPrecio: 263, calorias: 1575, ...p(263, 14990, S) },
+  { id: id(), idBebestible: id(), idEvento: 1, category: 'bebestible', tipo: 'Destilado', nombre: 'Vodka Stolichnaya 750cc',          formato: 'botella', cantidad: 1, idPrecio: 264, calorias: 1540, ...p(264, 11990, L) },
 
   // INSUMOS
   // ──────────────────────────────────────────────────────────────

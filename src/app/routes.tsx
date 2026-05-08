@@ -10,6 +10,8 @@ import { PriceComparison } from "./pages/PriceComparison";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { NotFound } from "./pages/NotFound";
 import { Profile } from "./pages/Profile";
+import { SeleccionServicio } from "./pages/SeleccionServicio";
+import { ContratarAsador } from "./pages/ContratarAsador";
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +28,8 @@ export const router = createBrowserRouter([
       { path: "price-comparison", Component: PriceComparison },
       { path: "profile", Component: Profile },
       { path: "*", Component: NotFound },
+      { path: "/seleccion-servicio", element: <SeleccionServicio /> },
+      { path: "/contratar-asador", element: <ContratarAsador /> },
     ],
   },
 ]);

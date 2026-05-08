@@ -36,7 +36,6 @@ const CATEGORY_LABEL: Record<string, string> = {
   ensalada:   "Ensalada",
 };
 
-// Grupos de proteínas por animal
 const GRUPOS_PROTEINA: Record<string, string[]> = {
   "Vacuno":     ["Vacuno magro", "Vacuno intermedio", "Vacuno premium", "Vacuno otros"],
   "Cerdo":      ["Cerdo magro", "Cerdo intermedio", "Cerdo premium", "Cerdo otros"],
@@ -45,18 +44,25 @@ const GRUPOS_PROTEINA: Record<string, string[]> = {
   "Pescados":   ["Pescado magro", "Pescado intermedio", "Pescado graso"],
   "Mariscos":   ["Marisco magro", "Marisco intermedio"],
   "Embutidos":  ["Embutidos"],
+  "Vegano":     ["Vegano"],
   "Interiores": ["Interiores magros", "Interiores intermedios", "Interiores parrilleros"],
 };
 
-// Grupos de bebestibles
+const GRUPOS_BEBESTIBLE_CON_ALCOHOL: Record<string, string> = {
+  "Cervezas":   "Cerveza",
+  "Vinos":      "Vino",
+  "Destilados": "Destilado",
+};
+
+const GRUPOS_BEBESTIBLE_SIN_ALCOHOL: Record<string, string> = {
+  "Gaseosas": "Gaseosa",
+  "Jugos":    "Jugo",
+  "Aguas":    "Agua",
+};
+
 const GRUPOS_BEBESTIBLE: Record<string, string> = {
-  "Gaseosas":  "Gaseosa",
-  "Jugos":     "Jugo",
-  "Aguas":     "Agua",
-  "Cervezas":  "Cerveza",
-  "Vinos":     "Vino",
-  "Pisco":     "Pisco",
-  "Licores":   "Licor",
+  ...GRUPOS_BEBESTIBLE_SIN_ALCOHOL,
+  ...GRUPOS_BEBESTIBLE_CON_ALCOHOL,
 };
 
 // ─── ProductCard ─────────────────────────────────────────────────────────────
@@ -133,7 +139,7 @@ function ProductCard({
               </div>
             </div>
             <p className="text-xs text-muted-foreground self-end">
-              Subtotal: {formatPrice(product.precio.valor * seleccionado.cantidad)}
+              Subtotal: {formatPrice(product.precio.valor * seleccionado.cantidad)} · {product.calorias * seleccionado.cantidad} kcal
             </p>
             <Button
               variant="outline" size="sm" className="w-full text-destructive border-destructive hover:bg-destructive/10"
@@ -145,7 +151,7 @@ function ProductCard({
         ) : (
           <Button size="sm" className="w-full" onClick={onToggle}>
             <Check className="size-4 mr-2" />
-            Incluir en el evento
+            Agregar al evento
           </Button>
         )}
       </CardFooter>
@@ -153,46 +159,48 @@ function ProductCard({
   );
 }
 
-// ─── Resumen seleccionados ────────────────────────────────────────────────────
+// ─── Mini resumen flotante lateral ───────────────────────────────────────────
 
-function ResumenSeleccion({ seleccionados }: { seleccionados: ProductoSeleccionado[] }) {
+function MiniResumen({ seleccionados }: { seleccionados: ProductoSeleccionado[] }) {
   const total = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
   const calorias = seleccionados.reduce((sum, s) => sum + s.product.calorias * s.cantidad, 0);
 
-  if (seleccionados.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-        <ClipboardList className="size-8 mx-auto mb-2 opacity-40" />
-        Aún no has seleccionado productos para el evento
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-      <div className="flex items-center gap-2 font-semibold">
+    <div className="sticky top-24 rounded-xl border bg-muted/30 p-4 space-y-3">
+      <div className="flex items-center gap-2 font-semibold text-sm">
         <ClipboardList className="size-4" />
-        Productos del evento ({seleccionados.length})
+        Resumen del evento
       </div>
-      <div className="space-y-1 max-h-48 overflow-y-auto">
-        {seleccionados.map((s) => (
-          <div key={s.product.id} className="flex items-center justify-between text-sm">
-            <span className="truncate flex-1 mr-2">{s.product.nombre}</span>
-            <span className="text-muted-foreground shrink-0">
-              ×{s.cantidad} · {formatPrice(s.product.precio.valor * s.cantidad)}
-            </span>
+
+      {seleccionados.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">Sin productos aún</p>
+      ) : (
+        <>
+          <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+            {seleccionados.map((s) => (
+              <div key={s.product.id} className="flex justify-between text-xs">
+                <span className="truncate flex-1 mr-2">{s.product.nombre}</span>
+                <span className="text-muted-foreground shrink-0">×{s.cantidad}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="border-t pt-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">Costo estimado</span>
-        <span className="font-bold">{formatPrice(total)}</span>
-      </div>
-      {calorias > 0 && (
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Calorías totales</span>
-          <span className="font-medium">{Math.round(calorias).toLocaleString()} kcal</span>
-        </div>
+          <div className="border-t pt-2 space-y-1">
+            <div className="flex justify-between text-sm font-bold">
+              <span>Total</span>
+              <span>{formatPrice(total)}</span>
+            </div>
+            {calorias > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Calorías</span>
+                <span>{calorias.toLocaleString()} kcal</span>
+              </div>
+            )}
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Productos</span>
+              <span>{seleccionados.length} items</span>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -201,35 +209,24 @@ function ResumenSeleccion({ seleccionados }: { seleccionados: ProductoSelecciona
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function ProductCatalogStep({ seleccionados, onChange }: Props) {
-  const [searchQuery, setSearchQuery]       = useState("");
+  const [searchQuery, setSearchQuery]           = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | "all">("all");
   const [selectedGrupo, setSelectedGrupo]       = useState<string>("all");
   const [selectedBebGrupo, setSelectedBebGrupo] = useState<string>("all");
   const [selectedSubtipo, setSelectedSubtipo]   = useState<string>("all");
-  const [sortBy, setSortBy]                 = useState<"name" | "price-asc" | "price-desc" | "calories">("name");
+  const [sortBy, setSortBy]                     = useState<"name" | "price-asc" | "price-desc" | "calories">("name");
 
-  // Subcategorías del grupo seleccionado
   const subtipesDelGrupo = useMemo(() => {
     if (selectedCategory !== "proteina" || selectedGrupo === "all") return [];
     return GRUPOS_PROTEINA[selectedGrupo] ?? [];
   }, [selectedCategory, selectedGrupo]);
 
-  // Resetear subtipo al cambiar categoría
   const handleCategoryChange = (cat: string) => {
     setSelectedCategory(cat as ProductCategory | "all");
     setSelectedGrupo("all");
     setSelectedSubtipo("all");
     setSelectedBebGrupo("all");
   };
-
-  const getCategoryCount = (category: ProductCategory) =>
-    mockProducts.filter((p) => p.category === category).length;
-
-  const getGrupoCount = (grupo: string) =>
-    mockProducts.filter((p) => p.category === "proteina" && GRUPOS_PROTEINA[grupo]?.includes(p.tipo)).length;
-
-  const getSubtipoCount = (subtipo: string) =>
-    mockProducts.filter((p) => p.category === "proteina" && p.tipo === subtipo).length;
 
   const filteredProducts = mockProducts.filter((p) => {
     const matchesSearch =
@@ -268,143 +265,131 @@ export function ProductCatalogStep({ seleccionados, onChange }: Props) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Selecciona los productos del evento</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Elige qué incluir en tu asado. Puedes ajustar las cantidades directamente en cada producto.
-        </p>
-      </div>
+    <div className="flex gap-6 items-start">
 
-      <ResumenSeleccion seleccionados={seleccionados} />
-
-      {/* Búsqueda y ordenamiento */}
-      <div className="flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
-          <Input
-            placeholder="Buscar productos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      {/* ── Columna principal ── */}
+      <div className="flex-1 space-y-6 min-w-0">
+        <div>
+          <h2 className="text-2xl font-bold">Selecciona los productos del evento</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Elige qué incluir en tu asado. Puedes ajustar las cantidades directamente en cada producto.
+          </p>
         </div>
-        <Select value={sortBy} onValueChange={(v: typeof sortBy) => setSortBy(v)}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <Filter className="size-4 mr-2" />
-            <SelectValue placeholder="Ordenar por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">Nombre A-Z</SelectItem>
-            <SelectItem value="price-asc">Precio: Menor a Mayor</SelectItem>
-            <SelectItem value="price-desc">Precio: Mayor a Menor</SelectItem>
-            <SelectItem value="calories">Calorías</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Tabs de categoría */}
-      <Tabs value={selectedCategory} onValueChange={handleCategoryChange}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">Todos ({mockProducts.length})</TabsTrigger>
-          <TabsTrigger value="proteina">Proteínas ({getCategoryCount("proteina")})</TabsTrigger>
-          <TabsTrigger value="bebestible">Bebestibles ({getCategoryCount("bebestible")})</TabsTrigger>
-          <TabsTrigger value="insumo">Insumos ({getCategoryCount("insumo")})</TabsTrigger>
-          <TabsTrigger value="ensalada">Ensaladas ({getCategoryCount("ensalada")})</TabsTrigger>
-        </TabsList>
+        {/* Búsqueda y ordenamiento */}
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+            <Input
+              placeholder="Buscar productos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(v: typeof sortBy) => setSortBy(v)}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <Filter className="size-4 mr-2" />
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Nombre A-Z</SelectItem>
+              <SelectItem value="price-asc">Precio: Menor a Mayor</SelectItem>
+              <SelectItem value="price-desc">Precio: Mayor a Menor</SelectItem>
+              <SelectItem value="calories">Calorías</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <TabsContent value={selectedCategory} className="mt-4 space-y-4">
+        {/* Tabs de categoría */}
+        <Tabs value={selectedCategory} onValueChange={handleCategoryChange}>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="proteina">Proteínas</TabsTrigger>
+            <TabsTrigger value="bebestible">Bebestibles</TabsTrigger>
+            <TabsTrigger value="insumo">Insumos</TabsTrigger>
+            <TabsTrigger value="ensalada">Ensaladas</TabsTrigger>
+          </TabsList>
 
-          {/* Filtro de bebestibles */}
-          {selectedCategory === "bebestible" && (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedBebGrupo === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedBebGrupo("all")}
-              >
-                Todos
-              </Button>
-              {Object.keys(GRUPOS_BEBESTIBLE).map((grupo) => (
-                <Button
-                  key={grupo}
-                  variant={selectedBebGrupo === grupo ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedBebGrupo(grupo)}
-                >
-                  {grupo} ({mockProducts.filter(p => p.category === "bebestible" && p.tipo === GRUPOS_BEBESTIBLE[grupo]).length})
-                </Button>
-              ))}
-            </div>
-          )}
+          <TabsContent value={selectedCategory} className="mt-4 space-y-4">
 
-          {/* Filtro de proteínas: nivel 1 — tipo de animal */}
-          {selectedCategory === "proteina" && (
-            <div className="space-y-2">
+            {/* Filtro bebestibles */}
+            {selectedCategory === "bebestible" && (
               <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedGrupo === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => { setSelectedGrupo("all"); setSelectedSubtipo("all"); }}
-                >
+                <Button variant={selectedBebGrupo === "all" ? "default" : "outline"} size="sm" onClick={() => setSelectedBebGrupo("all")}>
                   Todos
                 </Button>
-                {Object.keys(GRUPOS_PROTEINA).map((grupo) => (
-                  <Button
-                    key={grupo}
-                    variant={selectedGrupo === grupo ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => { setSelectedGrupo(grupo); setSelectedSubtipo("all"); }}
-                  >
-                    {grupo} ({getGrupoCount(grupo)})
+                <span className="flex items-center text-xs text-muted-foreground px-1">Sin alcohol:</span>
+                {Object.keys(GRUPOS_BEBESTIBLE_SIN_ALCOHOL).map((grupo) => (
+                  <Button key={grupo} variant={selectedBebGrupo === grupo ? "default" : "outline"} size="sm" onClick={() => setSelectedBebGrupo(grupo)}>
+                    {grupo}
+                  </Button>
+                ))}
+                <span className="flex items-center text-xs text-muted-foreground px-1">Con alcohol:</span>
+                {Object.keys(GRUPOS_BEBESTIBLE_CON_ALCOHOL).map((grupo) => (
+                  <Button key={grupo} variant={selectedBebGrupo === grupo ? "default" : "outline"} size="sm" onClick={() => setSelectedBebGrupo(grupo)}>
+                    {grupo}
                   </Button>
                 ))}
               </div>
+            )}
 
-              {/* Nivel 2 — subcategoría dentro del animal (solo si tiene más de un subtipo) */}
-              {selectedGrupo !== "all" && subtipesDelGrupo.length > 1 && (
-                <div className="flex flex-wrap gap-2 pl-2 border-l-2 border-primary/30">
-                  <Button
-                    variant={selectedSubtipo === "all" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setSelectedSubtipo("all")}
-                  >
-                    Todos los cortes
+            {/* Filtro proteínas nivel 1 */}
+            {selectedCategory === "proteina" && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant={selectedGrupo === "all" ? "default" : "outline"} size="sm" onClick={() => { setSelectedGrupo("all"); setSelectedSubtipo("all"); }}>
+                    Todos
                   </Button>
-                  {subtipesDelGrupo.map((sub) => (
-                    <Button
-                      key={sub}
-                      variant={selectedSubtipo === sub ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => setSelectedSubtipo(sub)}
-                    >
-                      {sub.replace(selectedGrupo + " ", "")} ({getSubtipoCount(sub)})
+                  {Object.keys(GRUPOS_PROTEINA).map((grupo) => (
+                    <Button key={grupo} variant={selectedGrupo === grupo ? "default" : "outline"} size="sm" onClick={() => { setSelectedGrupo(grupo); setSelectedSubtipo("all"); }}>
+                      {grupo}
                     </Button>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
 
-          {sortedProducts.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              No se encontraron productos
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {sortedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  seleccionado={seleccionados.find((s) => s.product.id === product.id)}
-                  onToggle={() => toggleProducto(product)}
-                  onCantidadChange={(delta) => cambiarCantidad(product, delta)}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                {/* Nivel 2 */}
+                {selectedGrupo !== "all" && subtipesDelGrupo.length > 1 && (
+                  <div className="flex flex-wrap gap-2 pl-2 border-l-2 border-primary/30">
+                    <Button variant={selectedSubtipo === "all" ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedSubtipo("all")}>
+                      Todos los cortes
+                    </Button>
+                    {subtipesDelGrupo.map((sub) => (
+                      <Button key={sub} variant={selectedSubtipo === sub ? "secondary" : "ghost"} size="sm" onClick={() => setSelectedSubtipo(sub)}>
+                        {sub.replace(selectedGrupo + " ", "")}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {sortedProducts.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                No se encontraron productos
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    seleccionado={seleccionados.find((s) => s.product.id === product.id)}
+                    onToggle={() => toggleProducto(product)}
+                    onCantidadChange={(delta) => cambiarCantidad(product, delta)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* ── Mini resumen flotante lateral (solo pantallas grandes) ── */}
+      <div className="hidden lg:block w-64 shrink-0 self-start sticky top-24">
+        <MiniResumen seleccionados={seleccionados} />
+      </div>
+
     </div>
   );
 }
