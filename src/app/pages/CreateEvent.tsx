@@ -9,10 +9,12 @@ import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { ArrowLeft, Calendar, Plus, ShoppingCart, Trophy, X, AlertTriangle, Wine } from "lucide-react";
 import { storage, generateId, Participante, esMayorDeEdad } from "../utils/localStorage";
-import { generarCotizacionesSimuladas } from "../utils/calculator";
+import { generarCotizacion } from "../services/cotizacionesApi";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
 import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductCatalogStep";
+import { crearEvento } from "../services/eventosApi";
+import { crearEventoProducto } from "../services/eventoProductosApi";
 import { AsadorStep } from "../components/AsadorStep";
 import { Asador } from "../data/mockAsadores";
 
@@ -33,7 +35,7 @@ const esAlcohol = (tipo: string): boolean =>
 
 const tieneAlcohol = (seleccionados: ProductoSeleccionado[]): boolean =>
   seleccionados.some(
-    (s) => s.product.category === "bebestible" && esAlcohol(s.product.tipo)
+    (s) => s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true
   );
 
 interface ModalEdadProps {
@@ -107,7 +109,9 @@ export function CreateEvent() {
   const [fecha, setFecha] = useState(formatDateForInput(new Date()));
   const [participantes, setParticipantes] = useState<Participante[]>([]);
   const [nuevoParticipante, setNuevoParticipante] = useState("");
-  const [selectedSupermercado, setSelectedSupermercado] = useState<string>("");
+  const [selectedComercio, setSelectedComercio] = useState<string>("");
+  const [cotizaciones, setCotizaciones] =
+    useState<any[]>([]);
 
   useEffect(() => {
     if (!currentUsuario) { navigate("/login"); return; }
@@ -132,41 +136,84 @@ export function CreateEvent() {
     });
   }, [currentUsuario, navigate]);
 
-  const getByCategory = (category: string) =>
+  const getByCategory = (categoria: string) =>
     seleccionados
-      .filter((s) => s.product.category === category)
+      .filter((s) =>
+        s.product.categoria?.toLowerCase().includes(categoria.toLowerCase())
+      )
       .map((s) => ({
         id: generateId(),
         nombre: s.product.nombre,
-        tipo: s.product.tipo,
+        tipo: s.product.categoria,
         cantidad: s.cantidad,
-        porPrecio: s.product.precio.valor,
-        calorias: s.product.calorias,
+        porPrecio: s.product.precioReferencia ?? 0,
+        calorias: s.product.calorias ?? 0,
       }));
 
-  const proteinas = getByCategory("proteina");
-  const bebestibles = getByCategory("bebestible");
-  const ensaladas = getByCategory("ensalada");
+  const proteinas = getByCategory("carne");
+  const bebestibles = getByCategory("bebida");
+  const ensaladas = getByCategory("ensalada");;
   const insumos = getByCategory("insumo");
 
-  const costoTotal = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
+  const costoTotal = seleccionados.reduce(
+    (sum, s) => sum + (s.product.precioReferencia ?? 0) * s.cantidad,
+    0
+  );
   const costoAsador = asadorSeleccionado
     ? asadorSeleccionado.tarifaBase + asadorSeleccionado.tarifaPorPersona * participantes.length
     : 0;
-  const caloriasTotales = seleccionados.reduce((sum, s) => sum + s.product.calorias * s.cantidad, 0);
-  const caloriasPorPersona = participantes.length > 0 ? caloriasTotales / participantes.length : 0;
 
-  const cotizaciones = generarCotizacionesSimuladas(proteinas, bebestibles, ensaladas, insumos);
+  const caloriasTotales = seleccionados.reduce(
+    (sum, s) => sum + ((s.product.calorias ?? 0) * s.cantidad),
+    0
+  );
+
+  const caloriasPorPersona = participantes.length > 0 ? caloriasTotales / participantes.length : 0;
   const mejorCotizacion = cotizaciones[0] || null;
   const cotizacionActiva =
-    cotizaciones.find((c) => c.supermercado === selectedSupermercado) || mejorCotizacion;
+    cotizaciones.find((c) => c.comercio === selectedComercio) || mejorCotizacion;
 
   useEffect(() => {
-    if (mejorCotizacion && !selectedSupermercado) {
-      setSelectedSupermercado(mejorCotizacion.supermercado);
+    if (mejorCotizacion && !selectedComercio) {
+      setSelectedComercio(mejorCotizacion.comercio);
     }
-  }, [mejorCotizacion, selectedSupermercado]);
+  }, [mejorCotizacion, selectedComercio]);
 
+  const cargarCotizaciones = async () => {
+
+    try {
+
+      const request = {
+
+        productos: seleccionados.map((s) => ({
+
+          idProducto: s.product.id,
+
+          cantidad: s.cantidad,
+        })),
+      };
+
+      const response =
+        await generarCotizacion(request);
+
+      setCotizaciones(
+        response.cotizaciones || []
+
+      
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Error cargando cotizaciones:",
+        error
+      );
+
+      toast.error(
+        "No fue posible generar cotizaciones"
+      );
+    }
+  };
   // ── Verificación de edad ──────────────────────────────────────────────────
 
   const handleConfirmarEdad = (mayor: boolean, fechaNac: string) => {
@@ -178,7 +225,7 @@ export function CreateEvent() {
 
     if (!mayor) {
       productosFinales = seleccionados.filter(
-        (s) => !(s.product.category === "bebestible" && esAlcohol(s.product.tipo))
+        (s) => !(s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true)
       );
       setSeleccionados(productosFinales);
       toast.warning(
@@ -214,7 +261,7 @@ export function CreateEvent() {
         const mayor = esMayorDeEdad(currentUsuario.fechaNacimiento);
         if (!mayor) {
           const sinAlcohol = seleccionados.filter(
-            (s) => !(s.product.category === "bebestible" && esAlcohol(s.product.tipo))
+            (s) => !(s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true)
           );
 
           // Validar que queden productos después de eliminar alcohol
@@ -272,52 +319,115 @@ export function CreateEvent() {
     return true;
   };
 
-  const handleGuardarEvento = (participantesConCostos: CostSplitParticipant[]) => {
+  const handleGuardarEvento = async (participantesConCostos: CostSplitParticipant[]) => {
     if (!currentUsuario || !cotizacionActiva) return;
-    const eventoId = generateId();
 
-    const evento = {
-      id: eventoId,
-      nombre: nombre.trim(),
-      fecha,
-      presupuesto: Math.round(participantesConCostos.reduce((sum, p) => sum + p.monto, 0)),
-      estado: "planificado" as const,
-      usuarioId: currentUsuario.id,
-      participantes: participantesConCostos.map((p) => ({
-        id: p.id,
-        nombre: p.nombre,
-        contactos: p.metodoContacto === "sin_notificacion"
-          ? []
-          : [{ id: generateId(), metodo: p.metodoContacto, valor: p.contacto }],
-        metodoContacto: p.metodoContacto,
-        contacto: p.contacto,
-        monto: Math.round(p.monto),
-        montoManual: p.montoManual,
-        sinAlcohol: p.sinAlcohol,
-        esOrganizador: p.esOrganizador,
-      })),
-      proteinas: proteinas.map((item) => ({ ...item, id: generateId(), eventoId })),
-      bebestibles: bebestibles.map((item) => ({ ...item, id: generateId(), eventoId })),
-      ensaladas: ensaladas.map((item) => ({ ...item, id: generateId(), eventoId })),
-      insumos: insumos.map((item) => ({ ...item, id: generateId(), eventoId })),
-      caloriasTotales: Math.round(caloriasTotales),
-      caloriasPorPersona: Math.round(caloriasPorPersona),
-      cotizaciones,
-      cotizacionSeleccionada: cotizacionActiva.supermercado,
-      costoAsador: costoAsador,
-      asador: asadorSeleccionado ? {
-        id: asadorSeleccionado.id,
-        nombre: asadorSeleccionado.nombre,
-        telefono: asadorSeleccionado.telefono,
-        correo: asadorSeleccionado.correo,
-        tarifa: costoAsador,
-      } : null,
-      createdAt: new Date().toISOString(),
-    };
+    try {
 
-    storage.saveEvento(evento);
-    toast.success("Evento creado correctamente");
-    navigate(`/event/${eventoId}`);
+      const presupuestoFinal = Math.round(
+        participantesConCostos.reduce(
+          (sum, p) => sum + p.monto,
+          0
+        )
+      );
+
+      const eventoCreado = await crearEvento({
+
+        nombre: nombre.trim(),
+
+        descripcion: "Evento creado desde frontend",
+
+        fechaEvento: `${fecha}T20:00:00`,
+
+        direccion: "Pendiente",
+
+        presupuesto: presupuestoFinal,
+
+        cantidadPersonas: participantes.length,
+
+        estado: "PLANIFICANDO",
+
+        idOrganizador: currentUsuario.id,
+      });
+
+      const eventoId = eventoCreado.idEvento;
+
+      for (const seleccionado of seleccionados) {
+
+        await crearEventoProducto({
+
+          idEvento: eventoId,
+
+          idProducto: seleccionado.product.id,
+
+          cantidad: seleccionado.cantidad,
+
+          precioEstimado:
+            (seleccionado.product.precioReferencia ?? 0)
+            * seleccionado.cantidad,
+
+          seleccionado: true,
+        });
+      }
+      const evento = {
+        id: eventoId,
+        nombre: nombre.trim(),
+        fecha,
+        presupuesto: presupuestoFinal,
+        estado: "planificado" as const,
+        usuarioId: currentUsuario.id,
+        participantes: participantesConCostos.map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          contactos: p.metodoContacto === "sin_notificacion"
+            ? []
+            : [{ id: generateId(), metodo: p.metodoContacto, valor: p.contacto }],
+          metodoContacto: p.metodoContacto,
+          contacto: p.contacto,
+          monto: Math.round(p.monto),
+          montoManual: p.montoManual,
+          sinAlcohol: p.sinAlcohol,
+          esOrganizador: p.esOrganizador,
+        })),
+        proteinas: proteinas.map((item) => ({ ...item, id: generateId(), eventoId })),
+        bebestibles: bebestibles.map((item) => ({ ...item, id: generateId(), eventoId })),
+        ensaladas: ensaladas.map((item) => ({ ...item, id: generateId(), eventoId })),
+        insumos: insumos.map((item) => ({ ...item, id: generateId(), eventoId })),
+        caloriasTotales: Math.round(caloriasTotales),
+        caloriasPorPersona: Math.round(caloriasPorPersona),
+        cotizaciones,
+        cotizacionSeleccionada: cotizacionActiva.comercio,
+        costoAsador: costoAsador,
+        asador: asadorSeleccionado ? {
+          id: asadorSeleccionado.id,
+          nombre: asadorSeleccionado.nombre,
+          telefono: asadorSeleccionado.telefono,
+          correo: asadorSeleccionado.correo,
+          tarifa: costoAsador,
+        } : null,
+        createdAt: new Date().toISOString(),
+      };
+
+      storage.saveEvento(evento);
+
+      toast.success(
+        "Evento creado correctamente"
+      );
+
+      navigate(`/event/${eventoId}`);
+
+    } catch (error) {
+
+      console.error(
+        "Error creando evento:",
+        error
+      );
+
+      toast.error(
+        "Error creando el evento"
+      );
+    }
+
   };
 
   if (!currentUsuario) return null;
@@ -341,7 +451,7 @@ export function CreateEvent() {
           <CostSplitStep
             participantes={participantes}
             total={cotizacionActiva.total}
-            costoAlcoholTotal={cotizacionActiva.totalAlcohol}
+            costoAlcoholTotal={0}
             onBack={() => setStep("quote")}
             onConfirm={handleGuardarEvento}
           />
@@ -352,20 +462,20 @@ export function CreateEvent() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Cotización simulada</h1>
               <p className="mt-2 text-muted-foreground">
-                Compara supermercados y elige la mejor opción para tu asado.
+                Compara comercios y elige la mejor opción para tu asado.
               </p>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
               {cotizaciones.map((cotizacion, index) => {
-                const esSeleccionada = cotizacion.supermercado === cotizacionActiva?.supermercado;
+                const esSeleccionada = cotizacion.comercio === cotizacionActiva?.comercio;
                 const esMejor = index === 0;
                 return (
-                  <Card key={cotizacion.supermercado} className={esSeleccionada ? "border-primary shadow-sm" : ""}>
+                  <Card key={cotizacion.comercio} className={esSeleccionada ? "border-primary shadow-sm" : ""}>
                     <CardHeader>
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="text-xl">{cotizacion.supermercado}</CardTitle>
+                          <CardTitle className="text-xl">{cotizacion.comercio}</CardTitle>
                           <CardDescription>Simulación de canasta para este asado</CardDescription>
                         </div>
                         <div className="flex flex-col gap-2 items-end">
@@ -376,24 +486,37 @@ export function CreateEvent() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="rounded-lg bg-muted p-4">
-                        <p className="text-sm text-muted-foreground">Total supermercado</p>
-                        <p className="text-3xl font-bold text-primary">{formatPrice(Math.round(cotizacion.total))}</p>
+                        <p className="text-sm text-muted-foreground">Total comercio</p>
+                        <p className="text-3xl font-bold text-primary">{formatPrice(
+                          Math.round(Number(cotizacion.total))
+                        )}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Alcohol incluido: {formatPrice(Math.round(cotizacion.totalAlcohol))}
+                          Alcohol incluido: {formatPrice(Math.round(0))}
                         </p>
                       </div>
                       <div className="space-y-2 text-sm">
-                        {cotizacion.detalles.slice(0, 5).map((detalle) => (
-                          <div key={`${cotizacion.supermercado}-${detalle.nombre}`} className="flex items-center justify-between">
-                            <span className="text-muted-foreground">{detalle.nombre}</span>
-                            <span className="font-medium">{formatPrice(Math.round(detalle.subtotal))}</span>
-                          </div>
-                        ))}
+                        {cotizacion.items
+                          .slice(0, 5)
+                          .map((detalle: any) => (
+                            <div key={`${cotizacion.comercio}-${detalle.nombreProducto}`} className="flex items-center justify-between">
+                              <span className="text-muted-foreground">
+                                {detalle.nombreProducto}
+                              </span>
+                              <span className="font-medium">
+                                {detalle.subtotal !== null &&
+                                  detalle.subtotal !== undefined
+                                  ? formatPrice(
+                                    Math.round(Number(detalle.subtotal))
+                                  )
+                                  : "No disponible"}
+                              </span>
+                            </div>
+                          ))}
                       </div>
                       <Button
                         variant={esSeleccionada ? "default" : "outline"}
                         className="w-full"
-                        onClick={() => setSelectedSupermercado(cotizacion.supermercado)}
+                        onClick={() => setSelectedComercio(cotizacion.comercio)}
                       >
                         {esSeleccionada ? "Cotización activa" : "Usar esta cotización"}
                       </Button>
@@ -413,7 +536,11 @@ export function CreateEvent() {
               <CardContent className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Total elegido</p>
-                  <p className="text-2xl font-bold">{formatPrice(Math.round(cotizacionActiva?.total || 0))}</p>
+                  <p className="text-2xl font-bold">{formatPrice(
+                    Math.round(
+                      Number(cotizacionActiva?.total || 0)
+                    )
+                  )}</p>
                 </div>
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Calorías totales</p>
@@ -580,7 +707,18 @@ export function CreateEvent() {
 
             <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("asador")}>Volver</Button>
-              <Button onClick={() => { if (validarConfiguracion()) setStep("quote"); }}>
+              <Button
+                onClick={async () => {
+
+                  if (!validarConfiguracion()) {
+                    return;
+                  }
+
+                  await cargarCotizaciones();
+
+                  setStep("quote");
+                }}
+              >
                 Siguiente paso
               </Button>
             </div>

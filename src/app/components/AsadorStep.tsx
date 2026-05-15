@@ -25,10 +25,21 @@ const StarRating = ({ rating }: { rating: number }) => (
 // ─── Resumen productos ────────────────────────────────────────────────────────
 
 function ResumenProductos({ seleccionados }: { seleccionados: ProductoSeleccionado[] }) {
-  const total = seleccionados.reduce((sum, s) => sum + s.product.precio.valor * s.cantidad, 0);
-  const calorias = seleccionados.reduce((sum, s) => sum + s.product.calorias * s.cantidad, 0);
 
-  if (seleccionados.length === 0) return null;
+  const total = seleccionados.reduce(
+
+    (sum, s) => sum + ((s.product.precioReferencia ?? 0) * s.cantidad),
+
+    0
+  );
+
+  const calorias = seleccionados.reduce(
+
+    (sum, s) => sum + ((s.product.calorias ?? 0) * s.cantidad),
+
+    0
+  );
+    if (seleccionados.length === 0) return null;
 
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3 h-full">
@@ -36,29 +47,56 @@ function ResumenProductos({ seleccionados }: { seleccionados: ProductoSelecciona
         <ClipboardList className="size-4" />
         Productos del evento
       </div>
+
       <div className="space-y-1 max-h-52 overflow-y-auto">
         {seleccionados.map((s) => (
-          <div key={s.product.id} className="flex justify-between text-xs">
-            <span className="truncate flex-1 mr-2 text-muted-foreground">{s.product.nombre}</span>
-            <span className="shrink-0">×{s.cantidad}</span>
+          <div
+            key={s.product.id}
+            className="flex justify-between text-xs"
+          >
+            <span className="truncate flex-1 mr-2 text-muted-foreground">
+              {s.product.nombre}
+            </span>
+
+            <span className="shrink-0">
+              ×{s.cantidad}
+            </span>
           </div>
         ))}
       </div>
+
       <div className="border-t pt-2 space-y-1 text-xs">
+
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Total productos</span>
-          <span className="font-bold">{formatPrice(total)}</span>
+          <span className="text-muted-foreground">
+            Total productos
+          </span>
+
+          <span className="font-bold">
+            {formatPrice(total)}
+          </span>
         </div>
+
         {calorias > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Calorías</span>
-            <span className="font-medium">{calorias.toLocaleString()} kcal</span>
+
+            <span className="text-muted-foreground">
+              Calorías
+            </span>
+
+            <span className="font-medium">
+              {calorias.toLocaleString()} kcal
+            </span>
+
           </div>
         )}
+
       </div>
+
       <p className="text-xs text-muted-foreground pt-1 border-t">
         El costo del maestro asador se sumará aparte.
       </p>
+
     </div>
   );
 }
