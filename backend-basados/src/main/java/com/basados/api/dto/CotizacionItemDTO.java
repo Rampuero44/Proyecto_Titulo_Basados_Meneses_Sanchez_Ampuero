@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 
 public class CotizacionItemDTO {
 
+    private Long idHistorial;
+
     private String nombreProducto;
 
     private Integer cantidad;
@@ -12,9 +14,19 @@ public class CotizacionItemDTO {
 
     private BigDecimal subtotal;
 
+    private String comercio;
+
     private Boolean encontrado;
 
     public CotizacionItemDTO() {
+    }
+
+    public Long getIdHistorial() {
+        return idHistorial;
+    }
+
+    public void setIdHistorial(Long idHistorial) {
+        this.idHistorial = idHistorial;
     }
 
     public String getNombreProducto() {
@@ -47,6 +59,14 @@ public class CotizacionItemDTO {
 
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
+    }
+
+    public String getComercio() {
+        return comercio;
+    }
+
+    public void setComercio(String comercio) {
+        this.comercio = comercio;
     }
 
     public Boolean getEncontrado() {

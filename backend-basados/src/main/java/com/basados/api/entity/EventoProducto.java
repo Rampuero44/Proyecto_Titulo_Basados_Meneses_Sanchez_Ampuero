@@ -21,11 +21,12 @@ public class EventoProducto {
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
 
+    @ManyToOne
+    @JoinColumn(name = "id_historial")
+    private HistorialPrecio historialPrecio;
+
     @Column(name = "cantidad", nullable = false)
     private BigDecimal cantidad;
-
-    @Column(name = "precio_estimado")
-    private BigDecimal precioEstimado;
 
     @Column(name = "seleccionado")
     private Boolean seleccionado;
@@ -57,20 +58,20 @@ public class EventoProducto {
         this.producto = producto;
     }
 
+    public HistorialPrecio getHistorialPrecio() {
+        return historialPrecio;
+    }
+
+    public void setHistorialPrecio(HistorialPrecio historialPrecio) {
+        this.historialPrecio = historialPrecio;
+    }
+
     public BigDecimal getCantidad() {
         return cantidad;
     }
 
     public void setCantidad(BigDecimal cantidad) {
         this.cantidad = cantidad;
-    }
-
-    public BigDecimal getPrecioEstimado() {
-        return precioEstimado;
-    }
-
-    public void setPrecioEstimado(BigDecimal precioEstimado) {
-        this.precioEstimado = precioEstimado;
     }
 
     public Boolean getSeleccionado() {

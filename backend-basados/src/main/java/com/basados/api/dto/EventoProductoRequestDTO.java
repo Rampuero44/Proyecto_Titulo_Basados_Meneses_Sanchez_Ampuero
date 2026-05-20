@@ -6,8 +6,10 @@ public class EventoProductoRequestDTO {
 
     private Long idEvento;
     private Long idProducto;
+    private Long idHistorial;
+
     private BigDecimal cantidad;
-    private BigDecimal precioEstimado;
+
     private Boolean seleccionado;
 
     public EventoProductoRequestDTO() {
@@ -29,20 +31,20 @@ public class EventoProductoRequestDTO {
         this.idProducto = idProducto;
     }
 
+    public Long getIdHistorial() {
+        return idHistorial;
+    }
+
+    public void setIdHistorial(Long idHistorial) {
+        this.idHistorial = idHistorial;
+    }
+
     public BigDecimal getCantidad() {
         return cantidad;
     }
 
     public void setCantidad(BigDecimal cantidad) {
         this.cantidad = cantidad;
-    }
-
-    public BigDecimal getPrecioEstimado() {
-        return precioEstimado;
-    }
-
-    public void setPrecioEstimado(BigDecimal precioEstimado) {
-        this.precioEstimado = precioEstimado;
     }
 
     public Boolean getSeleccionado() {
