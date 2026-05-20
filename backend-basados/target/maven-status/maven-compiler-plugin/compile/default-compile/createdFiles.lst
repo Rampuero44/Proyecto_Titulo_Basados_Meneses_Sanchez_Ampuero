@@ -1,5 +1,4 @@
 com\basados\api\controller\UsuarioController.class
-com\basados\api\service\scraping\JumboScrapingService.class
 com\basados\api\dto\CotizacionRequestDTO.class
 com\basados\api\entity\Comercio.class
 com\basados\api\dto\DestinatarioDto.class
@@ -7,15 +6,12 @@ com\basados\api\entity\Usuario.class
 com\basados\api\dto\NotificacionResponse.class
 com\basados\api\entity\Marca.class
 com\basados\api\service\NotificacionService.class
-com\basados\api\service\scraping\ScrapingResultado.class
 com\basados\api\dto\EventoParticipanteRequestDTO.class
 com\basados\api\entity\GastoEvento.class
 com\basados\api\controller\EventoProductoController.class
 com\basados\api\repository\FormatoRepository.class
-com\basados\api\service\scraping\LiderScrapingService.class
 com\basados\api\service\cotizacion\CotizacionService.class
 com\basados\api\repository\CategoriaProductoRepository.class
-com\basados\api\service\scraping\TottusScrapingService.class
 com\basados\api\config\WebConfig.class
 com\basados\api\dto\CotizacionProductoDTO.class
 com\basados\api\BasadosApiApplication.class
@@ -24,7 +20,6 @@ com\basados\api\dto\EventoRequestDTO.class
 com\basados\api\dto\ProductoResponseDTO.class
 com\basados\api\repository\GastoEventoRepository.class
 com\basados\api\controller\GastoEventoController.class
-com\basados\api\service\scraping\ScrapingService.class
 com\basados\api\repository\EventoRepository.class
 com\basados\api\dto\EventoProductoRequestDTO.class
 com\basados\api\config\WebConfig$1.class
@@ -42,7 +37,6 @@ com\basados\api\repository\ComercioRepository.class
 com\basados\api\service\WhatsAppService.class
 com\basados\api\controller\CategoriaProductoController.class
 com\basados\api\repository\EventoProductoRepository.class
-com\basados\api\service\scraping\FakeScrapingService.class
 com\basados\api\entity\HistorialPrecio.class
 com\basados\api\repository\ProductoRepository.class
 com\basados\api\entity\EventoParticipante.class

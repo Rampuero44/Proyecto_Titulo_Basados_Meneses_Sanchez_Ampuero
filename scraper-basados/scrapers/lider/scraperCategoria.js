@@ -4,6 +4,10 @@ const filtrosCategorias = require('../../config/filtrosCategorias');
 const { normalizarTexto } = require('../../utils/normalizadorTexto');
 const { extraerSku } = require('../../utils/extraerSku');
 const { guardarProducto } = require('../../services/productoService');
+const {
+    iniciarLog,
+    finalizarLog
+} = require('../../services/scrapingLogService');
 
 function pasaFiltros(producto, slugCategoria) {
 
@@ -53,6 +57,14 @@ async function extraerProductosCategoria(slugCategoria) {
     try {
 
         for (const subcategoria of categoria.subcategorias) {
+            let paginasScrapeadas = 0;
+            let productosDetectados = 0;
+            let productosActualizados = 0;
+
+            const idLog = await iniciarLog({
+                idComercio: 1,
+                subcategoria: subcategoria.nombre
+            });
 
             const page = await browser.newPage();
 
@@ -82,10 +94,15 @@ async function extraerProductosCategoria(slugCategoria) {
 
                 console.log(`[LIDER] Productos detectados: ${cards.length}`);
 
+                productosDetectados += cards.length;
+                
+
                 if (cards.length === 0) {
                     seguir = false;
                     break;
                 }
+
+                paginasScrapeadas++;
 
                 for (let i = 0; i < cards.length; i++) {
 
@@ -154,6 +171,7 @@ async function extraerProductosCategoria(slugCategoria) {
                             try {
 
                                 await guardarProducto(producto);
+                                productosActualizados++;
 
                             } catch (error) {
 
@@ -171,6 +189,14 @@ async function extraerProductosCategoria(slugCategoria) {
 
                 pagina++;
             }
+
+            await finalizarLog({
+                idLog,
+                paginasScrapeadas,
+                productosDetectados,
+                productosActualizados,
+                estado: 'OK'
+            });
 
             await page.close();
         }

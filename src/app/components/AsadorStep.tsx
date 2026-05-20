@@ -24,14 +24,15 @@ const StarRating = ({ rating }: { rating: number }) => (
 
 // ─── Resumen productos ────────────────────────────────────────────────────────
 
-function ResumenProductos({ seleccionados }: { seleccionados: ProductoSeleccionado[] }) {
+function ResumenProductos({
+  seleccionados,
+  cotizacionTotal,
+}: {
+  seleccionados: ProductoSeleccionado[];
+  cotizacionTotal?: number;
+}) {
 
-  const total = seleccionados.reduce(
-
-    (sum, s) => sum + ((s.product.precioReferencia ?? 0) * s.cantidad),
-
-    0
-  );
+  const total = cotizacionTotal ?? 0;
 
   const calorias = seleccionados.reduce(
 
@@ -39,7 +40,7 @@ function ResumenProductos({ seleccionados }: { seleccionados: ProductoSelecciona
 
     0
   );
-    if (seleccionados.length === 0) return null;
+  if (seleccionados.length === 0) return null;
 
   return (
     <div className="rounded-lg border bg-muted/30 p-4 space-y-3 h-full">
@@ -202,9 +203,11 @@ interface Props {
   asadorSeleccionado: Asador | null;
   onChange: (asador: Asador | null) => void;
   seleccionados: ProductoSeleccionado[];
+  cotizacionTotal?: number;
 }
 
-export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, seleccionados }: Props) {
+export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, seleccionados,
+  cotizacionTotal }: Props) {
   const [incluirServicio, setIncluirServicio] = useState<boolean | null>(
     asadorSeleccionado ? true : null
   );
@@ -244,17 +247,23 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
                 <ChevronRight className="size-5 mx-auto text-muted-foreground" />
               </CardContent>
             </Card>
-      </div>
+          </div>
 
           {/* Resumen lateral derecho */}
           <div className="hidden md:block w-64 shrink-0">
-            <ResumenProductos seleccionados={seleccionados} />
+            <ResumenProductos
+              seleccionados={seleccionados}
+              cotizacionTotal={cotizacionTotal}
+            />
           </div>
         </div>
 
         {/* Resumen en móvil */}
         <div className="md:hidden">
-          <ResumenProductos seleccionados={seleccionados} />
+          <ResumenProductos
+            seleccionados={seleccionados}
+            cotizacionTotal={cotizacionTotal}
+          />
         </div>
       </div>
     );
@@ -268,7 +277,10 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
           <h2 className="text-2xl font-bold">Sin maestro asador</h2>
           <p className="text-muted-foreground text-sm mt-1">El asado lo manejarán los participantes.</p>
         </div>
-        <ResumenProductos seleccionados={seleccionados} />
+        <ResumenProductos
+          seleccionados={seleccionados}
+          cotizacionTotal={cotizacionTotal}
+        />
         <Button variant="outline" onClick={() => setIncluirServicio(null)}>Cambiar opción</Button>
       </div>
     );

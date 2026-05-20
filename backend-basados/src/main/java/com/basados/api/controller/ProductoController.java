@@ -3,7 +3,6 @@ package com.basados.api.controller;
 import com.basados.api.dto.ProductoResponseDTO;
 import com.basados.api.entity.Producto;
 import com.basados.api.repository.ProductoRepository;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,17 +35,11 @@ public class ProductoController {
                     ? producto.getCategoria().getNombre()
                     : null,
 
-                producto.getComercio() != null
-                    ? producto.getComercio().getNombre()
-                    : null,
-
                 producto.getMarca() != null
                     ? producto.getMarca().getNombre()
                     : null,
 
                 producto.getCalorias(),
-
-                producto.getPrecioReferencia(),
 
                 producto.getAlcoholico()
 

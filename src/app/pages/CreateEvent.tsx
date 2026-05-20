@@ -146,7 +146,7 @@ export function CreateEvent() {
         nombre: s.product.nombre,
         tipo: s.product.categoria,
         cantidad: s.cantidad,
-        porPrecio: s.product.precioReferencia ?? 0,
+        porPrecio: 0,
         calorias: s.product.calorias ?? 0,
       }));
 
@@ -155,10 +155,6 @@ export function CreateEvent() {
   const ensaladas = getByCategory("ensalada");;
   const insumos = getByCategory("insumo");
 
-  const costoTotal = seleccionados.reduce(
-    (sum, s) => sum + (s.product.precioReferencia ?? 0) * s.cantidad,
-    0
-  );
   const costoAsador = asadorSeleccionado
     ? asadorSeleccionado.tarifaBase + asadorSeleccionado.tarifaPorPersona * participantes.length
     : 0;
@@ -172,6 +168,11 @@ export function CreateEvent() {
   const mejorCotizacion = cotizaciones[0] || null;
   const cotizacionActiva =
     cotizaciones.find((c) => c.comercio === selectedComercio) || mejorCotizacion;
+
+  const costoTotal =
+    cotizacionActiva?.total
+      ? Number(cotizacionActiva.total)
+      : 0;
 
   useEffect(() => {
     if (mejorCotizacion && !selectedComercio) {
@@ -199,7 +200,7 @@ export function CreateEvent() {
       setCotizaciones(
         response.cotizaciones || []
 
-      
+
       );
 
     } catch (error) {
@@ -363,8 +364,12 @@ export function CreateEvent() {
           cantidad: seleccionado.cantidad,
 
           precioEstimado:
-            (seleccionado.product.precioReferencia ?? 0)
-            * seleccionado.cantidad,
+            cotizacionActiva?.items
+              ?.find(
+                (item: any) =>
+                  item.nombreProducto === seleccionado.product.nombre
+              )
+              ?.subtotal ?? 0,
 
           seleccionado: true,
         });

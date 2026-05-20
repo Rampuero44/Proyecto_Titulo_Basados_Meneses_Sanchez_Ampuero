@@ -18,9 +18,6 @@ public class CotizacionResultadoDTO {
     public CotizacionResultadoDTO() {
     }
 
-    public String getComercio() {
-        return comercio;
-    }
 
     public void setComercio(String comercio) {
         this.comercio = comercio;

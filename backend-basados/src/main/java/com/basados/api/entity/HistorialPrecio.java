@@ -34,6 +34,12 @@ public class HistorialPrecio {
     @Column(name = "url_producto")
     private String urlProducto;
 
+    @Column(name = "precio_unitario")
+    private String precioUnitario;
+
+    @Column(name = "disponible")
+    private Boolean disponible;
+
     @Column(name = "fecha_scraping")
     private LocalDateTime fechaScraping;
 
@@ -113,5 +119,21 @@ public class HistorialPrecio {
 
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
+    }
+
+    public String getPrecioUnitario() {
+        return precioUnitario;
+    }
+
+    public void setPrecioUnitario(String precioUnitario) {
+        this.precioUnitario = precioUnitario;
+    }
+
+    public Boolean getDisponible() {
+        return disponible;
+    }
+
+    public void setDisponible(Boolean disponible) {
+        this.disponible = disponible;
     }
 }

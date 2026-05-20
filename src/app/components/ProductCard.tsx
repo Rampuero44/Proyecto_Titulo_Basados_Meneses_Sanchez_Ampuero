@@ -1,13 +1,13 @@
-import { ShoppingCart, TrendingDown, Flame, Store } from 'lucide-react';
-import { ProductWithPrice } from '../types/product';
+import { ShoppingCart, Flame } from 'lucide-react';
+import { Producto } from "../types/product";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useNavigate } from 'react-router';
 
 interface ProductCardProps {
-  product: ProductWithPrice;
-  onAddToCart: (product: ProductWithPrice) => void;
+  product: Producto;
+  onAddToCart: (product: Producto) => void;
 }
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
@@ -57,42 +57,28 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           <CardTitle className="text-lg group-hover:text-primary transition-colors">
             {product.nombre}
           </CardTitle>
-          <Badge className={getCategoryBadgeColor(product.category)}>
-            {getCategoryLabel(product.category)}
+          <Badge className={getCategoryBadgeColor(product.categoria)}>
+            {getCategoryLabel(product.categoria)}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{product.tipo}</p>
+        <p className="text-sm text-muted-foreground">{product.marca ?? "Sin marca"}</p>
       </CardHeader>
-      
+
       <CardContent onClick={() => navigate(`/productos/${product.id}`)}>
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-2xl font-bold">{formatPrice(product.precio.valor)}</span>
-            <TrendingDown className="text-green-600 size-5" />
-          </div>
-          
+
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Flame className="size-4 text-orange-500" />
-              <span>{product.calorias} cal</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Store className="size-4" />
-              <span>{product.comercio.nombre}</span>
+              <span>{product.calorias ?? 0} cal</span>
             </div>
           </div>
 
-          {product.category === 'bebestible' && 'formato' in product && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Formato: </span>
-              <span className="capitalize">{product.formato}</span>
-            </div>
-          )}
         </div>
       </CardContent>
 
       <CardFooter>
-        <Button 
+        <Button
           onClick={(e) => {
             e.stopPropagation();
             onAddToCart(product);

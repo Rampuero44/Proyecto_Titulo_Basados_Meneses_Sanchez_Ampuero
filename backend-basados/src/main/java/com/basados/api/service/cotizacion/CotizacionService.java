@@ -1,45 +1,33 @@
 package com.basados.api.service.cotizacion;
 
 import com.basados.api.dto.*;
+import com.basados.api.entity.HistorialPrecio;
 import com.basados.api.entity.Producto;
+import com.basados.api.repository.HistorialPrecioRepository;
 import com.basados.api.repository.ProductoRepository;
-import com.basados.api.service.scraping.*;
 
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CotizacionService {
 
     private final ProductoRepository productoRepository;
 
-    private final JumboScrapingService jumboService;
-
-    private final LiderScrapingService liderService;
-
-    private final TottusScrapingService tottusService;
+    private final HistorialPrecioRepository historialPrecioRepository;
 
     public CotizacionService(
             ProductoRepository productoRepository,
-            JumboScrapingService jumboService,
-            LiderScrapingService liderService,
-            TottusScrapingService tottusService
+            HistorialPrecioRepository historialPrecioRepository
     ) {
 
-        this.productoRepository =
-                productoRepository;
+        this.productoRepository = productoRepository;
 
-        this.jumboService =
-                jumboService;
-
-        this.liderService =
-                liderService;
-
-        this.tottusService =
-                tottusService;
+        this.historialPrecioRepository = historialPrecioRepository;
     }
 
     public CotizacionResponseDTO generarCotizaciones(
@@ -50,24 +38,7 @@ public class CotizacionService {
                 new ArrayList<>();
 
         resultados.add(
-                generarCotizacion(
-                        jumboService,
-                        request
-                )
-        );
-
-        resultados.add(
-                generarCotizacion(
-                        liderService,
-                        request
-                )
-        );
-
-        resultados.add(
-                generarCotizacion(
-                        tottusService,
-                        request
-                )
+                generarCotizacion(request)
         );
 
         CotizacionResponseDTO response =
@@ -81,7 +52,6 @@ public class CotizacionService {
     }
 
     private CotizacionResultadoDTO generarCotizacion(
-            ScrapingService scrapingService,
             CotizacionRequestDTO request
     ) {
 
@@ -110,10 +80,11 @@ public class CotizacionService {
                 continue;
             }
 
-            ScrapingResultado scraping =
-                    scrapingService.buscarProducto(
-                            producto
-                    );
+            Optional<HistorialPrecio> historialOpt =
+                    historialPrecioRepository
+                            .findTopByProductoOrderByFechaScrapingDesc(
+                                    producto
+                            );
 
             CotizacionItemDTO itemDTO =
                     new CotizacionItemDTO();
@@ -126,20 +97,27 @@ public class CotizacionService {
                     item.getCantidad()
             );
 
-            if (scraping.isDisponible()) {
+            if (historialOpt.isPresent()) {
+
+                HistorialPrecio historial =
+                        historialOpt.get();
+
+                BigDecimal precio =
+                        historial.getPrecioOferta() != null
+                                ? historial.getPrecioOferta()
+                                : historial.getPrecio();
 
                 BigDecimal subtotal =
-                        scraping.getPrecio()
-                                .multiply(
-                                        BigDecimal.valueOf(
-                                                item.getCantidad()
-                                        )
-                                );
+                        precio.multiply(
+                                BigDecimal.valueOf(
+                                        item.getCantidad()
+                                )
+                        );
 
                 itemDTO.setEncontrado(true);
 
                 itemDTO.setPrecioUnitario(
-                        scraping.getPrecio()
+                        precio
                 );
 
                 itemDTO.setSubtotal(
@@ -170,7 +148,9 @@ public class CotizacionService {
                 new CotizacionResultadoDTO();
 
         resultado.setComercio(
-                scrapingService.getNombreComercio()
+                encontrados > 0
+                        ? "Supabase"
+                        : "Sin resultados"
         );
 
         resultado.setTotal(

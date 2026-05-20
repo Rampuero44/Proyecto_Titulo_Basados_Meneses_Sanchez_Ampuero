@@ -32,10 +32,6 @@ public class Producto {
     @JoinColumn(name = "id_formato")
     private Formato formato;
 
-    @ManyToOne
-    @JoinColumn(name = "id_comercio")
-    private Comercio comercio;
-
     @Column(name = "calorias")
     private BigDecimal calorias;
 
@@ -48,8 +44,6 @@ public class Producto {
     @Column(name = "carbohidratos")
     private BigDecimal carbohidratos;
 
-    @Column(name = "precio_referencia")
-    private BigDecimal precioReferencia;
 
     @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
@@ -117,13 +111,6 @@ public class Producto {
         this.formato = formato;
     }
 
-    public Comercio getComercio() {
-        return comercio;
-    }
-
-    public void setComercio(Comercio comercio) {
-        this.comercio = comercio;
-    }
 
     public BigDecimal getCalorias() {
         return calorias;
@@ -155,14 +142,6 @@ public class Producto {
 
     public void setCarbohidratos(BigDecimal carbohidratos) {
         this.carbohidratos = carbohidratos;
-    }
-
-    public BigDecimal getPrecioReferencia() {
-        return precioReferencia;
-    }
-
-    public void setPrecioReferencia(BigDecimal precioReferencia) {
-        this.precioReferencia = precioReferencia;
     }
 
     public String getImagenUrl() {

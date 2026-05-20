@@ -3,21 +3,19 @@ import {
   Search,
   Filter,
   Flame,
-  Store,
   Plus,
   Minus,
   Check,
   ClipboardList,
 } from "lucide-react";
 
-import { ProductCategory, ProductWithPrice } from "../types/product";
+import { ProductCategory, Producto } from "../types/product";
 import { obtenerProductos } from "../services/productosApi";
 
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   Select,
   SelectContent,
@@ -27,7 +25,7 @@ import {
 } from "./ui/select";
 
 export interface ProductoSeleccionado {
-  product: ProductWithPrice;
+  product: Producto;
   cantidad: number;
 }
 
@@ -131,11 +129,10 @@ function ProductCard({
 
   return (
     <Card
-      className={`flex flex-col transition-all ${
-        isSelected
-          ? "border-primary ring-1 ring-primary"
-          : "hover:shadow-md"
-      }`}
+      className={`flex flex-col transition-all ${isSelected
+        ? "border-primary ring-1 ring-primary"
+        : "hover:shadow-md"
+        }`}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
@@ -143,28 +140,19 @@ function ProductCard({
             {product.nombre}
           </CardTitle>
 
-          <Badge className={CATEGORY_BADGE[product.category] ?? ""}>
-            {CATEGORY_LABEL[product.category] ?? product.category}
+          <Badge className={CATEGORY_BADGE[product.categoria] ?? ""}>
+            {CATEGORY_LABEL[product.categoria] ?? product.categoria}
           </Badge>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          {product.tipo}
+          {product.marca ?? "Sin marca"}
         </p>
       </CardHeader>
 
       <CardContent className="flex-1 space-y-2">
-        <div className="flex items-baseline gap-1">
-          <p className="text-xl font-bold">
-            {formatPrice(product.precioReferencia ?? 0)}
-          </p>
-
-          <span className="text-xs text-muted-foreground">
-            /kg
-          </span>
-        </div>
-
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
+
           {product.calorias > 0 && (
             <span className="flex items-center gap-1">
               <Flame className="size-4 text-orange-500" />
@@ -172,10 +160,7 @@ function ProductCard({
             </span>
           )}
 
-          <span className="flex items-center gap-1">
-            <Store className="size-4" />
-            {product.comercio?.nombre ?? "Sin comercio"}
-          </span>
+
         </div>
       </CardContent>
 
@@ -241,11 +226,7 @@ function MiniResumen({
 }: {
   seleccionados: ProductoSeleccionado[];
 }) {
-  const total = seleccionados.reduce(
-    (sum, s) =>
-      sum + (s.product.precioReferencia ?? 0) * s.cantidad,
-    0
-  );
+  const total = 0;
 
   return (
     <div className="sticky top-24 rounded-xl border bg-muted/30 p-4 space-y-3">
@@ -280,7 +261,7 @@ function MiniResumen({
           <div className="border-t pt-2">
             <div className="flex justify-between text-sm font-bold">
               <span>Total</span>
-              <span>{formatPrice(total)}</span>
+              <span>$0</span>
             </div>
           </div>
         </>
@@ -415,9 +396,9 @@ export function ProductCatalogStep({
       seleccionados.map((s) =>
         s.product.id === product.id
           ? {
-              ...s,
-              cantidad: Math.max(1, s.cantidad + delta),
-            }
+            ...s,
+            cantidad: Math.max(1, s.cantidad + delta),
+          }
           : s
       )
     );
