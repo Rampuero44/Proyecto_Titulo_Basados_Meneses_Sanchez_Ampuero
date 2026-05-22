@@ -6,93 +6,66 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { ArrowLeft } from "lucide-react";
-import { storage, generateId, esMayorDeEdad } from "../utils/localStorage";
 import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
 
 export function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [cargando, setCargando] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fechaMaxima = new Date().toISOString().split("T")[0];
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
     }
-
     if (password.length < 6) {
       toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
     }
-
     if (!fechaNacimiento) {
       toast.error("Debes ingresar tu fecha de nacimiento");
       return;
     }
 
-    const existingUsuario = storage.getUsuarioByEmail(email);
-    if (existingUsuario) {
-      toast.error("Este email ya está registrado");
+    setCargando(true);
+    const { error } = await register(email, password, nombre, fechaNacimiento);
+
+    if (error) {
+      toast.error(error);
+      setCargando(false);
       return;
     }
 
-    const newUsuario = {
-      id: generateId(),
-      nombre,
-      email,
-      password,
-      rol: 'usuario' as const,
-      fechaNacimiento,
-    };
-
-    storage.saveUsuario(newUsuario);
-    storage.setCurrentUsuario(newUsuario);
-
-    if (!esMayorDeEdad(fechaNacimiento)) {
-      toast.success("Registro exitoso. Nota: el alcohol estará restringido en tus eventos.");
-    } else {
-      toast.success("Registro exitoso!");
-    }
-
-    navigate("/dashboard");
+    toast.success("Registro exitoso. Revisa tu email para confirmar tu cuenta.");
+    navigate("/login");
   };
-
-  // Calcular fecha máxima (hoy) para el input de fecha
-  const fechaMaxima = new Date().toISOString().split("T")[0];
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div className="min-h-screen flex items-center justify-center p-4 bg-muted/50">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-              className="w-fit -ml-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="w-fit -ml-2">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver al inicio
             </Button>
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center gap-2 mb-4">
-                <img
-                  src="/logo-basados.jpg"
-                  alt="BASADOS"
-                  className="w-16 h-16 rounded-xl object-cover"
-                />
+                <img src="/logo-basados.jpg" alt="BASADOS" className="w-16 h-16 rounded-xl object-cover" />
               </div>
               <CardTitle>Crear Cuenta</CardTitle>
-              <CardDescription>
-                Completa tus datos para registrarte
-              </CardDescription>
+              <CardDescription>Completa tus datos para registrarte</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -155,8 +128,8 @@ export function Register() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Registrarse
+              <Button type="submit" className="w-full" disabled={cargando}>
+                {cargando ? "Registrando..." : "Registrarse"}
               </Button>
             </form>
             <div className="mt-4 text-center text-sm">

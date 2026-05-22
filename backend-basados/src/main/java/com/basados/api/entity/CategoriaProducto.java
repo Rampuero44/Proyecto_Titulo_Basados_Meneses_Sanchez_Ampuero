@@ -14,6 +14,9 @@ public class CategoriaProducto {
     @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
+    @Column(name = "slug", length = 100)
+    private String slug;
+
     @Column(name = "descripcion", length = 255)
     private String descripcion;
 
@@ -34,6 +37,14 @@ public class CategoriaProducto {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 
     public String getDescripcion() {

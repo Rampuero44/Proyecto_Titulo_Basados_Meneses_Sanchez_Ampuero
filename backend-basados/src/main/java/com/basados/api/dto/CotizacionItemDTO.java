@@ -5,75 +5,37 @@ import java.math.BigDecimal;
 public class CotizacionItemDTO {
 
     private Long idHistorial;
-
     private String nombreProducto;
-
     private Integer cantidad;
-
     private BigDecimal precioUnitario;
-
+    private String precioUnitarioTexto;
     private BigDecimal subtotal;
-
     private String comercio;
-
     private Boolean encontrado;
 
-    public CotizacionItemDTO() {
-    }
+    public CotizacionItemDTO() {}
 
-    public Long getIdHistorial() {
-        return idHistorial;
-    }
+    public Long getIdHistorial() { return idHistorial; }
+    public void setIdHistorial(Long idHistorial) { this.idHistorial = idHistorial; }
 
-    public void setIdHistorial(Long idHistorial) {
-        this.idHistorial = idHistorial;
-    }
+    public String getNombreProducto() { return nombreProducto; }
+    public void setNombreProducto(String nombreProducto) { this.nombreProducto = nombreProducto; }
 
-    public String getNombreProducto() {
-        return nombreProducto;
-    }
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
 
-    public void setNombreProducto(String nombreProducto) {
-        this.nombreProducto = nombreProducto;
-    }
+    public BigDecimal getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
 
-    public Integer getCantidad() {
-        return cantidad;
-    }
+    public String getPrecioUnitarioTexto() { return precioUnitarioTexto; }
+    public void setPrecioUnitarioTexto(String precioUnitarioTexto) { this.precioUnitarioTexto = precioUnitarioTexto; }
 
-    public void setCantidad(Integer cantidad) {
-        this.cantidad = cantidad;
-    }
+    public BigDecimal getSubtotal() { return subtotal; }
+    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
 
-    public BigDecimal getPrecioUnitario() {
-        return precioUnitario;
-    }
+    public String getComercio() { return comercio; }
+    public void setComercio(String comercio) { this.comercio = comercio; }
 
-    public void setPrecioUnitario(BigDecimal precioUnitario) {
-        this.precioUnitario = precioUnitario;
-    }
-
-    public BigDecimal getSubtotal() {
-        return subtotal;
-    }
-
-    public void setSubtotal(BigDecimal subtotal) {
-        this.subtotal = subtotal;
-    }
-
-    public String getComercio() {
-        return comercio;
-    }
-
-    public void setComercio(String comercio) {
-        this.comercio = comercio;
-    }
-
-    public Boolean getEncontrado() {
-        return encontrado;
-    }
-
-    public void setEncontrado(Boolean encontrado) {
-        this.encontrado = encontrado;
-    }
+    public Boolean getEncontrado() { return encontrado; }
+    public void setEncontrado(Boolean encontrado) { this.encontrado = encontrado; }
 }

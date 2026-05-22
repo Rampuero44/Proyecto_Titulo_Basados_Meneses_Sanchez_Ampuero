@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -32,6 +32,7 @@ export interface ProductoSeleccionado {
 interface Props {
   seleccionados: ProductoSeleccionado[];
   onChange: (seleccionados: ProductoSeleccionado[]) => void;
+  sidebarExtra?: React.ReactNode;
 }
 
 const formatPrice = (price: number) =>
@@ -52,6 +53,25 @@ const CATEGORY_LABEL: Record<string, string> = {
   bebestible: "Bebestible",
   insumo: "Insumo",
   ensalada: "Ensalada",
+};
+
+// Mapeo de slugs de la BD a categorías del frontend
+const SLUG_A_CATEGORIA: Record<string, ProductCategory> = {
+  // Proteínas
+  "vacunos": "proteina",
+  "pollo": "proteina",
+  "cerdos": "proteina",
+  "embutidos-parrilleros": "proteina",
+  "pescados-y-mariscos": "proteina",
+  // Bebestibles
+  "bebidas-y-licores": "bebestible",
+  "bebidas-sin-alcohol": "bebestible",
+  // Ensaladas
+  "verduras": "ensalada",
+  // Insumos
+  "snacks-y-picoteo": "insumo",
+  "aceites-y-condimentos": "insumo",
+  "carbones-e-insumos": "insumo",
 };
 
 const GRUPOS_PROTEINA: Record<string, string[]> = {
@@ -120,12 +140,15 @@ function ProductCard({
   onToggle,
   onCantidadChange,
 }: {
-  product: any;
+  product: Producto;
   seleccionado: ProductoSeleccionado | undefined;
   onToggle: () => void;
   onCantidadChange: (delta: number) => void;
 }) {
   const isSelected = !!seleccionado;
+  const slug = product.slugCategoria ?? product.categoria;
+  const badgeClass = CATEGORY_BADGE[SLUG_A_CATEGORIA[slug] ?? slug] ?? "bg-gray-100 text-gray-800 hover:bg-gray-100";
+  const categoryLabel = CATEGORY_LABEL[SLUG_A_CATEGORIA[slug] ?? slug] ?? product.categoria;
 
   return (
     <Card
@@ -134,44 +157,60 @@ function ProductCard({
         : "hover:shadow-md"
         }`}
     >
+      {/* Imagen */}
+      <div className="h-36 bg-white rounded-t-lg overflow-hidden flex items-center justify-center shrink-0">
+        {product.imagenUrl ? (
+          <img
+            src={product.imagenUrl}
+            alt={product.nombre}
+            className="h-full w-full object-contain p-2"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          <div className="text-4xl select-none opacity-30">🥩</div>
+        )}
+      </div>
+
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base leading-tight">
+          <CardTitle className="text-base leading-tight line-clamp-2">
             {product.nombre}
           </CardTitle>
-
-          <Badge className={CATEGORY_BADGE[product.categoria] ?? ""}>
-            {CATEGORY_LABEL[product.categoria] ?? product.categoria}
+          <Badge className={`${badgeClass} shrink-0`}>
+            {categoryLabel}
           </Badge>
         </div>
-
-        <p className="text-sm text-muted-foreground">
-          {product.marca ?? "Sin marca"}
-        </p>
+        {product.marca && (
+          <p className="text-xs text-muted-foreground">{product.marca}</p>
+        )}
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-2">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-
-          {product.calorias > 0 && (
-            <span className="flex items-center gap-1">
-              <Flame className="size-4 text-orange-500" />
-              {product.calorias} cal
+      <CardContent className="flex-1 pb-2">
+        <div className="flex items-center justify-between text-sm">
+          {product.calorias != null && product.calorias > 0 && (
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Flame className="size-3 text-orange-500" />
+              {Math.round(product.calorias)} kcal
             </span>
           )}
-
-
+          {product.precioDesde != null && product.precioDesde > 0 && (
+            <div className="ml-auto text-right">
+              <span className="font-semibold text-primary text-sm">
+                Desde {formatPrice(product.precioDesde)}
+              </span>
+              {product.precioUnitario && (
+                <p className="text-xs text-muted-foreground">{product.precioUnitario}</p>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-2 pt-3">
+      <CardFooter className="flex flex-col gap-2 pt-2">
         {isSelected ? (
           <>
             <div className="flex items-center justify-between w-full">
-              <span className="text-sm text-muted-foreground">
-                Cantidad:
-              </span>
-
+              <span className="text-sm text-muted-foreground">Cantidad:</span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -181,11 +220,9 @@ function ProductCard({
                 >
                   <Minus className="size-3" />
                 </Button>
-
                 <span className="w-8 text-center font-semibold">
                   {seleccionado.cantidad}
                 </span>
-
                 <Button
                   variant="outline"
                   size="icon"
@@ -196,7 +233,6 @@ function ProductCard({
                 </Button>
               </div>
             </div>
-
             <Button
               variant="outline"
               size="sm"
@@ -207,11 +243,7 @@ function ProductCard({
             </Button>
           </>
         ) : (
-          <Button
-            size="sm"
-            className="w-full"
-            onClick={onToggle}
-          >
+          <Button size="sm" className="w-full" onClick={onToggle}>
             <Check className="size-4 mr-2" />
             Agregar al evento
           </Button>
@@ -223,10 +255,17 @@ function ProductCard({
 
 function MiniResumen({
   seleccionados,
+  onCantidadChange,
+  onQuitar,
 }: {
   seleccionados: ProductoSeleccionado[];
+  onCantidadChange: (product: Producto, delta: number) => void;
+  onQuitar: (product: Producto) => void;
 }) {
-  const total = 0;
+  const total = seleccionados.reduce((acc, s) => {
+    const precio = s.product.precioDesde ?? 0;
+    return acc + precio * s.cantidad;
+  }, 0);
 
   return (
     <div className="sticky top-24 rounded-xl border bg-muted/30 p-4 space-y-3">
@@ -241,28 +280,60 @@ function MiniResumen({
         </p>
       ) : (
         <>
-          <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {seleccionados.map((s) => (
-              <div
-                key={s.product.id}
-                className="flex justify-between text-xs"
-              >
-                <span className="truncate flex-1 mr-2">
-                  {s.product.nombre}
-                </span>
-
-                <span className="text-muted-foreground shrink-0">
-                  ×{s.cantidad}
-                </span>
+              <div key={s.product.id} className="space-y-1">
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-xs truncate flex-1 leading-tight">
+                    {s.product.nombre}
+                  </span>
+                  <button
+                    onClick={() => onQuitar(s.product)}
+                    className="text-destructive text-xs shrink-0 hover:underline ml-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-5"
+                      onClick={() => onCantidadChange(s.product, -1)}
+                    >
+                      <Minus className="size-2" />
+                    </Button>
+                    <span className="text-xs w-5 text-center font-semibold">
+                      {s.cantidad}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-5"
+                      onClick={() => onCantidadChange(s.product, 1)}
+                    >
+                      <Plus className="size-2" />
+                    </Button>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {s.product.precioDesde != null && s.product.precioDesde > 0
+                      ? formatPrice(s.product.precioDesde * s.cantidad)
+                      : "Sin precio"}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
 
           <div className="border-t pt-2">
             <div className="flex justify-between text-sm font-bold">
-              <span>Total</span>
-              <span>$0</span>
+              <span>Total estimado</span>
+              <span>{formatPrice(total)}</span>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Basado en precio mínimo por producto
+            </p>
           </div>
         </>
       )}
@@ -273,6 +344,7 @@ function MiniResumen({
 export function ProductCatalogStep({
   seleccionados,
   onChange,
+  sidebarExtra,
 }: Props) {
 
   const [productos, setProductos] = useState<any[]>([]);
@@ -345,63 +417,60 @@ export function ProductCatalogStep({
   };
 
   const filteredProducts = productos.filter((p) => {
+    // Excluir productos sin precio vigente
+    if (!p.precioDesde || p.precioDesde <= 0) return false;
 
     const matchesSearch =
-      p.nombre?.toLowerCase().includes(searchQuery.toLowerCase());
+      !searchQuery || p.nombre?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch;
+    if (!matchesSearch) return false;
+    if (selectedCategory === "all") return true;
+
+    // Resolver categoría del producto via slugCategoria
+    const slugProducto = p.slugCategoria as string | undefined;
+    const categoriaResuelta = slugProducto
+      ? (SLUG_A_CATEGORIA[slugProducto] ?? null)
+      : null;
+
+    return categoriaResuelta === selectedCategory;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-
     switch (sortBy) {
-
       case "name":
         return a.nombre.localeCompare(b.nombre);
-
+      case "price-asc":
+        return (a.precioDesde ?? Infinity) - (b.precioDesde ?? Infinity);
+      case "price-desc":
+        return (b.precioDesde ?? 0) - (a.precioDesde ?? 0);
+      case "calories":
+        return (b.calorias ?? 0) - (a.calorias ?? 0);
       default:
         return 0;
     }
   });
 
-  const toggleProducto = (product: any) => {
-
-    const existe = seleccionados.find(
-      (s) => s.product.id === product.id
-    );
-
+  const toggleProducto = (product: Producto) => {
+    const existe = seleccionados.find((s) => s.product.id === product.id);
     if (existe) {
-
-      onChange(
-        seleccionados.filter(
-          (s) => s.product.id !== product.id
-        )
-      );
-
+      onChange(seleccionados.filter((s) => s.product.id !== product.id));
     } else {
-
-      onChange([
-        ...seleccionados,
-        {
-          product,
-          cantidad: 1,
-        },
-      ]);
+      onChange([...seleccionados, { product, cantidad: 1 }]);
     }
   };
 
-  const cambiarCantidad = (product: any, delta: number) => {
-
-    onChange(
-      seleccionados.map((s) =>
-        s.product.id === product.id
-          ? {
-            ...s,
-            cantidad: Math.max(1, s.cantidad + delta),
-          }
-          : s
-      )
-    );
+  const cambiarCantidad = (product: Producto, delta: number) => {
+    const nuevaCantidad = (seleccionados.find((s) => s.product.id === product.id)?.cantidad ?? 0) + delta;
+    if (nuevaCantidad <= 0) {
+      // Cantidad llega a 0 → quitar del evento
+      onChange(seleccionados.filter((s) => s.product.id !== product.id));
+    } else {
+      onChange(
+        seleccionados.map((s) =>
+          s.product.id === product.id ? { ...s, cantidad: nuevaCantidad } : s
+        )
+      );
+    }
   };
 
   return (
@@ -485,9 +554,14 @@ export function ProductCatalogStep({
         )}
       </div>
 
-      <div className="hidden lg:block w-64 shrink-0 self-start sticky top-24">
-        <MiniResumen seleccionados={seleccionados} />
+      <div className="hidden lg:block w-64 shrink-0 self-start sticky top-24 space-y-4">
+        <MiniResumen
+          seleccionados={seleccionados}
+          onCantidadChange={cambiarCantidad}
+          onQuitar={toggleProducto}
+        />
+        {sidebarExtra}
       </div>
     </div>
   );
-}
+} 

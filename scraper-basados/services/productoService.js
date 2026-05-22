@@ -95,7 +95,9 @@ async function insertarProducto(producto) {
             producto.nombre,
             idCategoria,
             producto.imagenUrl,
-            producto.categoriaBasados === 'bebidas-y-licores',
+            // Slugs que corresponden a bebidas alcohólicas
+            // Agregar aquí nuevos slugs alcohólicos al incorporar Tottus/Jumbo
+            ['bebidas-y-licores'].includes(producto.categoriaBasados),
             producto.skuScraping,
             producto.imagenUrl
         ]

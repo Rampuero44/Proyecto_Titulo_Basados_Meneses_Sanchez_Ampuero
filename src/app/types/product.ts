@@ -8,9 +8,13 @@ export interface Producto {
   id: number;
   nombre: string;
   categoria: string;
+  slugCategoria?: string;
   marca?: string;
   calorias?: number;
   alcoholico?: boolean;
+  imagenUrl?: string;
+  precioDesde?: number;
+  precioUnitario?: string;
 }
 
 export interface CartItem {

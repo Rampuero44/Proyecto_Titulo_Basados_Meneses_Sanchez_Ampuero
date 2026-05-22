@@ -17,6 +17,10 @@ import { crearEvento } from "../services/eventosApi";
 import { crearEventoProducto } from "../services/eventoProductosApi";
 import { AsadorStep } from "../components/AsadorStep";
 import { Asador } from "../data/mockAsadores";
+import { ModalContextoEvento, ContextoEvento } from "../components/ModalContextoEvento";
+import { IaSugerencias } from "../components/IaSugerencias";
+import { IaCotizacion } from "../components/IaCotizacion";
+import { useAuth } from "../context/AuthContext";
 
 const formatDateForInput = (date: Date) => {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -95,9 +99,13 @@ function ModalVerificacionEdad({ onConfirmar }: ModalEdadProps) {
 export function CreateEvent() {
   const navigate = useNavigate();
 
-  const [currentUsuario] = useState(
-    () => storage.getCurrentUsuario() || storage.getUsuarioByEmail("juan@gmail.com") || null
-  );
+  const { user, loading } = useAuth();
+  const currentUsuario = user ? {
+    id: user.id,
+    nombre: user.user_metadata?.nombre ?? user.email ?? "Usuario",
+    email: user.email ?? "",
+    fechaNacimiento: user.user_metadata?.fecha_nacimiento ?? null,
+  } : null;
 
   const [step, setStep] = useState<"catalog" | "asador" | "config" | "quote" | "cost">("catalog");
   const [mostrarModalEdad, setMostrarModalEdad] = useState(false);
@@ -110,12 +118,12 @@ export function CreateEvent() {
   const [participantes, setParticipantes] = useState<Participante[]>([]);
   const [nuevoParticipante, setNuevoParticipante] = useState("");
   const [selectedComercio, setSelectedComercio] = useState<string>("");
-  const [cotizaciones, setCotizaciones] =
-    useState<any[]>([]);
+  const [cotizaciones, setCotizaciones] = useState<any[]>([]);
+  const [contextoEvento, setContextoEvento] = useState<ContextoEvento | null>(null);
 
   useEffect(() => {
+    if (loading) return;
     if (!currentUsuario) { navigate("/login"); return; }
-    if (!storage.getCurrentUsuario()) storage.setCurrentUsuario(currentUsuario);
     setNombre((prev) => prev || `Evento de ${currentUsuario.nombre}`);
     setParticipantes((prev) => {
       const exists = prev.some(
@@ -134,7 +142,7 @@ export function CreateEvent() {
         ...prev,
       ];
     });
-  }, [currentUsuario, navigate]);
+  }, [currentUsuario, loading, navigate]);
 
   const getByCategory = (categoria: string) =>
     seleccionados
@@ -355,21 +363,25 @@ export function CreateEvent() {
 
       for (const seleccionado of seleccionados) {
 
+        console.log(
+          "ITEMS COTIZACION",
+          cotizacionActiva?.items
+        );
+
         await crearEventoProducto({
 
           idEvento: eventoId,
 
           idProducto: seleccionado.product.id,
 
-          cantidad: seleccionado.cantidad,
-
-          precioEstimado:
+          idHistorial:
             cotizacionActiva?.items
               ?.find(
                 (item: any) =>
                   item.nombreProducto === seleccionado.product.nombre
-              )
-              ?.subtotal ?? 0,
+              )?.idHistorial,
+
+          cantidad: seleccionado.cantidad,
 
           seleccionado: true,
         });
@@ -380,7 +392,7 @@ export function CreateEvent() {
         fecha,
         presupuesto: presupuestoFinal,
         estado: "planificado" as const,
-        usuarioId: currentUsuario.id,
+        usuarioId: 0,
         participantes: participantesConCostos.map((p) => ({
           id: p.id,
           nombre: p.nombre,
@@ -413,7 +425,7 @@ export function CreateEvent() {
         createdAt: new Date().toISOString(),
       };
 
-      storage.saveEvento(evento);
+      storage.saveEvento(evento as any);
 
       toast.success(
         "Evento creado correctamente"
@@ -435,6 +447,7 @@ export function CreateEvent() {
 
   };
 
+  if (loading) return null;
   if (!currentUsuario) return null;
 
   return (
@@ -443,6 +456,10 @@ export function CreateEvent() {
 
       {mostrarModalEdad && (
         <ModalVerificacionEdad onConfirmar={handleConfirmarEdad} />
+      )}
+
+      {!contextoEvento && (
+        <ModalContextoEvento onConfirmar={setContextoEvento} />
       )}
 
       <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -562,6 +579,22 @@ export function CreateEvent() {
               <Button variant="outline" onClick={() => setStep("config")}>Volver a la configuración</Button>
               <Button onClick={() => setStep("cost")}>Continuar a reparto de montos</Button>
             </div>
+
+            {contextoEvento && (
+              <IaCotizacion
+                contexto={contextoEvento}
+                productos={seleccionados.map((s) => ({
+                  nombre: s.product.nombre,
+                  cantidad: s.cantidad,
+                  slugCategoria: s.product.slugCategoria ?? s.product.categoria,
+                  precioUnitario: s.product.precioUnitario,
+                }))}
+                cotizaciones={cotizaciones.map((c) => ({
+                  comercio: c.comercio,
+                  total: Number(c.total),
+                }))}
+              />
+            )}
           </div>
 
           /* ── STEP: maestro asador ── */
@@ -739,7 +772,21 @@ export function CreateEvent() {
               </p>
             </div>
 
-            <ProductCatalogStep seleccionados={seleccionados} onChange={setSeleccionados} />
+            <ProductCatalogStep
+              seleccionados={seleccionados}
+              onChange={setSeleccionados}
+              sidebarExtra={contextoEvento ? (
+                <IaSugerencias
+                  contexto={contextoEvento}
+                  productos={seleccionados.map((s) => ({
+                    nombre: s.product.nombre,
+                    cantidad: s.cantidad,
+                    slugCategoria: s.product.slugCategoria ?? s.product.categoria,
+                    precioUnitario: s.product.precioUnitario,
+                  }))}
+                />
+              ) : undefined}
+            />
 
             <div className="fixed bottom-6 right-6 z-50">
               <Button size="lg" onClick={handleContinuarDesdeCatalogo} className="shadow-lg shadow-primary/30">
