@@ -1,13 +1,16 @@
 export const formatearFecha = (fecha: string): string => {
   if (!fecha) return "";
-
-  const partes = fecha.split("-");
-  if (partes.length !== 3) {
+  try {
+    const date = new Date(fecha);
+    if (isNaN(date.getTime())) return fecha;
+    return date.toLocaleDateString("es-CL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
     return fecha;
   }
-
-  const [anio, mes, dia] = partes;
-  return `${dia}/${mes}/${anio}`;
 };
 
 export const obtenerUnidadItem = (nombre: string, tipo: string): string => {

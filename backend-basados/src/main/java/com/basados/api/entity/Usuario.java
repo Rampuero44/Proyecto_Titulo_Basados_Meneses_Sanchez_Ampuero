@@ -3,15 +3,15 @@ package com.basados.api.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    @Column(name = "id_usuario", updatable = false, nullable = false)
+    private UUID idUsuario;
 
     @Column(name = "nombre", nullable = false)
     private String nombre;
@@ -46,11 +46,11 @@ public class Usuario {
     public Usuario() {
     }
 
-    public Long getIdUsuario() {
+    public UUID getIdUsuario() {
         return idUsuario;
     }
 
-    public void setIdUsuario(Long idUsuario) {
+    public void setIdUsuario(UUID idUsuario) {
         this.idUsuario = idUsuario;
     }
 

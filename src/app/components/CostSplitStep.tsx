@@ -14,7 +14,7 @@ import {
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { DollarSign, Mail, Phone, Undo2, Send } from "lucide-react";
-import { Participante } from "../utils/localStorage";
+import { Participante } from "../types/product";
 import { toast } from "sonner";
 
 export type MetodoNotificacion = "sin_notificacion" | "correo" | "telefono";

@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { ArrowLeft, Calendar, Plus, ShoppingCart, Trophy, X, AlertTriangle, Wine } from "lucide-react";
-import { storage, generateId, Participante, esMayorDeEdad } from "../utils/localStorage";
+import { generateId, esMayorDeEdad } from "../utils/localStorage";
+import { Participante } from "../types/product";
 import { generarCotizacion } from "../services/cotizacionesApi";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
@@ -20,7 +21,10 @@ import { Asador } from "../data/mockAsadores";
 import { ModalContextoEvento, ContextoEvento } from "../components/ModalContextoEvento";
 import { IaSugerencias } from "../components/IaSugerencias";
 import { IaCotizacion } from "../components/IaCotizacion";
+import { ModalBorrador } from "../components/ModalBorrador";
+import { ModalAuthRequerido } from "../components/ModalAuthRequerido";
 import { useAuth } from "../context/AuthContext";
+import { obtenerBorrador } from "../services/eventosApi";
 
 const formatDateForInput = (date: Date) => {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -107,6 +111,8 @@ export function CreateEvent() {
     fechaNacimiento: user.user_metadata?.fecha_nacimiento ?? null,
   } : null;
 
+  const esInvitado = !currentUsuario;
+
   const [step, setStep] = useState<"catalog" | "asador" | "config" | "quote" | "cost">("catalog");
   const [mostrarModalEdad, setMostrarModalEdad] = useState(false);
   const [edadVerificada, setEdadVerificada] = useState(false);
@@ -120,11 +126,36 @@ export function CreateEvent() {
   const [selectedComercio, setSelectedComercio] = useState<string>("");
   const [cotizaciones, setCotizaciones] = useState<any[]>([]);
   const [contextoEvento, setContextoEvento] = useState<ContextoEvento | null>(null);
+  const [mostrarModalBorrador, setMostrarModalBorrador] = useState(false);
+  const [mostrarModalAuth, setMostrarModalAuth] = useState(false);
+  const [borradorId, setBorradorId] = useState<string | null>(null);
+  const [borradorRevisado, setBorradorRevisado] = useState(false);
 
   useEffect(() => {
     if (loading) return;
-    if (!currentUsuario) { navigate("/login"); return; }
-    setNombre((prev) => prev || `Evento de ${currentUsuario.nombre}`);
+
+    if (currentUsuario && !borradorRevisado) {
+      setBorradorRevisado(true);
+      obtenerBorrador(currentUsuario.id).then((borrador) => {
+        if (borrador) {
+          setBorradorId(borrador.idEvento);
+          setMostrarModalBorrador(true);
+        } else {
+          inicializarNuevoEvento();
+        }
+      }).catch(() => inicializarNuevoEvento());
+      return;
+    }
+
+    if (!currentUsuario && !borradorRevisado) {
+      setBorradorRevisado(true);
+      setNombre("Mi asado");
+    }
+  }, [currentUsuario, loading, borradorRevisado]);
+
+  const inicializarNuevoEvento = () => {
+    if (!currentUsuario) return;
+    setNombre(`Evento de ${currentUsuario.nombre}`);
     setParticipantes((prev) => {
       const exists = prev.some(
         (p) => p.nombre.trim().toLowerCase() === currentUsuario.nombre.trim().toLowerCase()
@@ -142,7 +173,37 @@ export function CreateEvent() {
         ...prev,
       ];
     });
-  }, [currentUsuario, loading, navigate]);
+  };
+
+  const handleContinuarBorrador = () => {
+    setMostrarModalBorrador(false);
+  };
+
+  const handleNuevoEvento = () => {
+    setMostrarModalBorrador(false);
+    setBorradorId(null);
+    inicializarNuevoEvento();
+  };
+
+  const handleStepCost = () => {
+    if (esInvitado) {
+      setMostrarModalAuth(true);
+    } else {
+      setStep("cost");
+    }
+  };
+
+  const handleAutenticado = () => {
+    setMostrarModalAuth(false);
+    setBorradorRevisado(true);
+  };
+
+  useEffect(() => {
+    if (!mostrarModalAuth && currentUsuario && step === "quote") {
+      inicializarNuevoEvento();
+      setStep("cost");
+    }
+  }, [currentUsuario, mostrarModalAuth, step]);
 
   const getByCategory = (categoria: string) =>
     seleccionados
@@ -177,10 +238,14 @@ export function CreateEvent() {
   const cotizacionActiva =
     cotizaciones.find((c) => c.comercio === selectedComercio) || mejorCotizacion;
 
+  const costoEstimado = seleccionados.reduce((sum, s) => {
+    return sum + (s.product.precioDesde ?? 0) * s.cantidad;
+  }, 0);
+
   const costoTotal =
     cotizacionActiva?.total
       ? Number(cotizacionActiva.total)
-      : 0;
+      : costoEstimado;
 
   useEffect(() => {
     if (mejorCotizacion && !selectedComercio) {
@@ -386,46 +451,6 @@ export function CreateEvent() {
           seleccionado: true,
         });
       }
-      const evento = {
-        id: eventoId,
-        nombre: nombre.trim(),
-        fecha,
-        presupuesto: presupuestoFinal,
-        estado: "planificado" as const,
-        usuarioId: 0,
-        participantes: participantesConCostos.map((p) => ({
-          id: p.id,
-          nombre: p.nombre,
-          contactos: p.metodoContacto === "sin_notificacion"
-            ? []
-            : [{ id: generateId(), metodo: p.metodoContacto, valor: p.contacto }],
-          metodoContacto: p.metodoContacto,
-          contacto: p.contacto,
-          monto: Math.round(p.monto),
-          montoManual: p.montoManual,
-          sinAlcohol: p.sinAlcohol,
-          esOrganizador: p.esOrganizador,
-        })),
-        proteinas: proteinas.map((item) => ({ ...item, id: generateId(), eventoId })),
-        bebestibles: bebestibles.map((item) => ({ ...item, id: generateId(), eventoId })),
-        ensaladas: ensaladas.map((item) => ({ ...item, id: generateId(), eventoId })),
-        insumos: insumos.map((item) => ({ ...item, id: generateId(), eventoId })),
-        caloriasTotales: Math.round(caloriasTotales),
-        caloriasPorPersona: Math.round(caloriasPorPersona),
-        cotizaciones,
-        cotizacionSeleccionada: cotizacionActiva.comercio,
-        costoAsador: costoAsador,
-        asador: asadorSeleccionado ? {
-          id: asadorSeleccionado.id,
-          nombre: asadorSeleccionado.nombre,
-          telefono: asadorSeleccionado.telefono,
-          correo: asadorSeleccionado.correo,
-          tarifa: costoAsador,
-        } : null,
-        createdAt: new Date().toISOString(),
-      };
-
-      storage.saveEvento(evento as any);
 
       toast.success(
         "Evento creado correctamente"
@@ -448,7 +473,6 @@ export function CreateEvent() {
   };
 
   if (loading) return null;
-  if (!currentUsuario) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -458,7 +482,21 @@ export function CreateEvent() {
         <ModalVerificacionEdad onConfirmar={handleConfirmarEdad} />
       )}
 
-      {!contextoEvento && (
+      {mostrarModalBorrador && (
+        <ModalBorrador
+          onContinuar={handleContinuarBorrador}
+          onNuevo={handleNuevoEvento}
+        />
+      )}
+
+      {mostrarModalAuth && (
+        <ModalAuthRequerido
+          onAutenticado={handleAutenticado}
+          onCancelar={() => setMostrarModalAuth(false)}
+        />
+      )}
+
+      {!mostrarModalBorrador && !contextoEvento && (
         <ModalContextoEvento onConfirmar={setContextoEvento} />
       )}
 
@@ -577,7 +615,7 @@ export function CreateEvent() {
 
             <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("config")}>Volver a la configuración</Button>
-              <Button onClick={() => setStep("cost")}>Continuar a reparto de montos</Button>
+              <Button onClick={handleStepCost}>Continuar a reparto de montos</Button>
             </div>
 
             {contextoEvento && (
@@ -605,6 +643,7 @@ export function CreateEvent() {
               asadorSeleccionado={asadorSeleccionado}
               onChange={setAsadorSeleccionado}
               seleccionados={seleccionados}
+              cotizacionTotal={costoTotal}
             />
             <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("catalog")}>Volver al catálogo</Button>
@@ -636,7 +675,7 @@ export function CreateEvent() {
               <CardHeader>
                 <CardTitle className="text-base">Productos seleccionados</CardTitle>
                 <CardDescription>
-                  {seleccionados.length} productos · {formatPrice(costoTotal)} estimado
+                  {seleccionados.length} productos · {formatPrice(costoTotal)} {!cotizacionActiva ? "(est.)" : ""}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -717,7 +756,9 @@ export function CreateEvent() {
                 <CardHeader className="pb-2"><CardTitle className="text-base">Costo productos</CardTitle></CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold text-primary">{formatPrice(costoTotal)}</p>
-                  <p className="text-sm text-muted-foreground">Base antes de cotizar</p>
+                  <p className="text-sm text-muted-foreground">
+                    {cotizacionActiva ? "Cotización seleccionada" : "Estimado — pendiente cotizar"}
+                  </p>
                 </CardContent>
               </Card>
               {asadorSeleccionado && (

@@ -26,7 +26,7 @@ export function Home() {
               <Link to="/login">Iniciar Sesión</Link>
             </Button>
             <Button asChild>
-              <Link to="/seleccion-servicio"> Comenzar Gratis</Link>
+              <Link to="/create-event"> Comenzar Gratis</Link>
             </Button>
           </div>
         </div>
@@ -52,7 +52,7 @@ export function Home() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/seleccion-servicio">
+                <Link to="/create-event">
                   Comenzar Gratis
                 </Link>
               </Button>

@@ -3,15 +3,15 @@ package com.basados.api.entity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "evento_productos")
 public class EventoProducto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_evento_producto")
-    private Long idEventoProducto;
+    @Column(name = "id_evento_producto", updatable = false, nullable = false)
+    private UUID idEventoProducto;
 
     @ManyToOne
     @JoinColumn(name = "id_evento", nullable = false)
@@ -34,11 +34,11 @@ public class EventoProducto {
     public EventoProducto() {
     }
 
-    public Long getIdEventoProducto() {
+    public UUID getIdEventoProducto() {
         return idEventoProducto;
     }
 
-    public void setIdEventoProducto(Long idEventoProducto) {
+    public void setIdEventoProducto(UUID idEventoProducto) {
         this.idEventoProducto = idEventoProducto;
     }
 

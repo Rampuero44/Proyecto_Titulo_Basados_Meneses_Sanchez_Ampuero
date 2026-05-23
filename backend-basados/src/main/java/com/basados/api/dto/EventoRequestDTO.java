@@ -12,72 +12,31 @@ public class EventoRequestDTO {
     private BigDecimal presupuesto;
     private Integer cantidadPersonas;
     private String estado;
-    private Long idOrganizador;
+    private String idOrganizador;
 
-    public EventoRequestDTO() {
-    }
+    public EventoRequestDTO() {}
 
-    public String getNombre() {
-        return nombre;
-    }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
+    public LocalDateTime getFechaEvento() { return fechaEvento; }
+    public void setFechaEvento(LocalDateTime fechaEvento) { this.fechaEvento = fechaEvento; }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
 
-    public LocalDateTime getFechaEvento() {
-        return fechaEvento;
-    }
+    public BigDecimal getPresupuesto() { return presupuesto; }
+    public void setPresupuesto(BigDecimal presupuesto) { this.presupuesto = presupuesto; }
 
-    public void setFechaEvento(LocalDateTime fechaEvento) {
-        this.fechaEvento = fechaEvento;
-    }
+    public Integer getCantidadPersonas() { return cantidadPersonas; }
+    public void setCantidadPersonas(Integer cantidadPersonas) { this.cantidadPersonas = cantidadPersonas; }
 
-    public String getDireccion() {
-        return direccion;
-    }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
-    }
-
-    public BigDecimal getPresupuesto() {
-        return presupuesto;
-    }
-
-    public void setPresupuesto(BigDecimal presupuesto) {
-        this.presupuesto = presupuesto;
-    }
-
-    public Integer getCantidadPersonas() {
-        return cantidadPersonas;
-    }
-
-    public void setCantidadPersonas(Integer cantidadPersonas) {
-        this.cantidadPersonas = cantidadPersonas;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public Long getIdOrganizador() {
-        return idOrganizador;
-    }
-
-    public void setIdOrganizador(Long idOrganizador) {
-        this.idOrganizador = idOrganizador;
-    }
+    public String getIdOrganizador() { return idOrganizador; }
+    public void setIdOrganizador(String idOrganizador) { this.idOrganizador = idOrganizador; }
 }

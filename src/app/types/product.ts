@@ -35,3 +35,21 @@ export interface Cotizacion {
   total: number;
   items: CotizacionItem[];
 }
+export interface ContactoParticipante {
+  id: number;
+  metodo: string;
+  valor: string;
+}
+
+export interface Participante {
+  id: number;
+  nombre: string;
+  contactos: ContactoParticipante[];
+  metodoContacto?: 'sin_notificacion' | 'correo' | 'telefono';
+  contacto?: string;
+  aceptaNotificaciones?: boolean;
+  monto?: number;
+  montoManual?: boolean;
+  sinAlcohol?: boolean;
+  esOrganizador?: boolean;
+}

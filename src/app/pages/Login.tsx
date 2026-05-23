@@ -21,7 +21,7 @@ export function Login() {
     e.preventDefault();
     setCargando(true);
 
-    const { error } = await login(email, password);
+    const { error, user } = await login(email, password);
 
     if (error) {
       toast.error("Email o contraseña incorrectos");
@@ -30,7 +30,8 @@ export function Login() {
     }
 
     toast.success("Bienvenido!");
-    navigate("/dashboard");
+    const rol = user?.user_metadata?.rol ?? "usuario";
+    navigate(rol === "admin" ? "/admin" : "/dashboard");
   };
 
   return (

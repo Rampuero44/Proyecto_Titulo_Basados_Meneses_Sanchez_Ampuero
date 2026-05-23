@@ -4,52 +4,26 @@ import java.math.BigDecimal;
 
 public class EventoParticipanteRequestDTO {
 
-    private Long idEvento;
-    private Long idUsuario;
+    private String idEvento;
+    private String idUsuario;
     private String rol;
     private BigDecimal aporte;
     private Boolean asistencia;
 
-    public EventoParticipanteRequestDTO() {
-    }
+    public EventoParticipanteRequestDTO() {}
 
-    public Long getIdEvento() {
-        return idEvento;
-    }
+    public String getIdEvento() { return idEvento; }
+    public void setIdEvento(String idEvento) { this.idEvento = idEvento; }
 
-    public void setIdEvento(Long idEvento) {
-        this.idEvento = idEvento;
-    }
+    public String getIdUsuario() { return idUsuario; }
+    public void setIdUsuario(String idUsuario) { this.idUsuario = idUsuario; }
 
-    public Long getIdUsuario() {
-        return idUsuario;
-    }
+    public String getRol() { return rol; }
+    public void setRol(String rol) { this.rol = rol; }
 
-    public void setIdUsuario(Long idUsuario) {
-        this.idUsuario = idUsuario;
-    }
+    public BigDecimal getAporte() { return aporte; }
+    public void setAporte(BigDecimal aporte) { this.aporte = aporte; }
 
-    public String getRol() {
-        return rol;
-    }
-
-    public void setRol(String rol) {
-        this.rol = rol;
-    }
-
-    public BigDecimal getAporte() {
-        return aporte;
-    }
-
-    public void setAporte(BigDecimal aporte) {
-        this.aporte = aporte;
-    }
-
-    public Boolean getAsistencia() {
-        return asistencia;
-    }
-
-    public void setAsistencia(Boolean asistencia) {
-        this.asistencia = asistencia;
-    }
+    public Boolean getAsistencia() { return asistencia; }
+    public void setAsistencia(Boolean asistencia) { this.asistencia = asistencia; }
 }

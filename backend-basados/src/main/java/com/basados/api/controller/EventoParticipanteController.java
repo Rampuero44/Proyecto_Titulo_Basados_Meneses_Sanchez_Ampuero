@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/evento-participantes")
@@ -38,25 +39,19 @@ public class EventoParticipanteController {
     }
 
     @PostMapping
-    public EventoParticipante crear(
-            @RequestBody EventoParticipanteRequestDTO dto
-    ) {
+    public EventoParticipante crear(@RequestBody EventoParticipanteRequestDTO dto) {
+        Evento evento = eventoRepository.findById(UUID.fromString(dto.getIdEvento())).orElseThrow();
+        Usuario usuario = usuarioRepository.findById(UUID.fromString(dto.getIdUsuario())).orElseThrow();
 
-        Evento evento = eventoRepository.findById(dto.getIdEvento())
-                .orElseThrow();
+        EventoParticipante ep = new EventoParticipante();
+        ep.setIdEventoParticipante(UUID.randomUUID());
+        ep.setEvento(evento);
+        ep.setUsuario(usuario);
+        ep.setRol(dto.getRol());
+        ep.setAporte(dto.getAporte());
+        ep.setAsistencia(dto.getAsistencia());
+        ep.setFechaUnion(LocalDateTime.now());
 
-        Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
-                .orElseThrow();
-
-        EventoParticipante eventoParticipante = new EventoParticipante();
-
-        eventoParticipante.setEvento(evento);
-        eventoParticipante.setUsuario(usuario);
-        eventoParticipante.setRol(dto.getRol());
-        eventoParticipante.setAporte(dto.getAporte());
-        eventoParticipante.setAsistencia(dto.getAsistencia());
-        eventoParticipante.setFechaUnion(LocalDateTime.now());
-
-        return repository.save(eventoParticipante);
+        return repository.save(ep);
     }
 }

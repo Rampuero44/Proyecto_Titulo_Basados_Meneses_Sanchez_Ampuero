@@ -1,6 +1,6 @@
-com\basados\api\controller\UsuarioController.class
 com\basados\api\dto\CotizacionIaRequest.class
 com\basados\api\dto\CotizacionRequestDTO.class
+com\basados\api\dto\EventoDetalleDTO$ProductoEventoDTO.class
 com\basados\api\entity\Comercio.class
 com\basados\api\dto\DestinatarioDto.class
 com\basados\api\entity\Usuario.class
@@ -34,7 +34,6 @@ com\basados\api\entity\EventoProducto.class
 com\basados\api\dto\EventoResponseDTO.class
 com\basados\api\controller\EventoParticipanteController.class
 com\basados\api\controller\NotificacionController.class
-com\basados\api\controller\TestScrapingController.class
 com\basados\api\entity\Evento.class
 com\basados\api\entity\Formato.class
 com\basados\api\dto\ResumenEventoRequest.class
@@ -42,6 +41,7 @@ com\basados\api\repository\ComercioRepository.class
 com\basados\api\service\WhatsAppService.class
 com\basados\api\controller\CategoriaProductoController.class
 com\basados\api\repository\EventoProductoRepository.class
+com\basados\api\dto\EventoDetalleDTO$ParticipanteEventoDTO.class
 com\basados\api\entity\HistorialPrecio.class
 com\basados\api\repository\ProductoRepository.class
 com\basados\api\entity\EventoParticipante.class
@@ -57,7 +57,7 @@ com\basados\api\controller\ComercioController.class
 com\basados\api\service\EmailService.class
 com\basados\api\controller\HistorialPrecioController.class
 com\basados\api\dto\CotizacionResponseDTO.class
-com\basados\api\service\scraping\LiderGraphQLClient.class
 com\basados\api\dto\IaResponseDTO.class
 com\basados\api\controller\CotizacionController.class
+com\basados\api\dto\EventoDetalleDTO.class
 com\basados\api\controller\EventoController.class

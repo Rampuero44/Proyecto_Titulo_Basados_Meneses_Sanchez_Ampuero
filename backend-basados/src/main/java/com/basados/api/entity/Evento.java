@@ -4,15 +4,15 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "eventos")
 public class Evento {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_evento")
-    private Long idEvento;
+    @Column(name = "id_evento", updatable = false, nullable = false)
+    private UUID idEvento;
 
     @Column(name = "nombre", nullable = false)
     private String nombre;
@@ -61,11 +61,11 @@ public class Evento {
     public Evento() {
     }
 
-    public Long getIdEvento() {
+    public UUID getIdEvento() {
         return idEvento;
     }
 
-    public void setIdEvento(Long idEvento) {
+    public void setIdEvento(UUID idEvento) {
         this.idEvento = idEvento;
     }
 

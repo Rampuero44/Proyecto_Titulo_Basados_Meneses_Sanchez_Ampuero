@@ -1,15 +1,16 @@
 import { Link, useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { LogOut, Users, BarChart3, Shield, Home } from "lucide-react";
-import { storage } from "../utils/localStorage";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
+import { useAuth } from "../context/AuthContext";
 
 export function NavbarAdmin() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    storage.setCurrentUsuario(null);
+  const handleLogout = async () => {
+    await logout();
     toast.success("Sesión cerrada");
     navigate("/");
   };

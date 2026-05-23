@@ -19,6 +19,11 @@ public interface HistorialPrecioRepository
             Producto producto
     );
 
+    List<HistorialPrecio>
+    findByProductoOrderByFechaScrapingDesc(
+            Producto producto
+    );
+
     @Query("""
         SELECT hp FROM HistorialPrecio hp
         WHERE hp.producto = :producto

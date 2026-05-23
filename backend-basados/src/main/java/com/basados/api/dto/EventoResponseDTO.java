@@ -2,10 +2,11 @@ package com.basados.api.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class EventoResponseDTO {
 
-    private Long id;
+    private UUID id;
     private String nombre;
     private String descripcion;
     private LocalDateTime fechaEvento;
@@ -19,7 +20,7 @@ public class EventoResponseDTO {
     }
 
     public EventoResponseDTO(
-            Long id,
+            UUID id,
             String nombre,
             String descripcion,
             LocalDateTime fechaEvento,
@@ -40,7 +41,7 @@ public class EventoResponseDTO {
         this.organizador = organizador;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
