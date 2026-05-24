@@ -11,6 +11,10 @@ const {
     extraerProductosCategoria: extraerProductosCategoriaTottus
 } = require('./scrapers/tottus/scraperCategoria');
 
+const {
+    enriquecerProductosNuevos
+} = require('./services/enriquecimientoService');
+
 const app = express();
 
 const PORT = 3001;
@@ -153,6 +157,16 @@ app.get('/tottus/:slug', async (req, res) => {
     }
 });
 
+app.post('/enriquecer', async (req, res) => {
+    try {
+        console.log('[SERVER] Iniciando enriquecimiento manual');
+        const resultado = await enriquecerProductosNuevos();
+        res.json({ ok: true, ...resultado });
+    } catch (error) {
+        console.error('[SERVER] Error en enriquecimiento:', error.message);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
 
 app.listen(PORT, () => {
 

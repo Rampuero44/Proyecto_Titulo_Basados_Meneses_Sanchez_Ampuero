@@ -42,11 +42,13 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
                AND hp4.precioUnitario IS NOT NULL
              ORDER BY hp4.fechaScraping DESC
              LIMIT 1
-            )
+            ),
+            f.pesoGramos
         )
         FROM Producto p
         LEFT JOIN p.categoria c
         LEFT JOIN p.marca m
+        LEFT JOIN p.formato f
         WHERE p.activo = true
           OR p.activo IS NULL
         ORDER BY p.nombre ASC

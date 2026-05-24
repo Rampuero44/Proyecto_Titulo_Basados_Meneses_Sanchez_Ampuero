@@ -57,6 +57,31 @@ async function buscarProductoPorSku(sku) {
     return result.rows[0];
 }
 
+function extraerPesoGramos(nombre) {
+    if (!nombre) return null;
+    const regex = /(\d+[,.]?\d*)\s*(kg|g|gr)\b/i;
+    const match = nombre.match(regex);
+    if (!match) return null;
+    const valor = parseFloat(match[1].replace(',', '.'));
+    const unidad = match[2].toLowerCase();
+    if (unidad === 'kg') return Math.round(valor * 1000);
+    return Math.round(valor);
+}
+
+async function obtenerOCrearFormato(pesoGramos) {
+    if (!pesoGramos) return null;
+    const nombre = pesoGramos >= 1000 ? `${pesoGramos / 1000} kg` : `${pesoGramos} g`;
+    const existing = await pool.query(
+        'SELECT id_formato FROM formatos WHERE peso_gramos = $1', [pesoGramos]
+    );
+    if (existing.rows.length > 0) return existing.rows[0].id_formato;
+    const inserted = await pool.query(
+        'INSERT INTO formatos (nombre, peso_gramos) VALUES ($1, $2) RETURNING id_formato',
+        [nombre, pesoGramos]
+    );
+    return inserted.rows[0]?.id_formato ?? null;
+}
+
 async function insertarProducto(producto) {
 
     const idCategoria = await obtenerCategoriaId(
@@ -69,6 +94,9 @@ async function insertarProducto(producto) {
         );
     }
 
+    const pesoGramos = extraerPesoGramos(producto.nombre);
+    const idFormato = await obtenerOCrearFormato(pesoGramos);
+
     const result = await pool.query(
         `
         INSERT INTO productos (
@@ -78,16 +106,12 @@ async function insertarProducto(producto) {
             alcoholico,
             sku_scraping,
             url_imagen_original,
+            id_formato,
+            enriquecido,
             fecha_actualizacion
         )
         VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6,
-            CURRENT_TIMESTAMP
+            $1, $2, $3, $4, $5, $6, $7, false, CURRENT_TIMESTAMP
         )
         RETURNING id_producto
         `,
@@ -95,11 +119,10 @@ async function insertarProducto(producto) {
             producto.nombre,
             idCategoria,
             producto.imagenUrl,
-            // Slugs que corresponden a bebidas alcohólicas
-            // Agregar aquí nuevos slugs alcohólicos al incorporar Tottus/Jumbo
             ['bebidas-y-licores'].includes(producto.categoriaBasados),
             producto.skuScraping,
-            producto.imagenUrl
+            producto.imagenUrl,
+            idFormato
         ]
     );
 
@@ -204,5 +227,6 @@ async function guardarProducto(producto) {
 }
 
 module.exports = {
-    guardarProducto
+    guardarProducto,
+    obtenerComercioId
 };

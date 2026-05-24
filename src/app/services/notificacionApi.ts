@@ -8,10 +8,11 @@ export type DestinatarioNotificacion = {
 };
 
 export type ResumenEventoPayload = {
-  eventoId: number;
+  eventoId: string;
   nombreEvento: string;
   fecha: string;
   organizador: string;
+  organizadorEmail: string;
   participantes: number;
   costoTotal: number;
   costoPromedio: number;
@@ -23,28 +24,21 @@ export type ResumenEventoPayload = {
 
 export async function enviarResumenEvento(payload: ResumenEventoPayload) {
   try {
-    console.log("📤 Enviando payload al backend:", payload);
-
     const response = await fetch(`${API_BASE_URL}/notificaciones/resumen`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    console.log("📡 Status response:", response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ Error backend:", errorText);
       throw new Error(errorText || "No se pudo enviar el resumen");
     }
 
-    const data = await response.json();
-    console.log("✅ Respuesta backend:", data);
-    return data;
+    return response.json();
 
   } catch (error) {
-    console.error("💥 Error en fetch:", error);
+    console.error("Error enviando notificación:", error);
     throw error;
   }
 }

@@ -3,10 +3,11 @@ package com.basados.api.dto;
 import java.util.List;
 
 public class ResumenEventoRequest {
-    private Long eventoId;
+    private String eventoId;
     private String nombreEvento;
     private String fecha;
     private String organizador;
+    private String organizadorEmail;
     private Integer participantes;
     private Integer costoTotal;
     private Integer costoPromedio;
@@ -15,11 +16,11 @@ public class ResumenEventoRequest {
     private String cotizacionSeleccionada;
     private List<DestinatarioDto> destinatarios;
 
-    public Long getEventoId() {
+    public String getEventoId() {
         return eventoId;
     }
 
-    public void setEventoId(Long eventoId) {
+    public void setEventoId(String eventoId) {
         this.eventoId = eventoId;
     }
 
@@ -101,5 +102,13 @@ public class ResumenEventoRequest {
 
     public void setDestinatarios(List<DestinatarioDto> destinatarios) {
         this.destinatarios = destinatarios;
+    }
+
+    public String getOrganizadorEmail() {
+        return organizadorEmail;
+    }
+
+    public void setOrganizadorEmail(String organizadorEmail) {
+        this.organizadorEmail = organizadorEmail;
     }
 }

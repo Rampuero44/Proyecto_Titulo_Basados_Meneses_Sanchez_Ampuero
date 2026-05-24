@@ -11,6 +11,7 @@ import { ArrowLeft, Calendar, Plus, ShoppingCart, Trophy, X, AlertTriangle, Wine
 import { generateId, esMayorDeEdad } from "../utils/localStorage";
 import { Participante } from "../types/product";
 import { generarCotizacion } from "../services/cotizacionesApi";
+import { enviarResumenEvento } from "../services/notificacionApi";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
 import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductCatalogStep";
@@ -389,7 +390,13 @@ export function CreateEvent() {
   const validarConfiguracion = () => {
     if (!nombre.trim()) { toast.error("Debes ingresar un nombre para el evento"); return false; }
     if (!fecha) { toast.error("Debes seleccionar una fecha"); return false; }
-    if (participantes.length === 0) { toast.error("Debes agregar al menos un participante"); return false; }
+    if (!esInvitado) {
+      const tieneOrganizador = participantes.some(p => p.esOrganizador);
+      if (!tieneOrganizador && participantes.length === 0) {
+        toast.error("Debes agregar al menos un participante");
+        return false;
+      }
+    }
     return true;
   };
 
@@ -452,9 +459,35 @@ export function CreateEvent() {
         });
       }
 
-      toast.success(
-        "Evento creado correctamente"
-      );
+      toast.success("Evento creado correctamente");
+
+      try {
+        const destinatarios = participantesConCostos
+          .filter(p => p.metodoContacto !== "sin_notificacion" && p.contacto?.trim())
+          .map(p => ({
+            nombre: p.nombre,
+            canal: p.metodoContacto === "correo" ? "email" : "whatsapp" as "email" | "whatsapp",
+            destino: p.contacto!,
+            monto: Math.round(p.monto),
+          }));
+
+        await enviarResumenEvento({
+          eventoId: eventoId,
+          nombreEvento: nombre.trim(),
+          fecha,
+          organizador: currentUsuario.nombre,
+          organizadorEmail: currentUsuario.email,
+          participantes: participantesConCostos.length,
+          costoTotal: presupuestoFinal,
+          costoPromedio: Math.round(presupuestoFinal / Math.max(participantesConCostos.length, 1)),
+          caloriasTotales: Math.round(caloriasTotales),
+          caloriasPorPersona: Math.round(caloriasPorPersona),
+          cotizacionSeleccionada: cotizacionActiva.comercio,
+          destinatarios,
+        });
+      } catch {
+        console.warn("Notificaciones no enviadas, pero el evento fue creado correctamente");
+      }
 
       navigate(`/event/${eventoId}`);
 

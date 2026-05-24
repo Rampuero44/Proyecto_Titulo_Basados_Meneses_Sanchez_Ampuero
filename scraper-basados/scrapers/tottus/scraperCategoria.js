@@ -3,11 +3,12 @@ const categoriasTottus = require('../../config/categoriasTottus');
 const filtrosCategorias = require('../../config/filtrosCategorias');
 const { normalizarTexto } = require('../../utils/normalizadorTexto');
 const { extraerSku } = require('../../utils/extraerSku');
-const { guardarProducto } = require('../../services/productoService');
+const { guardarProducto, obtenerComercioId } = require('../../services/productoService');
 const {
     iniciarLog,
     finalizarLog
 } = require('../../services/scrapingLogService');
+
 
 function pasaFiltros(producto, slugCategoria) {
 
@@ -54,7 +55,6 @@ async function extraerProductosCategoria(slugCategoria) {
     const resultados = [];
     const productosVistos = new Set();
 
-    const ID_COMERCIO_TOTTUS = 2;
 
     try {
 
@@ -64,7 +64,7 @@ async function extraerProductosCategoria(slugCategoria) {
             let productosActualizados = 0;
 
             const idLog = await iniciarLog({
-                idComercio: ID_COMERCIO_TOTTUS,
+                idComercio: await obtenerComercioId('Tottus'),
                 subcategoria: subcategoria.nombre
             });
 

@@ -219,12 +219,9 @@ export function CostSplitStep({ participantes, total, costoAlcoholTotal, onBack,
       return;
     }
 
-    const confirmar = window.confirm("¿Estás seguro de enviar las notificaciones de costo a los participantes?");
-    if (!confirmar) {
-      return;
-    }
+    const confirmar = window.confirm("¿Estás seguro de finalizar el evento y enviar notificaciones a los participantes?");
+    if (!confirmar) return;
 
-    toast.success("Notificaciones enviadas correctamente (simulación)");
     onConfirm(rows.map((row) => ({ ...row, monto: roundMoney(row.monto) })));
   };
 

@@ -11,6 +11,7 @@ export interface Producto {
   slugCategoria?: string;
   marca?: string;
   calorias?: number;
+  pesoGramos?: number;
   alcoholico?: boolean;
   imagenUrl?: string;
   precioDesde?: number;

@@ -183,6 +183,13 @@ function ProductCard({
         {product.marca && (
           <p className="text-xs text-muted-foreground">{product.marca}</p>
         )}
+        {product.pesoGramos != null && product.pesoGramos > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {product.pesoGramos >= 1000
+              ? `${(product.pesoGramos / 1000).toFixed(1)} kg`
+              : `${product.pesoGramos} g`}
+          </p>
+        )}
       </CardHeader>
 
       <CardContent className="flex-1 pb-2">

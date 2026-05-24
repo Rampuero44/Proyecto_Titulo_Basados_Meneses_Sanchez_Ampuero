@@ -33,9 +33,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const sincronizarNombre = async (user: User) => {
+    if (user.user_metadata?.nombre) return user;
+
+    const { data } = await supabase
+      .from("usuarios")
+      .select("nombre, rol")
+      .eq("correo", user.email)
+      .single();
+
+    if (data?.nombre) {
+      await supabase.auth.updateUser({
+        data: {
+          nombre: data.nombre,
+          rol: data.rol ?? "usuario"
+        }
+      });
+      const { data: refreshed } = await supabase.auth.getUser();
+      return refreshed?.user ?? user;
+    }
+    return user;
+  };
+
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null, user: data?.user ?? null };
+    if (error || !data.user) return { error: error?.message ?? null, user: null };
+
+    const userSincronizado = await sincronizarNombre(data.user);
+    return { error: null, user: userSincronizado };
   };
 
   const register = async (email: string, password: string, nombre: string, fechaNacimiento: string) => {

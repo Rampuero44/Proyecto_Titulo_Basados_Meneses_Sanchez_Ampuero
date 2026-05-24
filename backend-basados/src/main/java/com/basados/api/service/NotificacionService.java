@@ -32,7 +32,23 @@ public class NotificacionService {
             return new NotificacionResponse(0, 0);
         }
 
-        for (DestinatarioDto destinatario : request.getDestinatarios()) {
+        java.util.List<DestinatarioDto> destinatarios = new java.util.ArrayList<>(request.getDestinatarios());
+
+        if (request.getOrganizadorEmail() != null && !request.getOrganizadorEmail().isBlank()) {
+            boolean organizadorIncluido = destinatarios.stream()
+                .anyMatch(d -> request.getOrganizadorEmail().equalsIgnoreCase(d.getDestino()));
+
+            if (!organizadorIncluido) {
+                DestinatarioDto organizador = new DestinatarioDto();
+                organizador.setNombre(request.getOrganizador());
+                organizador.setCanal("email");
+                organizador.setDestino(request.getOrganizadorEmail());
+                organizador.setMonto(request.getCostoPromedio());
+                destinatarios.add(0, organizador);
+            }
+        }
+
+        for (DestinatarioDto destinatario : destinatarios) {
             if (destinatario.getCanal() == null || destinatario.getDestino() == null || destinatario.getDestino().isBlank()) {
                 continue;
             }
@@ -41,9 +57,9 @@ public class NotificacionService {
                 try {
                     whatsAppService.enviarMensaje(destinatario.getDestino(), mensajeWhatsapp);
                     enviadosWhatsapp++;
-                    System.out.println("✅ WhatsApp enviado a " + destinatario.getDestino());
+                    System.out.println("WhatsApp enviado a " + destinatario.getDestino());
                 } catch (Exception e) {
-                    System.err.println("❌ Error enviando WhatsApp a " + destinatario.getDestino());
+                    System.err.println("Error enviando WhatsApp a " + destinatario.getDestino());
                     e.printStackTrace();
                 }
             } else if ("email".equalsIgnoreCase(destinatario.getCanal())) {
@@ -53,16 +69,16 @@ public class NotificacionService {
 
                     emailService.enviarCorreoConAdjunto(
                             destinatario.getDestino(),
-                            "Resumen de tu evento BASADOS 📄",
+                            "Resumen de tu evento BASADOS",
                             cuerpoPersonalizado,
                             pdf
                     );
 
                     enviadosEmail++;
-                    System.out.println("📎 Email con PDF enviado a " + destinatario.getDestino());
+                    System.out.println("Email con PDF enviado a " + destinatario.getDestino());
 
                 } catch (Exception e) {
-                    System.err.println("❌ Error enviando email a " + destinatario.getDestino());
+                    System.err.println("Error enviando email a " + destinatario.getDestino());
                     e.printStackTrace();
                 }
             }
@@ -73,18 +89,18 @@ public class NotificacionService {
 
     private String construirCorreoPersonalizado(ResumenEventoRequest request, DestinatarioDto destinatario) {
         return "Hola " + valorSeguro(destinatario.getNombre()) + ",\n\n" +
-                "Tu evento fue planificado con BASADOS 🔥\n\n" +
+                "Tu evento fue planificado con BASADOS\n\n" +
                 "Evento: " + valorSeguro(request.getNombreEvento()) + "\n" +
                 "Fecha: " + valorSeguro(request.getFecha()) + "\n" +
                 "Participantes: " + valorNumero(request.getParticipantes()) + "\n\n" +
-                "💰 Tu aporte: $" + valorNumero(destinatario.getMonto()) + "\n\n" +
+                "Tu aporte: $" + valorNumero(destinatario.getMonto()) + "\n\n" +
                 "Costo total: $" + valorNumero(request.getCostoTotal()) + "\n" +
                 "Promedio por persona: $" + valorNumero(request.getCostoPromedio()) + "\n" +
-                "🔥 Calorías por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
-                "🛒 Supermercado: " + valorSeguro(request.getCotizacionSeleccionada()) + "\n\n" +
+                "Calorias por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
+                "Supermercado: " + valorSeguro(request.getCotizacionSeleccionada()) + "\n\n" +
                 "Organizador: " + valorSeguro(request.getOrganizador()) + "\n\n" +
-                "Adjuntamos además tu resumen en PDF.\n\n" +
-                "Gracias por usar BASADOS 🚀";
+                "Adjuntamos tu resumen en PDF.\n\n" +
+                "Gracias por usar BASADOS";
     }
 
     private String construirMensajeWhatsapp(ResumenEventoRequest request) {
@@ -94,7 +110,7 @@ public class NotificacionService {
                 "Participantes: " + valorNumero(request.getParticipantes()) + "\n" +
                 "Costo total: $" + valorNumero(request.getCostoTotal()) + "\n" +
                 "Promedio por persona: $" + valorNumero(request.getCostoPromedio()) + "\n" +
-                "Calorías por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
+                "Calorias por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
                 "Supermercado sugerido: " + valorSeguro(request.getCotizacionSeleccionada()) + "\n" +
                 "Organizador: " + valorSeguro(request.getOrganizador());
     }
