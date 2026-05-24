@@ -7,6 +7,10 @@ const {
     extraerProductosCategoria
 } = require('./scrapers/lider/scraperCategoria');
 
+const {
+    extraerProductosCategoria: extraerProductosCategoriaTottus
+} = require('./scrapers/tottus/scraperCategoria');
+
 const app = express();
 
 const PORT = 3001;
@@ -107,6 +111,31 @@ app.get('/categoria/:slug', async (req, res) => {
     try {
 
         const productos = await extraerProductosCategoria(slug);
+
+        res.json({
+            categoria: slug,
+            total: productos.length,
+            productos
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
+
+
+app.get('/tottus/:slug', async (req, res) => {
+
+    const slug = req.params.slug;
+
+    try {
+
+        const productos = await extraerProductosCategoriaTottus(slug);
 
         res.json({
             categoria: slug,
