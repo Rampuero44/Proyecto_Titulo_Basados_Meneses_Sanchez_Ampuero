@@ -43,7 +43,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
              ORDER BY hp4.fechaScraping DESC
              LIMIT 1
             ),
-            f.pesoGramos
+            f.pesoGramos,
+            f.unidad
         )
         FROM Producto p
         LEFT JOIN p.categoria c

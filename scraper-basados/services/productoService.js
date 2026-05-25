@@ -70,14 +70,14 @@ function extraerPesoGramos(nombre) {
 
 async function obtenerOCrearFormato(pesoGramos) {
     if (!pesoGramos) return null;
-    const nombre = pesoGramos >= 1000 ? `${pesoGramos / 1000} kg` : `${pesoGramos} g`;
+    const nombre = pesoGramos >= 1000 ? `${(pesoGramos / 1000).toFixed(1)} kg` : `${pesoGramos} g`;
     const existing = await pool.query(
-        'SELECT id_formato FROM formatos WHERE peso_gramos = $1', [pesoGramos]
+        'SELECT id_formato FROM formatos WHERE nombre = $1 AND unidad = $2', [nombre, 'g']
     );
     if (existing.rows.length > 0) return existing.rows[0].id_formato;
     const inserted = await pool.query(
-        'INSERT INTO formatos (nombre, peso_gramos) VALUES ($1, $2) RETURNING id_formato',
-        [nombre, pesoGramos]
+        'INSERT INTO formatos (nombre, peso_gramos, unidad) VALUES ($1, $2, $3) ON CONFLICT (nombre, unidad) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id_formato',
+        [nombre, pesoGramos, 'g']
     );
     return inserted.rows[0]?.id_formato ?? null;
 }

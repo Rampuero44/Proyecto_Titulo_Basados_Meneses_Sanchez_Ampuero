@@ -185,9 +185,15 @@ function ProductCard({
         )}
         {product.pesoGramos != null && product.pesoGramos > 0 && (
           <p className="text-xs text-muted-foreground">
-            {product.pesoGramos >= 1000
-              ? `${(product.pesoGramos / 1000).toFixed(1)} kg`
-              : `${product.pesoGramos} g`}
+            {product.unidadFormato === 'ml'
+              ? product.pesoGramos >= 1000
+                ? `${(product.pesoGramos / 1000).toFixed(1)} L`
+                : `${product.pesoGramos} ml`
+              : product.unidadFormato === 'un'
+                ? `${product.pesoGramos} unidades`
+                : product.pesoGramos >= 1000
+                  ? `${(product.pesoGramos / 1000).toFixed(1)} kg`
+                  : `${product.pesoGramos} g`}
           </p>
         )}
       </CardHeader>

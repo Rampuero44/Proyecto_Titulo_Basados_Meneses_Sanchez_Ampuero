@@ -18,6 +18,9 @@ public class Formato {
     @Column(name = "peso_gramos")
     private BigDecimal pesoGramos;
 
+    @Column(name = "unidad", length = 10)
+    private String unidad;
+
     public Formato() {}
 
     public Long getIdFormato() { return idFormato; }
@@ -28,4 +31,7 @@ public class Formato {
 
     public BigDecimal getPesoGramos() { return pesoGramos; }
     public void setPesoGramos(BigDecimal pesoGramos) { this.pesoGramos = pesoGramos; }
+
+    public String getUnidad() { return unidad; }
+    public void setUnidad(String unidad) { this.unidad = unidad; }
 }

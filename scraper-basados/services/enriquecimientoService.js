@@ -22,15 +22,18 @@ async function consultarClaude(productos) {
 
     const prompt = `Eres un experto en productos alimenticios chilenos. Para cada producto de la lista, extrae la siguiente información en formato JSON.
 
+CRÍTICO: Responde ÚNICAMENTE con el array JSON. Sin texto antes, sin texto después, sin explicaciones, sin markdown, sin bloques de código, sin backticks. Solo el array JSON puro comenzando con [ y terminando con ].
+
 Productos:
 ${listaProductos}
 
-Responde SOLO con un array JSON válido, sin texto adicional, sin markdown, sin backticks. Formato exacto:
+Formato exacto requerido:
 [
   {
     "index": 1,
-    "marca": "nombre de la marca o null si no se puede determinar",
-    "peso_gramos": número entero en gramos o null (convierte kg a gramos, ml a null),
+    "marca": "nombre de la marca comercial registrada (ej: Agrosuper, Don Pollo, Belmont, Sureña, Tottus, Lider, Ariztía, Sopraval, Miraflores, Natura, Chef) o null. IMPORTANTE: solo devuelve una marca si es claramente un nombre comercial registrado — NO devuelves descripciones del producto como 'Trutro', 'Vacuno', 'Pechuga', 'Maravilla', 'Canola', 'Oliva', 'Coco' (estos son tipos de aceite, no marcas). Capitaliza correctamente (primera letra mayúscula, resto minúsculas, ej: 'TOTTUS' → 'Tottus', 'DON POLLO' → 'Don Pollo')",
+    "peso_gramos": número entero en gramos o null. Reglas estrictas: (1) Si el nombre incluye peso fijo (ej: "850 g", "2 kg"), conviértelo a gramos. (2) Si es una CARNE DE RES, AVE O PESCADO sin peso indicado (se vende al corte por kilo), usa 1000. (3) Si es un aceite, bebida, salsa u otro líquido, usa null aunque el precio sea por litro. (4) Para cualquier otro producto sin peso indicado, usa null,
+    "unidad_formato": "g" para sólidos (carnes, embutidos, verduras), "ml" para líquidos (aceites, bebidas, salsas) o "un" para productos contables (packs, huevos). Si es líquido sin volumen indicado usa "ml",
     "calorias_100g": número entero de calorías por 100g o null,
     "proteinas_100g": número con decimales de proteínas por 100g o null,
     "grasas_100g": número con decimales de grasas por 100g o null,
@@ -40,7 +43,8 @@ Responde SOLO con un array JSON válido, sin texto adicional, sin markdown, sin 
 
 Reglas:
 - Para carnes sin marca visible, usa null en marca
-- peso_gramos debe ser el peso del envase (ej: "850 g" → 850, "2 kg" → 2000)
+- peso_gramos debe ser el peso del envase en gramos (ej: "850 g" → 850, "2 kg" → 2000). Para carnes/pescados sin peso indicado usa 1000. Para líquidos sin volumen indicado usa 1000 (representa 1 litro base)
+- Para líquidos con volumen indicado (ej: "1 L", "500 ml") usa ese valor en ml como peso_gramos con unidad "ml"
 - calorias_100g debe estar entre 0 y 900
 - Si no puedes determinar un valor con confianza razonable, usa null`;
 
@@ -65,16 +69,33 @@ Reglas:
     const data = await response.json();
     const texto = data.content[0].text.trim();
 
+    // Intentar parsear directamente
     try {
         return JSON.parse(texto);
-    } catch {
+    } catch {}
+
+    // Limpiar markdown y reintentar
+    try {
+        const limpio = texto
+            .replace(/```json\s*/gi, '')
+            .replace(/```\s*/g, '')
+            .trim();
+        return JSON.parse(limpio);
+    } catch {}
+
+    // Extraer array con regex
+    try {
         const match = texto.match(/\[[\s\S]*\]/);
         if (match) return JSON.parse(match[0]);
-        throw new Error('Respuesta JSON inválida de Claude');
-    }
+    } catch {}
+
+    // Si todo falla, retornar array vacío para no bloquear el proceso
+    console.warn('[ENRIQUECIMIENTO] JSON inválido, saltando batch');
+    return [];
 }
 
 function validarDatos(datos) {
+    const unidad = ['g', 'ml', 'un'].includes(datos.unidad_formato) ? datos.unidad_formato : 'g';
     return {
         calorias: datos.calorias_100g >= 0 && datos.calorias_100g <= 900
             ? datos.calorias_100g : null,
@@ -87,7 +108,8 @@ function validarDatos(datos) {
         peso_gramos: datos.peso_gramos > 0 && datos.peso_gramos <= 50000
             ? datos.peso_gramos : null,
         marca: datos.marca && datos.marca.length > 0 && datos.marca.length <= 100
-            ? datos.marca : null
+            ? datos.marca : null,
+        unidad_formato: unidad
     };
 }
 
@@ -115,31 +137,34 @@ async function obtenerOCrearMarca(nombreMarca) {
     return retry.rows[0]?.id_marca ?? null;
 }
 
-async function obtenerOCrearFormato(pesoGramos) {
-    if (!pesoGramos) return null;
+async function obtenerOCrearFormato(cantidad, unidad = 'g') {
+    if (!cantidad) return null;
 
-    const nombre = pesoGramos >= 1000
-        ? `${pesoGramos / 1000} kg`
-        : `${pesoGramos} g`;
+    let nombre;
+    if (unidad === 'ml') {
+        nombre = cantidad >= 1000 ? `${(cantidad / 1000).toFixed(1)} L` : `${cantidad} ml`;
+    } else if (unidad === 'un') {
+        nombre = `${cantidad} unidades`;
+    } else {
+        nombre = cantidad >= 1000 ? `${(cantidad / 1000).toFixed(1)} kg` : `${cantidad} g`;
+    }
 
     const existing = await pool.query(
-        'SELECT id_formato FROM formatos WHERE peso_gramos = $1',
-        [pesoGramos]
+        'SELECT id_formato FROM formatos WHERE nombre = $1 AND unidad = $2',
+        [nombre, unidad]
     );
-
     if (existing.rows.length > 0) return existing.rows[0].id_formato;
 
     const inserted = await pool.query(
-        'INSERT INTO formatos (nombre, peso_gramos) VALUES ($1, $2) RETURNING id_formato',
-        [nombre, pesoGramos]
+        'INSERT INTO formatos (nombre, peso_gramos, unidad) VALUES ($1, $2, $3) ON CONFLICT (nombre, unidad) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id_formato',
+        [nombre, unidad === 'g' ? cantidad : null, unidad]
     );
-
     return inserted.rows[0]?.id_formato ?? null;
 }
 
 async function actualizarProducto(idProducto, datos) {
     const idMarca = await obtenerOCrearMarca(datos.marca);
-    const idFormato = await obtenerOCrearFormato(datos.peso_gramos);
+    const idFormato = await obtenerOCrearFormato(datos.peso_gramos, datos.unidad_formato ?? 'g');
 
     await pool.query(`
         UPDATE productos SET

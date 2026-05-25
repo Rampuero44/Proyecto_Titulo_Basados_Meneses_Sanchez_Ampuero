@@ -15,6 +15,7 @@ public class ProductoResponseDTO {
     private BigDecimal precioDesde;
     private String precioUnitario;
     private BigDecimal pesoGramos;
+    private String unidadFormato;
 
     public ProductoResponseDTO() {}
 
@@ -29,7 +30,8 @@ public class ProductoResponseDTO {
             String imagenUrl,
             BigDecimal precioDesde,
             String precioUnitario,
-            BigDecimal pesoGramos
+            BigDecimal pesoGramos,
+            String unidadFormato
     ) {
         this.id = id;
         this.nombre = nombre;
@@ -42,6 +44,7 @@ public class ProductoResponseDTO {
         this.precioDesde = precioDesde;
         this.precioUnitario = precioUnitario;
         this.pesoGramos = pesoGramos;
+        this.unidadFormato = unidadFormato;
     }
 
     public Long getId() { return id; }
@@ -76,4 +79,7 @@ public class ProductoResponseDTO {
 
     public BigDecimal getPesoGramos() { return pesoGramos; }
     public void setPesoGramos(BigDecimal pesoGramos) { this.pesoGramos = pesoGramos; }
+
+    public String getUnidadFormato() { return unidadFormato; }
+    public void setUnidadFormato(String unidadFormato) { this.unidadFormato = unidadFormato; }
 }

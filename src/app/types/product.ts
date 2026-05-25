@@ -12,6 +12,7 @@ export interface Producto {
   marca?: string;
   calorias?: number;
   pesoGramos?: number;
+  unidadFormato?: string;
   alcoholico?: boolean;
   imagenUrl?: string;
   precioDesde?: number;
