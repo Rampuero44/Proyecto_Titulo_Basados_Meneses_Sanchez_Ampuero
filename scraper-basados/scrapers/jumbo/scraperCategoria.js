@@ -97,7 +97,7 @@ async function extraerProductosCategoria(slugCategoria) {
 
             // Jumbo tiene id de comercio 2 en la BD
             const idLog = await iniciarLog({
-                idComercio: 2,
+                idComercio: await obtenerComercioId('Jumbo'),
                 subcategoria: subcategoria.nombre
             });
 

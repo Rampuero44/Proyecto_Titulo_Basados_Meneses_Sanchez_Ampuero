@@ -111,16 +111,29 @@ async function extraerProductosCategoria(slugCategoria) {
 
                         const card = cards[i];
 
-                        const nombre = await card
-                            .locator('.pod-title, [class*="title"], b')
+                        const link = await card
+                            .locator('a[href]')
+                            .first()
+                            .getAttribute('href')
+                            .catch(() => null);
+
+                        // Extraer nombre desde el slug de la URL (posición 6)
+                        const nombreDesdeUrl = link
+                            ? link.split('/')[5]?.replace(/-/g, ' ')
+                                .replace(/\b\w/g, c => c.toUpperCase())
+                                .trim()
+                            : null;
+
+                        const nombre = nombreDesdeUrl || await card
+                            .locator('[class*="pod-title"], [class*="title"]')
                             .first()
                             .innerText()
                             .catch(() => null);
 
-                        const precioTexto = await card
-                            .locator('[data-internet-price]')
+                        const nombreTexto = await card
+                            .locator('[class*="pod-title"], [class*="title--rebranding"]')
                             .first()
-                            .getAttribute('data-internet-price')
+                            .innerText()
                             .catch(() => null);
 
                         const precioPrincipal = precioTexto
@@ -153,6 +166,15 @@ async function extraerProductosCategoria(slugCategoria) {
                             ? link
                             : `https://www.tottus.cl${link}`;
 
+                        const nombreDesdeUrl = link
+                            ? link.split('/')[5]?.replace(/-/g, ' ')
+                                .replace(/\b\w/g, c => c.toUpperCase())
+                                .trim()
+                            : null;
+
+                        const nombre = (nombreTexto && nombreTexto.length > 3 && !/^\d+$/.test(nombreTexto))
+                            ? nombreTexto.trim()
+                            : nombreDesdeUrl;
                         const sku = extraerSku(urlCompleta);
 
                         const producto = {

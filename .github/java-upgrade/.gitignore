@@ -15,4 +15,5 @@ target/
 .DS_Store
 Thumbs.db
 
-target/
+# Archivos compilados Java
+backend-basados/target/
