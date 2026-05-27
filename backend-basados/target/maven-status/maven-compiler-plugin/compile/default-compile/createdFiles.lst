@@ -1,3 +1,4 @@
+com\basados\api\dto\MaestroParrilleroDTO.class
 com\basados\api\dto\CotizacionIaRequest.class
 com\basados\api\dto\CotizacionRequestDTO.class
 com\basados\api\dto\EventoDetalleDTO$ProductoEventoDTO.class
@@ -25,6 +26,7 @@ com\basados\api\dto\ProductoResponseDTO.class
 com\basados\api\dto\CotizacionComercioDTO.class
 com\basados\api\repository\GastoEventoRepository.class
 com\basados\api\controller\GastoEventoController.class
+com\basados\api\controller\MaestroParrilleroController.class
 com\basados\api\repository\EventoRepository.class
 com\basados\api\dto\EventoProductoRequestDTO.class
 com\basados\api\config\WebConfig$1.class
@@ -40,6 +42,7 @@ com\basados\api\dto\ResumenEventoRequest.class
 com\basados\api\repository\ComercioRepository.class
 com\basados\api\service\WhatsAppService.class
 com\basados\api\controller\CategoriaProductoController.class
+com\basados\api\repository\MaestroParrilleroRepository.class
 com\basados\api\repository\EventoProductoRepository.class
 com\basados\api\dto\EventoDetalleDTO$ParticipanteEventoDTO.class
 com\basados\api\entity\HistorialPrecio.class
@@ -47,6 +50,7 @@ com\basados\api\repository\ProductoRepository.class
 com\basados\api\entity\EventoParticipante.class
 com\basados\api\entity\Producto.class
 com\basados\api\entity\CategoriaProducto.class
+com\basados\api\entity\MaestroParrillero.class
 com\basados\api\dto\CotizacionItemDTO.class
 com\basados\api\dto\SugerenciasRequest.class
 com\basados\api\repository\MarcaRepository.class

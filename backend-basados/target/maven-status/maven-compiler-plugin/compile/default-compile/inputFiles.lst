@@ -1,60 +1,64 @@
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\BasadosApiApplication.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\config\WebConfig.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\CategoriaProductoController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\ComercioController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\CotizacionController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\EventoController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\EventoParticipanteController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\EventoProductoController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\GastoEventoController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\HistorialPrecioController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\IaController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\NotificacionController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\ProductoController.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionComercioDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionIaRequest.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionItemDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionProductoDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionRequestDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionResponseDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionResultadoDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\DestinatarioDto.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoDetalleDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoParticipanteRequestDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoProductoRequestDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoRequestDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoResponseDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\IaResponseDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\NotificacionResponse.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\ProductoIaDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\ProductoResponseDTO.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\ResumenEventoRequest.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\SugerenciasRequest.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\CategoriaProducto.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Comercio.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Evento.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\EventoParticipante.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\EventoProducto.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Formato.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\GastoEvento.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\HistorialPrecio.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Marca.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Producto.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Usuario.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\CategoriaProductoRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\ComercioRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\EventoParticipanteRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\EventoProductoRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\EventoRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\FormatoRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\GastoEventoRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\HistorialPrecioRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\MarcaRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\ProductoRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\UsuarioRepository.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\cotizacion\CotizacionService.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\EmailService.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\ia\IaService.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\NotificacionService.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\PdfService.java
-C:\Users\hecto\Desktop\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\WhatsAppService.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\BasadosApiApplication.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\config\WebConfig.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\CategoriaProductoController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\ComercioController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\CotizacionController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\EventoController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\EventoParticipanteController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\EventoProductoController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\GastoEventoController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\HistorialPrecioController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\IaController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\MaestroParrilleroController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\NotificacionController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\controller\ProductoController.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionComercioDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionIaRequest.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionItemDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionProductoDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionRequestDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionResponseDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\CotizacionResultadoDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\DestinatarioDto.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoDetalleDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoParticipanteRequestDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoProductoRequestDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoRequestDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\EventoResponseDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\IaResponseDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\MaestroParrilleroDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\NotificacionResponse.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\ProductoIaDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\ProductoResponseDTO.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\ResumenEventoRequest.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\dto\SugerenciasRequest.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\CategoriaProducto.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Comercio.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Evento.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\EventoParticipante.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\EventoProducto.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Formato.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\GastoEvento.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\HistorialPrecio.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\MaestroParrillero.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Marca.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Producto.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\entity\Usuario.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\CategoriaProductoRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\ComercioRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\EventoParticipanteRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\EventoProductoRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\EventoRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\FormatoRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\GastoEventoRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\HistorialPrecioRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\MaestroParrilleroRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\MarcaRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\ProductoRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\repository\UsuarioRepository.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\cotizacion\CotizacionService.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\EmailService.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\ia\IaService.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\NotificacionService.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\PdfService.java
+C:\Proyecto Titulo\rama2\Proyecto_Titulo_Basados_Meneses_Sanchez_Ampuero\backend-basados\src\main\java\com\basados\api\service\WhatsAppService.java

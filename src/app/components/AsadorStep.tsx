@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { Star, Phone, Mail, MapPin, CreditCard, ChevronRight, X, UserCheck, Users, ClipboardList } from "lucide-react";
-import { mockAsadores, Asador } from "../data/mockAsadores";
+import { useState, useEffect } from "react";
+import { Star, Phone, Mail, CreditCard, ChevronRight, X, UserCheck, Users, ClipboardList } from "lucide-react";
+import { MaestroParrillero, obtenerMaestros } from "../services/asadoresApi";
 import { ProductoSeleccionado } from "./ProductCatalogStep";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 
 const formatPrice = (price: number) =>
@@ -22,8 +21,6 @@ const StarRating = ({ rating }: { rating: number }) => (
   </div>
 );
 
-// ─── Resumen productos ────────────────────────────────────────────────────────
-
 function ResumenProductos({
   seleccionados,
   cotizacionTotal,
@@ -31,13 +28,9 @@ function ResumenProductos({
   seleccionados: ProductoSeleccionado[];
   cotizacionTotal?: number;
 }) {
-
   const total = cotizacionTotal ?? 0;
-
   const calorias = seleccionados.reduce(
-
     (sum, s) => sum + ((s.product.calorias ?? 0) * s.cantidad),
-
     0
   );
   if (seleccionados.length === 0) return null;
@@ -48,77 +41,45 @@ function ResumenProductos({
         <ClipboardList className="size-4" />
         Productos del evento
       </div>
-
       <div className="space-y-1 max-h-52 overflow-y-auto">
         {seleccionados.map((s) => (
-          <div
-            key={s.product.id}
-            className="flex justify-between text-xs"
-          >
-            <span className="truncate flex-1 mr-2 text-muted-foreground">
-              {s.product.nombre}
-            </span>
-
-            <span className="shrink-0">
-              ×{s.cantidad}
-            </span>
+          <div key={s.product.id} className="flex justify-between text-xs">
+            <span className="truncate flex-1 mr-2 text-muted-foreground">{s.product.nombre}</span>
+            <span className="shrink-0">×{s.cantidad}</span>
           </div>
         ))}
       </div>
-
       <div className="border-t pt-2 space-y-1 text-xs">
-
         <div className="flex justify-between">
-          <span className="text-muted-foreground">
-            Total productos
-          </span>
-
-          <span className="font-bold">
-            {formatPrice(total)}
-          </span>
+          <span className="text-muted-foreground">Total productos</span>
+          <span className="font-bold">{formatPrice(total)}</span>
         </div>
-
         {calorias > 0 && (
           <div className="flex justify-between">
-
-            <span className="text-muted-foreground">
-              Calorías
-            </span>
-
-            <span className="font-medium">
-              {calorias.toLocaleString()} kcal
-            </span>
-
+            <span className="text-muted-foreground">Calorías</span>
+            <span className="font-medium">{calorias.toLocaleString()} kcal</span>
           </div>
         )}
-
       </div>
-
       <p className="text-xs text-muted-foreground pt-1 border-t">
         El costo del maestro asador se sumará aparte.
       </p>
-
     </div>
   );
 }
 
-// ─── Card del asador ─────────────────────────────────────────────────────────
-
 function AsadorCard({
   asador,
   seleccionado,
-  cantParticipantes,
   onSeleccionar,
   onDeseleccionar,
 }: {
-  asador: Asador;
+  asador: MaestroParrillero;
   seleccionado: boolean;
-  cantParticipantes: number;
   onSeleccionar: () => void;
   onDeseleccionar: () => void;
 }) {
   const [expandido, setExpandido] = useState(false);
-  const tarifaTotal = asador.tarifaBase + asador.tarifaPorPersona * cantParticipantes;
 
   return (
     <Card className={`flex flex-col transition-all ${seleccionado ? "border-primary ring-1 ring-primary" : "hover:shadow-md"}`}>
@@ -129,11 +90,11 @@ function AsadorCard({
               {asador.nombre.charAt(0)}
             </div>
             <div>
-              <CardTitle className="text-base leading-tight">{asador.nombre}</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">{asador.redSocial}</p>
+              <CardTitle className="text-base leading-tight">{asador.nombre} {asador.apellido}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">{asador.experienciaAnos} años de experiencia</p>
             </div>
           </div>
-          <StarRating rating={asador.calificacion} />
+          <StarRating rating={asador.puntuacion} />
         </div>
       </CardHeader>
 
@@ -147,32 +108,10 @@ function AsadorCard({
           </button>
         )}
         <Separator />
-        <div className="flex items-start gap-2 text-sm">
-          <MapPin className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-          <span className="text-muted-foreground">
-            {asador.zonas[0]?.comunas.slice(0, 3).join(", ")}
-            {asador.zonas[0]?.comunas.length > 3 && ` +${asador.zonas[0].comunas.length - 3} más`}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <CreditCard className="size-4 text-muted-foreground shrink-0" />
-          {asador.formasPago.map((fp) => (
-            <Badge key={fp} variant="secondary" className="text-xs">{fp}</Badge>
-          ))}
-        </div>
-        <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Tarifa base</span>
-            <span className="font-medium">{formatPrice(asador.tarifaBase)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Por persona ({cantParticipantes})</span>
-            <span className="font-medium">{formatPrice(asador.tarifaPorPersona * cantParticipantes)}</span>
-          </div>
-          <Separator className="my-1" />
+        <div className="rounded-lg bg-muted/50 p-3">
           <div className="flex justify-between text-sm font-bold">
-            <span>Total estimado</span>
-            <span className="text-primary">{formatPrice(tarifaTotal)}</span>
+            <span>Valor del servicio</span>
+            <span className="text-primary">{formatPrice(asador.valorServicio)}</span>
           </div>
         </div>
         <div className="flex gap-3 text-xs text-muted-foreground">
@@ -196,23 +135,32 @@ function AsadorCard({
   );
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
-
 interface Props {
   cantParticipantes: number;
-  asadorSeleccionado: Asador | null;
-  onChange: (asador: Asador | null) => void;
+  asadorSeleccionado: MaestroParrillero | null;
+  onChange: (asador: MaestroParrillero | null) => void;
   seleccionados: ProductoSeleccionado[];
   cotizacionTotal?: number;
 }
 
-export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, seleccionados,
-  cotizacionTotal }: Props) {
+export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, seleccionados, cotizacionTotal }: Props) {
   const [incluirServicio, setIncluirServicio] = useState<boolean | null>(
     asadorSeleccionado ? true : null
   );
+  const [maestros, setMaestros] = useState<MaestroParrillero[]>([]);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // ── Pantalla inicial: ¿quieres maestro asador? ──
+  useEffect(() => {
+    if (incluirServicio === true && maestros.length === 0) {
+      setCargando(true);
+      obtenerMaestros()
+        .then(setMaestros)
+        .catch(() => setError("No se pudieron cargar los maestros asadores"))
+        .finally(() => setCargando(false));
+    }
+  }, [incluirServicio]);
+
   if (incluirServicio === null) {
     return (
       <div className="space-y-6">
@@ -222,9 +170,7 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
             ¿Quieres contratar un maestro asador profesional para tu evento?
           </p>
         </div>
-
         <div className="flex gap-6 items-start">
-          {/* Tarjetas de selección centradas */}
           <div className="flex-1 grid gap-4 sm:grid-cols-2 place-items-center">
             <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all" onClick={() => setIncluirServicio(true)}>
               <CardContent className="pt-6 text-center space-y-3">
@@ -236,7 +182,6 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
                 <ChevronRight className="size-5 mx-auto text-primary" />
               </CardContent>
             </Card>
-
             <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all" onClick={() => { setIncluirServicio(false); onChange(null); }}>
               <CardContent className="pt-6 text-center space-y-3">
                 <div className="text-4xl">🔥</div>
@@ -248,28 +193,17 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
               </CardContent>
             </Card>
           </div>
-
-          {/* Resumen lateral derecho */}
           <div className="hidden md:block w-64 shrink-0">
-            <ResumenProductos
-              seleccionados={seleccionados}
-              cotizacionTotal={cotizacionTotal}
-            />
+            <ResumenProductos seleccionados={seleccionados} cotizacionTotal={cotizacionTotal} />
           </div>
         </div>
-
-        {/* Resumen en móvil */}
         <div className="md:hidden">
-          <ResumenProductos
-            seleccionados={seleccionados}
-            cotizacionTotal={cotizacionTotal}
-          />
+          <ResumenProductos seleccionados={seleccionados} cotizacionTotal={cotizacionTotal} />
         </div>
       </div>
     );
   }
 
-  // ── Sin maestro ──
   if (incluirServicio === false) {
     return (
       <div className="space-y-4">
@@ -277,16 +211,12 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
           <h2 className="text-2xl font-bold">Sin maestro asador</h2>
           <p className="text-muted-foreground text-sm mt-1">El asado lo manejarán los participantes.</p>
         </div>
-        <ResumenProductos
-          seleccionados={seleccionados}
-          cotizacionTotal={cotizacionTotal}
-        />
+        <ResumenProductos seleccionados={seleccionados} cotizacionTotal={cotizacionTotal} />
         <Button variant="outline" onClick={() => setIncluirServicio(null)}>Cambiar opción</Button>
       </div>
     );
   }
 
-  // ── Lista de asadores ──
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -303,9 +233,9 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
         <div className="flex items-center gap-3 rounded-lg border border-primary bg-primary/5 p-4">
           <UserCheck className="size-5 text-primary shrink-0" />
           <div className="flex-1">
-            <p className="font-medium text-sm">{asadorSeleccionado.nombre} seleccionado</p>
+            <p className="font-medium text-sm">{asadorSeleccionado.nombre} {asadorSeleccionado.apellido} seleccionado</p>
             <p className="text-xs text-muted-foreground">
-              Tarifa estimada: {formatPrice(asadorSeleccionado.tarifaBase + asadorSeleccionado.tarifaPorPersona * cantParticipantes)}
+              Valor del servicio: {formatPrice(asadorSeleccionado.valorServicio)}
             </p>
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -314,13 +244,15 @@ export function AsadorStep({ cantParticipantes, asadorSeleccionado, onChange, se
         </div>
       )}
 
+      {cargando && <p className="text-muted-foreground text-sm">Cargando maestros asadores...</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockAsadores.map((asador) => (
+        {maestros.map((asador) => (
           <AsadorCard
-            key={asador.id}
+            key={asador.idMaestro}
             asador={asador}
-            seleccionado={asadorSeleccionado?.id === asador.id}
-            cantParticipantes={cantParticipantes}
+            seleccionado={asadorSeleccionado?.idMaestro === asador.idMaestro}
             onSeleccionar={() => onChange(asador)}
             onDeseleccionar={() => onChange(null)}
           />

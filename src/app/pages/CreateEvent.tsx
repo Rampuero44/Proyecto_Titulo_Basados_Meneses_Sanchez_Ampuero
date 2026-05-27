@@ -18,7 +18,7 @@ import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductC
 import { crearEvento } from "../services/eventosApi";
 import { crearEventoProducto } from "../services/eventoProductosApi";
 import { AsadorStep } from "../components/AsadorStep";
-import { Asador } from "../data/mockAsadores";
+import { MaestroParrillero } from "../services/asadoresApi";
 import { ModalContextoEvento, ContextoEvento } from "../components/ModalContextoEvento";
 import { IaSugerencias } from "../components/IaSugerencias";
 import { IaCotizacion } from "../components/IaCotizacion";
@@ -119,7 +119,7 @@ export function CreateEvent() {
   const [edadVerificada, setEdadVerificada] = useState(false);
   const [esMayor, setEsMayor] = useState<boolean | null>(null);
   const [seleccionados, setSeleccionados] = useState<ProductoSeleccionado[]>([]);
-  const [asadorSeleccionado, setAsadorSeleccionado] = useState<Asador | null>(null);
+  const [asadorSeleccionado, setAsadorSeleccionado] = useState<MaestroParrillero | null>(null);
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState(formatDateForInput(new Date()));
   const [participantes, setParticipantes] = useState<Participante[]>([]);
@@ -225,9 +225,7 @@ export function CreateEvent() {
   const ensaladas = getByCategory("ensalada");;
   const insumos = getByCategory("insumo");
 
-  const costoAsador = asadorSeleccionado
-    ? asadorSeleccionado.tarifaBase + asadorSeleccionado.tarifaPorPersona * participantes.length
-    : 0;
+  const costoAsador = asadorSeleccionado ? asadorSeleccionado.valorServicio : 0;
 
   const caloriasTotales = seleccionados.reduce(
     (sum, s) => sum + ((s.product.calorias ?? 0) * s.cantidad),
