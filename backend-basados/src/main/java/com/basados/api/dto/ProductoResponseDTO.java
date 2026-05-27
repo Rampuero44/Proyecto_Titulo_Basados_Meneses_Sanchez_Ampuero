@@ -9,6 +9,7 @@ public class ProductoResponseDTO {
     private String categoria;
     private String slugCategoria;
     private String marca;
+    private String tipo;
     private BigDecimal calorias;
     private Boolean alcoholico;
     private String imagenUrl;
@@ -25,6 +26,7 @@ public class ProductoResponseDTO {
             String categoria,
             String slugCategoria,
             String marca,
+            String tipo,
             BigDecimal calorias,
             Boolean alcoholico,
             String imagenUrl,
@@ -38,6 +40,7 @@ public class ProductoResponseDTO {
         this.categoria = categoria;
         this.slugCategoria = slugCategoria;
         this.marca = marca;
+        this.tipo = tipo;
         this.calorias = calorias;
         this.alcoholico = alcoholico;
         this.imagenUrl = imagenUrl;
@@ -61,6 +64,9 @@ public class ProductoResponseDTO {
 
     public String getMarca() { return marca; }
     public void setMarca(String marca) { this.marca = marca; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
     public BigDecimal getCalorias() { return calorias; }
     public void setCalorias(BigDecimal calorias) { this.calorias = calorias; }

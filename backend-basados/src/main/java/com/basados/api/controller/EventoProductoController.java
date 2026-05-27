@@ -46,7 +46,11 @@ public class EventoProductoController {
     public EventoProducto crear(@RequestBody EventoProductoRequestDTO dto) {
         Evento evento = eventoRepository.findById(UUID.fromString(dto.getIdEvento())).orElseThrow();
         Producto producto = productoRepository.findById(dto.getIdProducto()).orElseThrow();
-        HistorialPrecio historial = historialPrecioRepository.findById(dto.getIdHistorial()).orElseThrow();
+
+        HistorialPrecio historial = null;
+        if (dto.getIdHistorial() != null) {
+            historial = historialPrecioRepository.findById(dto.getIdHistorial()).orElse(null);
+        }
 
         EventoProducto ep = new EventoProducto();
         ep.setIdEventoProducto(UUID.randomUUID());

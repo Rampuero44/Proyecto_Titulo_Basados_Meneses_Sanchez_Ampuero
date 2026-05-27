@@ -13,6 +13,7 @@ com\basados\api\controller\EventoProductoController.class
 com\basados\api\repository\FormatoRepository.class
 com\basados\api\service\cotizacion\CotizacionService.class
 com\basados\api\repository\CategoriaProductoRepository.class
+com\basados\api\entity\Tipo.class
 com\basados\api\config\WebConfig.class
 com\basados\api\dto\CotizacionProductoDTO.class
 com\basados\api\dto\ProductoIaDTO.class

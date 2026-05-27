@@ -16,6 +16,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             c.nombre,
             c.slug,
             m.nombre,
+            t.nombre,
             p.calorias,
             p.alcoholico,
             p.imagenUrl,
@@ -50,9 +51,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         LEFT JOIN p.categoria c
         LEFT JOIN p.marca m
         LEFT JOIN p.formato f
+        LEFT JOIN p.tipo t
         WHERE p.activo = true
           OR p.activo IS NULL
         ORDER BY p.nombre ASC
     """)
+   
     List<ProductoResponseDTO> findAllActivosConPrecioMinimo();
 }
