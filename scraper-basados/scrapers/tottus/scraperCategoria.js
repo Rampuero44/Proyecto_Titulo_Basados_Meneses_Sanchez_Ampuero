@@ -111,29 +111,35 @@ async function extraerProductosCategoria(slugCategoria) {
 
                         const card = cards[i];
 
+                        // Extraer nombre desde texto (selector corregido)
+                        const nombreTexto = await card
+                            .locator('[class*="pod-title"], [class*="title--rebranding"]')
+                            .first()
+                            .innerText()
+                            .catch(() => null);
+
                         const link = await card
                             .locator('a[href]')
                             .first()
                             .getAttribute('href')
                             .catch(() => null);
 
-                        // Extraer nombre desde el slug de la URL (posición 6)
+                        // Fallback: extraer nombre desde URL (posición 7)
                         const nombreDesdeUrl = link
-                            ? link.split('/')[5]?.replace(/-/g, ' ')
+                            ? link.split('/')[6]?.replace(/-/g, ' ')
                                 .replace(/\b\w/g, c => c.toUpperCase())
                                 .trim()
                             : null;
 
-                        const nombre = nombreDesdeUrl || await card
-                            .locator('[class*="pod-title"], [class*="title"]')
-                            .first()
-                            .innerText()
-                            .catch(() => null);
+                        // Usar nombre de texto si es válido, sino usar el de URL
+                        const nombre = (nombreTexto && nombreTexto.length > 3 && !/^\d+$/.test(nombreTexto))
+                            ? nombreTexto.trim()
+                            : nombreDesdeUrl;
 
-                        const nombreTexto = await card
-                            .locator('[class*="pod-title"], [class*="title--rebranding"]')
+                        const precioTexto = await card
+                            .locator('[data-internet-price]')
                             .first()
-                            .innerText()
+                            .getAttribute('data-internet-price')
                             .catch(() => null);
 
                         const precioPrincipal = precioTexto
@@ -144,12 +150,6 @@ async function extraerProductosCategoria(slugCategoria) {
                             .locator('.prices-unit-price, [class*="unit-price"]')
                             .first()
                             .innerText()
-                            .catch(() => null);
-
-                        const link = await card
-                            .locator('a[href]')
-                            .first()
-                            .getAttribute('href')
                             .catch(() => null);
 
                         const imagen = await card
@@ -166,15 +166,6 @@ async function extraerProductosCategoria(slugCategoria) {
                             ? link
                             : `https://www.tottus.cl${link}`;
 
-                        const nombreDesdeUrl = link
-                            ? link.split('/')[5]?.replace(/-/g, ' ')
-                                .replace(/\b\w/g, c => c.toUpperCase())
-                                .trim()
-                            : null;
-
-                        const nombre = (nombreTexto && nombreTexto.length > 3 && !/^\d+$/.test(nombreTexto))
-                            ? nombreTexto.trim()
-                            : nombreDesdeUrl;
                         const sku = extraerSku(urlCompleta);
 
                         const producto = {

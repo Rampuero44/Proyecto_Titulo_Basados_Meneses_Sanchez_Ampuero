@@ -30,8 +30,22 @@ public class IaService {
             : req.getProductos().stream()
                 .map(p -> {
                     String unidad = p.getPrecioUnitario() != null ? " [" + p.getPrecioUnitario() + "]" : "";
-                    return String.format("- %s (x%d, categoría: %s%s)",
-                        p.getNombre(), p.getCantidad(), p.getSlugCategoria(), unidad);
+                    String peso = "";
+                    if (p.getPesoGramos() != null && p.getUnidadFormato() != null) {
+                        if ("g".equals(p.getUnidadFormato())) {
+                            peso = p.getPesoGramos() >= 1000
+                                ? String.format(" [%.1f kg]", p.getPesoGramos() / 1000.0)
+                                : String.format(" [%d g]", p.getPesoGramos());
+                        } else if ("ml".equals(p.getUnidadFormato())) {
+                            peso = p.getPesoGramos() >= 1000
+                                ? String.format(" [%.1f L]", p.getPesoGramos() / 1000.0)
+                                : String.format(" [%d ml]", p.getPesoGramos());
+                        } else if ("un".equals(p.getUnidadFormato())) {
+                            peso = " [unidad/pack]";
+                        }
+                    }
+                    return String.format("- %s (x%d, categoría: %s%s%s)",
+                        p.getNombre(), p.getCantidad(), p.getSlugCategoria(), peso, unidad);
                 })
                 .collect(Collectors.joining("\n"));
 
@@ -46,8 +60,14 @@ public class IaService {
             Productos seleccionados hasta ahora:
             %s
 
+            IMPORTANTE: Considera el peso/formato de cada producto para calcular cantidades correctas:
+            - Para carnes: 300-400g por persona es el estándar chileno
+            - Si un producto muestra 1000g (1 kg), es el peso de referencia por unidad
+            - Para productos vendidos al peso (carnes, pescados), multiplica el peso unitario por la cantidad seleccionada
+            - Para líquidos (bebidas, aceites): considera el volumen en litros o ml
+
             Responde en español con máximo 4 puntos cortos. Indica:
-            1. Si la cantidad de carne es suficiente (estándar chileno: 300-400g por persona de carne principal)
+            1. Si la cantidad de carne es suficiente considerando el peso real de los productos (300-400g por persona)
             2. Si faltan categorías importantes (bebidas, ensaladas, insumos)
             3. Si el presupuesto es coherente con lo seleccionado
             4. Una sugerencia específica para mejorar la selección
@@ -73,7 +93,21 @@ public class IaService {
         String productosTexto = req.getProductos() == null || req.getProductos().isEmpty()
             ? "Sin detalle."
             : req.getProductos().stream()
-                .map(p -> String.format("- %s x%d (%s)", p.getNombre(), p.getCantidad(), p.getSlugCategoria()))
+                .map(p -> {
+                    String peso = "";
+                    if (p.getPesoGramos() != null && p.getUnidadFormato() != null) {
+                        if ("g".equals(p.getUnidadFormato())) {
+                            peso = p.getPesoGramos() >= 1000
+                                ? String.format(" [%.1f kg]", p.getPesoGramos() / 1000.0)
+                                : String.format(" [%d g]", p.getPesoGramos());
+                        } else if ("ml".equals(p.getUnidadFormato())) {
+                            peso = p.getPesoGramos() >= 1000
+                                ? String.format(" [%.1f L]", p.getPesoGramos() / 1000.0)
+                                : String.format(" [%d ml]", p.getPesoGramos());
+                        }
+                    }
+                    return String.format("- %s x%d (%s%s)", p.getNombre(), p.getCantidad(), p.getSlugCategoria(), peso);
+                })
                 .collect(Collectors.joining("\n"));
 
         boolean tienePresupuesto = req.getPresupuesto() > 0;

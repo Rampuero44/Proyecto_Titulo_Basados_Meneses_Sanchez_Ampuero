@@ -160,6 +160,15 @@ async function insertarHistorialPrecio(
         );
     }
 
+    // Validar precio antes de insertar
+    const precioLimpio = limpiarPrecio(producto.precio);
+    const precioNumerico = parseFloat(precioLimpio);
+    
+    if (isNaN(precioNumerico) || precioNumerico <= 0) {
+        console.log(`[DB] Precio inválido para producto ${producto.nombre} (${precioLimpio}), omitiendo historial`);
+        return;
+    }
+
     await pool.query(
         `
         INSERT INTO historial_precios (
@@ -184,7 +193,7 @@ async function insertarHistorialPrecio(
         [
             idProducto,
             idComercio,
-            limpiarPrecio(producto.precio),
+            precioNumerico,
             producto.url,
             producto.precioUnitario
         ]
