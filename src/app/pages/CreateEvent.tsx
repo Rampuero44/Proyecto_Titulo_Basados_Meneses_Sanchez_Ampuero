@@ -31,17 +31,12 @@ const formatDateForInput = (date: Date) => {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return offsetDate.toISOString().split("T")[0];
 };
-
 const formatCalories = (value: number) => `${Math.round(value).toLocaleString()} kcal`;
-
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
-
 const TIPOS_ALCOHOL = ["cerveza", "vino", "destilado", "licor", "pisco", "ron", "vodka", "whisky", "champagne", "sidra"];
-
 const esAlcohol = (tipo: string): boolean =>
   TIPOS_ALCOHOL.some((a) => tipo.toLowerCase().includes(a));
-
 const tieneAlcohol = (seleccionados: ProductoSeleccionado[]): boolean =>
   seleccionados.some(
     (s) => s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true
@@ -50,12 +45,10 @@ const tieneAlcohol = (seleccionados: ProductoSeleccionado[]): boolean =>
 interface ModalEdadProps {
   onConfirmar: (esMayor: boolean, fechaNacimiento: string) => void;
 }
-
 function ModalVerificacionEdad({ onConfirmar }: ModalEdadProps) {
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [error, setError] = useState("");
   const fechaMaxima = new Date().toISOString().split("T")[0];
-
   const handleVerificar = () => {
     if (!fechaNacimiento) {
       setError("Debes ingresar tu fecha de nacimiento");
@@ -64,7 +57,6 @@ function ModalVerificacionEdad({ onConfirmar }: ModalEdadProps) {
     const mayor = esMayorDeEdad(fechaNacimiento);
     onConfirmar(mayor, fechaNacimiento);
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <Card className="w-full max-w-sm mx-4">
@@ -103,7 +95,6 @@ function ModalVerificacionEdad({ onConfirmar }: ModalEdadProps) {
 
 export function CreateEvent() {
   const navigate = useNavigate();
-
   const { user, loading } = useAuth();
   const currentUsuario = user ? {
     id: user.id,
@@ -111,9 +102,7 @@ export function CreateEvent() {
     email: user.email ?? "",
     fechaNacimiento: user.user_metadata?.fecha_nacimiento ?? null,
   } : null;
-
   const esInvitado = !currentUsuario;
-
   const [step, setStep] = useState<"catalog" | "asador" | "config" | "quote" | "cost">("catalog");
   const [mostrarModalEdad, setMostrarModalEdad] = useState(false);
   const [edadVerificada, setEdadVerificada] = useState(false);
@@ -122,6 +111,7 @@ export function CreateEvent() {
   const [asadorSeleccionado, setAsadorSeleccionado] = useState<MaestroParrillero | null>(null);
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState(formatDateForInput(new Date()));
+  const [direccion, setDireccion] = useState("");
   const [participantes, setParticipantes] = useState<Participante[]>([]);
   const [nuevoParticipante, setNuevoParticipante] = useState("");
   const [selectedComercio, setSelectedComercio] = useState<string>("");
@@ -134,7 +124,6 @@ export function CreateEvent() {
 
   useEffect(() => {
     if (loading) return;
-
     if (currentUsuario && !borradorRevisado) {
       setBorradorRevisado(true);
       obtenerBorrador(currentUsuario.id).then((borrador) => {
@@ -147,7 +136,6 @@ export function CreateEvent() {
       }).catch(() => inicializarNuevoEvento());
       return;
     }
-
     if (!currentUsuario && !borradorRevisado) {
       setBorradorRevisado(true);
       setNombre("Mi asado");
@@ -194,9 +182,31 @@ export function CreateEvent() {
     }
   };
 
+  // ── FIX: verificar alcohol al loguearse ──
   const handleAutenticado = () => {
     setMostrarModalAuth(false);
     setBorradorRevisado(true);
+
+    if (user) {
+      const fechaNac = user.user_metadata?.fecha_nacimiento ?? user.user_metadata?.fechaNacimiento ?? null;
+      if (fechaNac) {
+        const mayor = esMayorDeEdad(fechaNac);
+        if (!mayor) {
+          const sinAlcohol = seleccionados.filter(
+            (s) => !(s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true)
+          );
+          if (sinAlcohol.length !== seleccionados.length) {
+            setSeleccionados(sinAlcohol);
+            toast.warning(
+              "Como eres menor de edad, las bebidas alcohólicas fueron retiradas de tu selección.",
+              { duration: 5000 }
+            );
+          }
+          setEsMayor(false);
+          setEdadVerificada(true);
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -222,25 +232,20 @@ export function CreateEvent() {
 
   const proteinas = getByCategory("carne");
   const bebestibles = getByCategory("bebida");
-  const ensaladas = getByCategory("ensalada");;
+  const ensaladas = getByCategory("ensalada");
   const insumos = getByCategory("insumo");
-
   const costoAsador = asadorSeleccionado ? asadorSeleccionado.valorServicio : 0;
-
   const caloriasTotales = seleccionados.reduce(
     (sum, s) => sum + ((s.product.calorias ?? 0) * s.cantidad),
     0
   );
-
   const caloriasPorPersona = participantes.length > 0 ? caloriasTotales / participantes.length : 0;
   const mejorCotizacion = cotizaciones[0] || null;
   const cotizacionActiva =
     cotizaciones.find((c) => c.comercio === selectedComercio) || mejorCotizacion;
-
   const costoEstimado = seleccionados.reduce((sum, s) => {
     return sum + (s.product.precioDesde ?? 0) * s.cantidad;
   }, 0);
-
   const costoTotal =
     cotizacionActiva?.total
       ? Number(cotizacionActiva.total)
@@ -253,49 +258,26 @@ export function CreateEvent() {
   }, [mejorCotizacion, selectedComercio]);
 
   const cargarCotizaciones = async () => {
-
     try {
-
       const request = {
-
         productos: seleccionados.map((s) => ({
-
           idProducto: s.product.id,
-
           cantidad: s.cantidad,
         })),
       };
-
-      const response =
-        await generarCotizacion(request);
-
-      setCotizaciones(
-        response.cotizaciones || []
-
-
-      );
-
+      const response = await generarCotizacion(request);
+      setCotizaciones(response.cotizaciones || []);
     } catch (error) {
-
-      console.error(
-        "Error cargando cotizaciones:",
-        error
-      );
-
-      toast.error(
-        "No fue posible generar cotizaciones"
-      );
+      console.error("Error cargando cotizaciones:", error);
+      toast.error("No fue posible generar cotizaciones");
     }
   };
-  // ── Verificación de edad ──────────────────────────────────────────────────
 
   const handleConfirmarEdad = (mayor: boolean, fechaNac: string) => {
     setMostrarModalEdad(false);
     setEdadVerificada(true);
     setEsMayor(mayor);
-
     let productosFinales = seleccionados;
-
     if (!mayor) {
       productosFinales = seleccionados.filter(
         (s) => !(s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true)
@@ -308,13 +290,10 @@ export function CreateEvent() {
     } else {
       toast.success("Edad verificada. Puedes continuar con tu selección.");
     }
-
-    // Validar que queden productos después de la restricción
     if (productosFinales.length === 0) {
       toast.error("No quedan productos en tu selección. Agrega al menos un producto no alcohólico para continuar.", { duration: 6000 });
       return;
     }
-
     setStep("asador");
   };
 
@@ -328,7 +307,6 @@ export function CreateEvent() {
 
   const handleContinuarDesdeCatalogo = () => {
     if (!validarCatalogo()) return;
-
     if (tieneAlcohol(seleccionados)) {
       if (currentUsuario?.fechaNacimiento) {
         const mayor = esMayorDeEdad(currentUsuario.fechaNacimiento);
@@ -336,13 +314,10 @@ export function CreateEvent() {
           const sinAlcohol = seleccionados.filter(
             (s) => !(s.product.categoria?.toLowerCase().includes("bebida") && s.product.alcoholico === true)
           );
-
-          // Validar que queden productos después de eliminar alcohol
           if (sinAlcohol.length === 0) {
             toast.error("No puedes continuar: eres menor de edad y solo seleccionaste bebidas alcohólicas. Agrega otros productos.", { duration: 6000 });
             return;
           }
-
           setSeleccionados(sinAlcohol);
           toast.warning(
             "Como eres menor de edad, las bebidas alcohólicas fueron retiradas de tu selección.",
@@ -354,13 +329,11 @@ export function CreateEvent() {
         setStep("asador");
         return;
       }
-
       if (!edadVerificada) {
         setMostrarModalEdad(true);
         return;
       }
     }
-
     setStep("asador");
   };
 
@@ -385,80 +358,47 @@ export function CreateEvent() {
     setParticipantes((prev) => prev.filter((p) => p.id !== id));
   };
 
+  // ── FIX: mínimo 2 participantes ──
   const validarConfiguracion = () => {
     if (!nombre.trim()) { toast.error("Debes ingresar un nombre para el evento"); return false; }
     if (!fecha) { toast.error("Debes seleccionar una fecha"); return false; }
-    if (!esInvitado) {
-      const tieneOrganizador = participantes.some(p => p.esOrganizador);
-      if (!tieneOrganizador && participantes.length === 0) {
-        toast.error("Debes agregar al menos un participante");
-        return false;
-      }
+    if (!direccion.trim()) { toast.error("Debes ingresar la dirección del evento"); return false; }
+    if (participantes.length < 2) {
+      toast.error("Un asado necesita al menos 2 participantes 🔥");
+      return false;
     }
     return true;
   };
 
   const handleGuardarEvento = async (participantesConCostos: CostSplitParticipant[]) => {
     if (!currentUsuario || !cotizacionActiva) return;
-
     try {
-
       const presupuestoFinal = Math.round(
-        participantesConCostos.reduce(
-          (sum, p) => sum + p.monto,
-          0
-        )
+        participantesConCostos.reduce((sum, p) => sum + p.monto, 0)
       );
-
       const eventoCreado = await crearEvento({
-
         nombre: nombre.trim(),
-
         descripcion: "Evento creado desde frontend",
-
         fechaEvento: `${fecha}T20:00:00`,
-
-        direccion: "Pendiente",
-
+        direccion: direccion.trim() || "Sin dirección",
         presupuesto: presupuestoFinal,
-
         cantidadPersonas: participantes.length,
-
         estado: "PLANIFICANDO",
-
         idOrganizador: currentUsuario.id,
       });
-
       const eventoId = eventoCreado.idEvento;
-
       for (const seleccionado of seleccionados) {
-
-        console.log(
-          "ITEMS COTIZACION",
-          cotizacionActiva?.items
-        );
-
         await crearEventoProducto({
-
           idEvento: eventoId,
-
           idProducto: seleccionado.product.id,
-
-          idHistorial:
-            cotizacionActiva?.items
-              ?.find(
-                (item: any) =>
-                  item.nombreProducto === seleccionado.product.nombre
-              )?.idHistorial,
-
+          idHistorial: cotizacionActiva?.items?.find(
+            (item: any) => item.nombreProducto === seleccionado.product.nombre
+          )?.idHistorial,
           cantidad: seleccionado.cantidad,
-
           seleccionado: true,
         });
       }
-
       toast.success("Evento creado correctamente");
-
       try {
         const destinatarios = participantesConCostos
           .filter(p => p.metodoContacto !== "sin_notificacion" && p.contacto?.trim())
@@ -468,7 +408,6 @@ export function CreateEvent() {
             destino: p.contacto!,
             monto: Math.round(p.monto),
           }));
-
         await enviarResumenEvento({
           eventoId: eventoId,
           nombreEvento: nombre.trim(),
@@ -486,21 +425,11 @@ export function CreateEvent() {
       } catch {
         console.warn("Notificaciones no enviadas, pero el evento fue creado correctamente");
       }
-
       navigate(`/event/${eventoId}`);
-
     } catch (error) {
-
-      console.error(
-        "Error creando evento:",
-        error
-      );
-
-      toast.error(
-        "Error creando el evento"
-      );
+      console.error("Error creando evento:", error);
+      toast.error("Error creando el evento");
     }
-
   };
 
   if (loading) return null;
@@ -508,36 +437,30 @@ export function CreateEvent() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       {mostrarModalEdad && (
         <ModalVerificacionEdad onConfirmar={handleConfirmarEdad} />
       )}
-
       {mostrarModalBorrador && (
         <ModalBorrador
           onContinuar={handleContinuarBorrador}
           onNuevo={handleNuevoEvento}
         />
       )}
-
       {mostrarModalAuth && (
         <ModalAuthRequerido
           onAutenticado={handleAutenticado}
           onCancelar={() => setMostrarModalAuth(false)}
         />
       )}
-
       {!mostrarModalBorrador && !contextoEvento && (
         <ModalContextoEvento onConfirmar={setContextoEvento} />
       )}
-
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver
         </Button>
 
-        {/* ── STEP: reparto ── */}
         {step === "cost" && cotizacionActiva ? (
           <CostSplitStep
             participantes={participantes}
@@ -546,8 +469,6 @@ export function CreateEvent() {
             onBack={() => setStep("quote")}
             onConfirm={handleGuardarEvento}
           />
-
-          /* ── STEP: cotización ── */
         ) : step === "quote" ? (
           <div className="space-y-6">
             <div>
@@ -556,7 +477,6 @@ export function CreateEvent() {
                 Compara comercios y elige la mejor opción para tu asado.
               </p>
             </div>
-
             <div className="grid gap-4 lg:grid-cols-3">
               {cotizaciones.map((cotizacion, index) => {
                 const esSeleccionada = cotizacion.comercio === cotizacionActiva?.comercio;
@@ -578,31 +498,22 @@ export function CreateEvent() {
                     <CardContent className="space-y-4">
                       <div className="rounded-lg bg-muted p-4">
                         <p className="text-sm text-muted-foreground">Total comercio</p>
-                        <p className="text-3xl font-bold text-primary">{formatPrice(
-                          Math.round(Number(cotizacion.total))
-                        )}</p>
+                        <p className="text-3xl font-bold text-primary">{formatPrice(Math.round(Number(cotizacion.total)))}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           Alcohol incluido: {formatPrice(Math.round(0))}
                         </p>
                       </div>
                       <div className="space-y-2 text-sm">
-                        {cotizacion.items
-                          .slice(0, 5)
-                          .map((detalle: any) => (
-                            <div key={`${cotizacion.comercio}-${detalle.nombreProducto}`} className="flex items-center justify-between">
-                              <span className="text-muted-foreground">
-                                {detalle.nombreProducto}
-                              </span>
-                              <span className="font-medium">
-                                {detalle.subtotal !== null &&
-                                  detalle.subtotal !== undefined
-                                  ? formatPrice(
-                                    Math.round(Number(detalle.subtotal))
-                                  )
-                                  : "No disponible"}
-                              </span>
-                            </div>
-                          ))}
+                        {cotizacion.items.slice(0, 5).map((detalle: any) => (
+                          <div key={`${cotizacion.comercio}-${detalle.nombreProducto}`} className="flex items-center justify-between">
+                            <span className="text-muted-foreground">{detalle.nombreProducto}</span>
+                            <span className="font-medium">
+                              {detalle.subtotal !== null && detalle.subtotal !== undefined
+                                ? formatPrice(Math.round(Number(detalle.subtotal)))
+                                : "No disponible"}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                       <Button
                         variant={esSeleccionada ? "default" : "outline"}
@@ -616,7 +527,6 @@ export function CreateEvent() {
                 );
               })}
             </div>
-
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -627,11 +537,7 @@ export function CreateEvent() {
               <CardContent className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Total elegido</p>
-                  <p className="text-2xl font-bold">{formatPrice(
-                    Math.round(
-                      Number(cotizacionActiva?.total || 0)
-                    )
-                  )}</p>
+                  <p className="text-2xl font-bold">{formatPrice(Math.round(Number(cotizacionActiva?.total || 0)))}</p>
                 </div>
                 <div className="rounded-lg border p-4">
                   <p className="text-sm text-muted-foreground">Calorías totales</p>
@@ -643,12 +549,10 @@ export function CreateEvent() {
                 </div>
               </CardContent>
             </Card>
-
             <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("config")}>Volver a la configuración</Button>
               <Button onClick={handleStepCost}>Continuar a reparto de montos</Button>
             </div>
-
             {contextoEvento && (
               <IaCotizacion
                 contexto={contextoEvento}
@@ -665,8 +569,6 @@ export function CreateEvent() {
               />
             )}
           </div>
-
-          /* ── STEP: maestro asador ── */
         ) : step === "asador" ? (
           <div className="space-y-6">
             <AsadorStep
@@ -681,15 +583,12 @@ export function CreateEvent() {
               <Button onClick={() => setStep("config")}>Siguiente Paso</Button>
             </div>
           </div>
-
-          /* ── STEP: configuración ── */
         ) : step === "config" ? (
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Configuración del evento</h1>
               <p className="mt-2 text-muted-foreground">Ponle nombre, fecha y agrega participantes.</p>
             </div>
-
             {edadVerificada && esMayor === false && (
               <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
@@ -701,7 +600,6 @@ export function CreateEvent() {
                 </div>
               </div>
             )}
-
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Productos seleccionados</CardTitle>
@@ -723,7 +621,6 @@ export function CreateEvent() {
                 </Button>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader><CardTitle>Datos del evento</CardTitle></CardHeader>
               <CardContent className="space-y-4">
@@ -739,15 +636,24 @@ export function CreateEvent() {
                       <Input id="fecha-evento" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="pl-9" />
                     </div>
                   </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="direccion-evento">
+                      ¿Dónde será el asado? <span className="text-primary">*</span>
+                    </Label>
+                    <Input
+                      id="direccion-evento"
+                      placeholder="Ej: Av. Las Condes 1234, Santiago"
+                      value={direccion}
+                      onChange={(e) => setDireccion(e.target.value)}
+                    />
+                  </div>
                 </div>
-
                 <Separator />
-
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold">Participantes</h3>
-                      <p className="text-sm text-muted-foreground">El organizador siempre participa.</p>
+                      <p className="text-sm text-muted-foreground">El organizador siempre participa. Agrega al menos uno más 🔥</p>
                     </div>
                     <Badge variant="secondary">{participantes.length} asistentes</Badge>
                   </div>
@@ -781,7 +687,6 @@ export function CreateEvent() {
                 </div>
               </CardContent>
             </Card>
-
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Costo productos</CardTitle></CardHeader>
@@ -814,18 +719,12 @@ export function CreateEvent() {
                 </CardContent>
               </Card>
             </div>
-
             <div className="fixed bottom-6 right-6 z-50 flex gap-3">
               <Button variant="outline" onClick={() => setStep("asador")}>Volver</Button>
               <Button
                 onClick={async () => {
-
-                  if (!validarConfiguracion()) {
-                    return;
-                  }
-
+                  if (!validarConfiguracion()) return;
                   await cargarCotizaciones();
-
                   setStep("quote");
                 }}
               >
@@ -833,8 +732,6 @@ export function CreateEvent() {
               </Button>
             </div>
           </div>
-
-          /* ── STEP: catálogo ── */
         ) : (
           <div className="space-y-6">
             <div>
@@ -843,7 +740,6 @@ export function CreateEvent() {
                 Elige los productos para tu asado, luego configura el evento y reparte el costo.
               </p>
             </div>
-
             <ProductCatalogStep
               seleccionados={seleccionados}
               onChange={setSeleccionados}
@@ -859,7 +755,6 @@ export function CreateEvent() {
                 />
               ) : undefined}
             />
-
             <div className="fixed bottom-6 right-6 z-50">
               <Button size="lg" onClick={handleContinuarDesdeCatalogo} className="shadow-lg shadow-primary/30">
                 Siguiente paso →
