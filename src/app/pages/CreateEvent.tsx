@@ -119,6 +119,7 @@ export function CreateEvent() {
   const [contextoEvento, setContextoEvento] = useState<ContextoEvento | null>(null);
   const [mostrarModalBorrador, setMostrarModalBorrador] = useState(false);
   const [mostrarModalAuth, setMostrarModalAuth] = useState(false);
+  const [vieneDeModalAuth, setVieneDeModalAuth] = useState(false);
   const [borradorId, setBorradorId] = useState<string | null>(null);
   const [borradorRevisado, setBorradorRevisado] = useState(false);
 
@@ -176,6 +177,7 @@ export function CreateEvent() {
 
   const handleStepCost = () => {
     if (esInvitado) {
+      setVieneDeModalAuth(true);
       setMostrarModalAuth(true);
     } else {
       setStep("cost");
@@ -210,7 +212,8 @@ export function CreateEvent() {
   };
 
   useEffect(() => {
-    if (!mostrarModalAuth && currentUsuario && step === "quote") {
+    if (!mostrarModalAuth && currentUsuario && step === "quote" && vieneDeModalAuth) {
+      setVieneDeModalAuth(false);
       inicializarNuevoEvento();
       setStep("cost");
     }

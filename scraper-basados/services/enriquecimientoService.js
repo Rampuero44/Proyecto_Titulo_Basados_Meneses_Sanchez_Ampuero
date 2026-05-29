@@ -31,9 +31,10 @@ Formato exacto requerido:
 [
   {
     "index": 1,
-    "marca": "nombre de la marca comercial registrada (ej: Agrosuper, Don Pollo, Belmont, Sureña, Tottus, Lider, Ariztía, Sopraval, Miraflores, Natura, Chef) o null. IMPORTANTE: solo devuelve una marca si es claramente un nombre comercial registrado — NO devuelves descripciones del producto como 'Trutro', 'Vacuno', 'Pechuga', 'Maravilla', 'Canola', 'Oliva', 'Coco' (estos son tipos de aceite, no marcas). Capitaliza correctamente (primera letra mayúscula, resto minúsculas, ej: 'TOTTUS' → 'Tottus', 'DON POLLO' → 'Don Pollo')",
-    "peso_gramos": número entero en gramos o null. Reglas estrictas: (1) Si el nombre incluye peso fijo (ej: "850 g", "2 kg"), conviértelo a gramos. (2) Si es una CARNE DE RES, AVE O PESCADO sin peso indicado (se vende al corte por kilo), usa 1000. (3) Si es un aceite, bebida, salsa u otro líquido, usa null aunque el precio sea por litro. (4) Para cualquier otro producto sin peso indicado, usa null,
-    "unidad_formato": "g" para sólidos (carnes, embutidos, verduras), "ml" para líquidos (aceites, bebidas, salsas) o "un" para productos contables (packs, huevos). Si es líquido sin volumen indicado usa "ml",
+    "marca": "nombre de la marca comercial registrada (ej: Agrosuper, Don Pollo, Belmont, Sureña, Tottus, Lider, Ariztía, Sopraval, Miraflores, Natura, Chef) o null. REGLAS ESTRICTAS: (1) Solo devuelve una marca si es claramente un nombre comercial registrado. (2) NO devuelvas partes descriptivas del producto como marca: 'Trutro', 'Vacuno', 'Pechuga', 'Maravilla', 'Canola', 'Oliva', 'Coco', 'Entero', 'Trozado' son tipos/cortes, NO marcas. (3) NO devuelvas tipos de carne, cortes, verduras o ingredientes como marca. (4) Capitaliza correctamente: primera letra mayúscula, resto minúsculas (ej: 'TOTTUS' → 'Tottus', 'DON POLLO' → 'Don Pollo', 'BELMONT' → 'Belmont')",
+    "peso_gramos": número entero en gramos o null. Reglas estrictas: (1) Si el nombre incluye peso fijo (ej: "850 g", "2 kg"), conviértelo a gramos. (2) Si es una CARNE DE RES, AVE O PESCADO sin peso indicado (se vende al corte por kilo), usa 1000. (3) Si es un aceite, bebida, salsa u otro líquido, usa null aunque el precio sea por litro. (4) Para packs múltiples (ej: "6 unidades", "12 pack"), multiplica el peso unitario por la cantidad. (5) Para cualquier otro producto sin peso indicado, usa null,
+    "unidad_formato": "g" para sólidos (carnes, embutidos, verduras), "ml" para líquidos (aceites, bebidas, salsas) o "un" para productos contables (packs de cerveza, cartones de huevos, paquetes múltiples). Si es líquido sin volumen indicado usa "ml". Para packs múltiples usa "un",
+    "cantidad_pack": número entero de unidades en el pack (ej: cerveza 6 pack → 6, cartón 12 huevos → 12) o null si es unidad individual,
     "calorias_100g": número entero de calorías por 100g o null,
     "proteinas_100g": número con decimales de proteínas por 100g o null,
     "grasas_100g": número con decimales de grasas por 100g o null,
@@ -41,10 +42,11 @@ Formato exacto requerido:
   }
 ]
 
-Reglas:
+Reglas adicionales:
 - Para carnes sin marca visible, usa null en marca
 - peso_gramos debe ser el peso del envase en gramos (ej: "850 g" → 850, "2 kg" → 2000). Para carnes/pescados sin peso indicado usa 1000. Para líquidos sin volumen indicado usa 1000 (representa 1 litro base)
 - Para líquidos con volumen indicado (ej: "1 L", "500 ml") usa ese valor en ml como peso_gramos con unidad "ml"
+- Para packs múltiples: detecta palabras clave como "pack", "unidades", "cartón" y extrae la cantidad en cantidad_pack
 - calorias_100g debe estar entre 0 y 900
 - Si no puedes determinar un valor con confianza razonable, usa null`;
 
@@ -96,6 +98,17 @@ Reglas:
 
 function validarDatos(datos) {
     const unidad = ['g', 'ml', 'un'].includes(datos.unidad_formato) ? datos.unidad_formato : 'g';
+    
+    // Capitalizar marca correctamente (primera letra mayúscula, resto minúsculas)
+    let marcaNormalizada = null;
+    if (datos.marca && datos.marca.length > 0 && datos.marca.length <= 100) {
+        marcaNormalizada = datos.marca
+            .toLowerCase()
+            .split(' ')
+            .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1))
+            .join(' ');
+    }
+    
     return {
         calorias: datos.calorias_100g >= 0 && datos.calorias_100g <= 900
             ? datos.calorias_100g : null,
@@ -107,9 +120,9 @@ function validarDatos(datos) {
             ? datos.carbohidratos_100g : null,
         peso_gramos: datos.peso_gramos > 0 && datos.peso_gramos <= 50000
             ? datos.peso_gramos : null,
-        marca: datos.marca && datos.marca.length > 0 && datos.marca.length <= 100
-            ? datos.marca : null,
-        unidad_formato: unidad
+        marca: marcaNormalizada,
+        unidad_formato: unidad,
+        cantidad_pack: datos.cantidad_pack > 0 ? datos.cantidad_pack : null
     };
 }
 

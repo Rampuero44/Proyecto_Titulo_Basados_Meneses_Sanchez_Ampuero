@@ -7,6 +7,7 @@ import com.basados.api.entity.EventoParticipante;
 import com.basados.api.entity.EventoProducto;
 import com.basados.api.repository.EventoParticipanteRepository;
 import com.basados.api.repository.EventoProductoRepository;
+import com.basados.api.repository.ContratacionRepository;
 import com.basados.api.entity.Evento;
 import com.basados.api.entity.Usuario;
 import com.basados.api.repository.EventoRepository;
@@ -27,17 +28,20 @@ public class EventoController {
     private final UsuarioRepository usuarioRepository;
     private final EventoParticipanteRepository participanteRepository;
     private final EventoProductoRepository productoEventoRepository;
+    private final ContratacionRepository contratacionRepository;
 
     public EventoController(
             EventoRepository eventoRepository,
             UsuarioRepository usuarioRepository,
             EventoParticipanteRepository participanteRepository,
-            EventoProductoRepository productoEventoRepository
+            EventoProductoRepository productoEventoRepository,
+            ContratacionRepository contratacionRepository
     ) {
         this.eventoRepository = eventoRepository;
         this.usuarioRepository = usuarioRepository;
         this.participanteRepository = participanteRepository;
         this.productoEventoRepository = productoEventoRepository;
+        this.contratacionRepository = contratacionRepository;
     }
 
     @GetMapping
@@ -106,6 +110,24 @@ public class EventoController {
             p.setAporte(ep.getAporte());
             return p;
         }).toList());
+
+        // Contratación de asador
+        List<com.basados.api.entity.ContratacionAsador> contrataciones =
+            contratacionRepository.findByIdEvento(evento.getIdEvento());
+        if (!contrataciones.isEmpty()) {
+            com.basados.api.entity.ContratacionAsador c = contrataciones.get(0);
+            EventoDetalleDTO.ContratacionDTO contDto = new EventoDetalleDTO.ContratacionDTO();
+            contDto.setIdContratacion(c.getIdContratacion());
+            contDto.setValorAcordado(c.getValorAcordado());
+            contDto.setEstado(c.getEstado());
+            if (c.getMaestro() != null && c.getMaestro().getUsuario() != null) {
+                contDto.setNombreMaestro(
+                    c.getMaestro().getUsuario().getNombre() + " " +
+                    c.getMaestro().getUsuario().getApellido()
+                );
+            }
+            dto.setContratacion(contDto);
+        }
 
         return dto;
     }

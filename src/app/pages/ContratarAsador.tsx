@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Navbar } from "../components/Navbar";
 import { Button } from "../components/ui/button";
-import { ArrowLeft, Star, Phone, Mail, MapPin, CreditCard, UserCheck, X } from "lucide-react";
-import { mockAsadores, Asador } from "../data/mockAsadores";
+import { ArrowLeft, Star, Phone, Mail, UserCheck, X } from "lucide-react";
+import { MaestroParrillero, obtenerMaestros } from "../services/asadoresApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { toast } from "sonner";
+
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
@@ -23,16 +24,45 @@ const StarRating = ({ rating }: { rating: number }) => (
 
 export function ContratarAsador() {
   const navigate = useNavigate();
-  const [asadorSeleccionado, setAsadorSeleccionado] = useState<Asador | null>(null);
-  const [personas, setPersonas] = useState(10);
+  const [asadorSeleccionado, setAsadorSeleccionado] = useState<MaestroParrillero | null>(null);
   const [expandido, setExpandido] = useState<number | null>(null);
+  const [maestros, setMaestros] = useState<MaestroParrillero[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [contratando, setContratando] = useState(false);
 
-  const handleContratar = () => {
+  useEffect(() => {
+    obtenerMaestros()
+      .then(setMaestros)
+      .catch(() => toast.error("No se pudieron cargar los maestros asadores"))
+      .finally(() => setCargando(false));
+  }, []);
+
+  const handleContratar = async () => {
     if (!asadorSeleccionado) {
       toast.error("Selecciona un maestro asador para continuar");
       return;
     }
-    toast.success(`¡${asadorSeleccionado.nombre} contactado! Te llegará un correo con los detalles.`);
+
+    setContratando(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/contrataciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idMaestro: asadorSeleccionado.idMaestro,
+          valorAcordado: asadorSeleccionado.valorServicio,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Error al registrar la contratación");
+
+      toast.success(`¡${asadorSeleccionado.nombre} contratado! Nos pondremos en contacto contigo pronto.`);
+      setAsadorSeleccionado(null);
+    } catch {
+      toast.error("No se pudo registrar la contratación. Intenta nuevamente.");
+    } finally {
+      setContratando(false);
+    }
   };
 
   return (
@@ -52,42 +82,30 @@ export function ContratarAsador() {
           </p>
         </div>
 
-        {/* Selector de personas */}
-        <div className="flex items-center gap-4 mb-6 p-4 rounded-lg border bg-muted/30">
-          <span className="text-sm font-medium">¿Cuántas personas serán?</span>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" className="size-8" onClick={() => setPersonas(Math.max(1, personas - 1))}>-</Button>
-            <span className="w-8 text-center font-bold">{personas}</span>
-            <Button variant="outline" size="icon" className="size-8" onClick={() => setPersonas(personas + 1)}>+</Button>
-          </div>
-          <span className="text-sm text-muted-foreground">Las tarifas se calculan según este número</span>
-        </div>
-
-        {/* Asador seleccionado */}
         {asadorSeleccionado && (
           <div className="flex items-center gap-3 rounded-lg border border-primary bg-primary/5 p-4 mb-6">
             <UserCheck className="size-5 text-primary shrink-0" />
             <div className="flex-1">
-              <p className="font-medium">{asadorSeleccionado.nombre} seleccionado</p>
+              <p className="font-medium">{asadorSeleccionado.nombre} {asadorSeleccionado.apellido} seleccionado</p>
               <p className="text-sm text-muted-foreground">
-                Tarifa estimada: {formatPrice(asadorSeleccionado.tarifaBase + asadorSeleccionado.tarifaPorPersona * personas)} para {personas} personas
+                Valor del servicio: {formatPrice(asadorSeleccionado.valorServicio)}
               </p>
             </div>
-            <Button size="sm" onClick={handleContratar}>
-              Confirmar contratación
+            <Button size="sm" onClick={handleContratar} disabled={contratando}>
+              {contratando ? "Registrando..." : "Confirmar contratación"}
             </Button>
           </div>
         )}
 
-        {/* Grilla de asadores */}
+        {cargando && <p className="text-muted-foreground text-sm">Cargando maestros asadores...</p>}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mockAsadores.map((asador) => {
-            const seleccionado = asadorSeleccionado?.id === asador.id;
-            const isExpandido = expandido === asador.id;
-            const tarifaTotal = asador.tarifaBase + asador.tarifaPorPersona * personas;
+          {maestros.map((asador) => {
+            const seleccionado = asadorSeleccionado?.idMaestro === asador.idMaestro;
+            const isExpandido = expandido === asador.idMaestro;
 
             return (
-              <Card key={asador.id} className={`flex flex-col transition-all ${seleccionado ? "border-primary ring-1 ring-primary" : "hover:shadow-md"}`}>
+              <Card key={asador.idMaestro} className={`flex flex-col transition-all ${seleccionado ? "border-primary ring-1 ring-primary" : "hover:shadow-md"}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -95,11 +113,11 @@ export function ContratarAsador() {
                         {asador.nombre.charAt(0)}
                       </div>
                       <div>
-                        <CardTitle className="text-base leading-tight">{asador.nombre}</CardTitle>
-                        <p className="text-xs text-muted-foreground mt-0.5">{asador.redSocial}</p>
+                        <CardTitle className="text-base leading-tight">{asador.nombre} {asador.apellido}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">{asador.experienciaAnos} años de experiencia</p>
                       </div>
                     </div>
-                    <StarRating rating={asador.calificacion} />
+                    <StarRating rating={asador.puntuacion} />
                   </div>
                 </CardHeader>
 
@@ -108,41 +126,18 @@ export function ContratarAsador() {
                     {asador.descripcion}
                   </p>
                   {asador.descripcion.length > 100 && (
-                    <button className="text-xs text-primary hover:underline" onClick={() => setExpandido(isExpandido ? null : asador.id)}>
+                    <button className="text-xs text-primary hover:underline"
+                      onClick={() => setExpandido(isExpandido ? null : asador.idMaestro)}>
                       {isExpandido ? "Ver menos" : "Ver más"}
                     </button>
                   )}
 
                   <Separator />
 
-                  <div className="flex items-start gap-2 text-sm">
-                    <MapPin className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <span className="text-muted-foreground">
-                      {asador.zonas[0]?.comunas.slice(0, 3).join(", ")}
-                      {asador.zonas[0]?.comunas.length > 3 && ` +${asador.zonas[0].comunas.length - 3} más`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CreditCard className="size-4 text-muted-foreground shrink-0" />
-                    {asador.formasPago.map((fp) => (
-                      <Badge key={fp} variant="secondary" className="text-xs">{fp}</Badge>
-                    ))}
-                  </div>
-
-                  <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tarifa base</span>
-                      <span className="font-medium">{formatPrice(asador.tarifaBase)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Por persona ({personas})</span>
-                      <span className="font-medium">{formatPrice(asador.tarifaPorPersona * personas)}</span>
-                    </div>
-                    <Separator className="my-1" />
+                  <div className="rounded-lg bg-muted/50 p-3">
                     <div className="flex justify-between text-sm font-bold">
-                      <span>Total estimado</span>
-                      <span className="text-primary">{formatPrice(tarifaTotal)}</span>
+                      <span>Valor del servicio</span>
+                      <span className="text-primary">{formatPrice(asador.valorServicio)}</span>
                     </div>
                   </div>
 
@@ -154,7 +149,9 @@ export function ContratarAsador() {
 
                 <div className="p-4 pt-0">
                   {seleccionado ? (
-                    <Button variant="outline" size="sm" className="w-full text-destructive border-destructive hover:bg-destructive/10" onClick={() => setAsadorSeleccionado(null)}>
+                    <Button variant="outline" size="sm"
+                      className="w-full text-destructive border-destructive hover:bg-destructive/10"
+                      onClick={() => setAsadorSeleccionado(null)}>
                       <X className="size-4 mr-2" />Quitar selección
                     </Button>
                   ) : (

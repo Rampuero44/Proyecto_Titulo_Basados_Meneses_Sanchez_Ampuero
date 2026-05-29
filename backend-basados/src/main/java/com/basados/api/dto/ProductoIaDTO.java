@@ -5,6 +5,8 @@ public class ProductoIaDTO {
     private int cantidad;
     private String slugCategoria;
     private String precioUnitario;
+    private Integer pesoGramos;
+    private String unidadFormato;
 
     public ProductoIaDTO() {}
 
@@ -19,4 +21,10 @@ public class ProductoIaDTO {
 
     public String getPrecioUnitario() { return precioUnitario; }
     public void setPrecioUnitario(String precioUnitario) { this.precioUnitario = precioUnitario; }
+
+    public Integer getPesoGramos() { return pesoGramos; }
+    public void setPesoGramos(Integer pesoGramos) { this.pesoGramos = pesoGramos; }
+
+    public String getUnidadFormato() { return unidadFormato; }
+    public void setUnidadFormato(String unidadFormato) { this.unidadFormato = unidadFormato; }
 }

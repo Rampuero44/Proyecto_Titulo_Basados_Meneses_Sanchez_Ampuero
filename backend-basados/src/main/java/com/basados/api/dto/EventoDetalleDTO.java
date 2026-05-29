@@ -18,6 +18,23 @@ public class EventoDetalleDTO {
     private String organizador;
     private List<ProductoEventoDTO> productos;
     private List<ParticipanteEventoDTO> participantes;
+    private ContratacionDTO contratacion;
+
+    public static class ContratacionDTO {
+        private Long idContratacion;
+        private String nombreMaestro;
+        private java.math.BigDecimal valorAcordado;
+        private String estado;
+
+        public Long getIdContratacion() { return idContratacion; }
+        public void setIdContratacion(Long idContratacion) { this.idContratacion = idContratacion; }
+        public String getNombreMaestro() { return nombreMaestro; }
+        public void setNombreMaestro(String nombreMaestro) { this.nombreMaestro = nombreMaestro; }
+        public java.math.BigDecimal getValorAcordado() { return valorAcordado; }
+        public void setValorAcordado(java.math.BigDecimal valorAcordado) { this.valorAcordado = valorAcordado; }
+        public String getEstado() { return estado; }
+        public void setEstado(String estado) { this.estado = estado; }
+    }
 
     public static class ProductoEventoDTO {
         private Long idProducto;
@@ -82,4 +99,6 @@ public class EventoDetalleDTO {
     public void setProductos(List<ProductoEventoDTO> productos) { this.productos = productos; }
     public List<ParticipanteEventoDTO> getParticipantes() { return participantes; }
     public void setParticipantes(List<ParticipanteEventoDTO> participantes) { this.participantes = participantes; }
+    public ContratacionDTO getContratacion() { return contratacion; }
+    public void setContratacion(ContratacionDTO contratacion) { this.contratacion = contratacion; }
 }
