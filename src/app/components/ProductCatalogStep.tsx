@@ -24,6 +24,11 @@ import {
   SelectValue,
 } from "./ui/select";
 
+// ─────────────────────────────────────────────
+// NUEVO: importar supabase para leer la sesión
+// ─────────────────────────────────────────────
+import { supabase } from "../lib/supabase"; // ajusta la ruta si es distinta
+
 export interface ProductoSeleccionado {
   product: Producto;
   cantidad: number;
@@ -98,6 +103,74 @@ const GRUPOS_BEBESTIBLE: Record<string, string> = {
   ...GRUPOS_BEBESTIBLE_CON_ALCOHOL,
 };
 
+// ─────────────────────────────────────────────
+// NUEVO: tipos de producto alcohólicos
+// ─────────────────────────────────────────────
+const TIPOS_ALCOHOLICOS = ["cerveza", "vino", "destilado"];
+
+function esProductoAlcoholico(product: any): boolean {
+  const tipo = (product.tipo ?? "").toLowerCase();
+  return TIPOS_ALCOHOLICOS.includes(tipo);
+}
+
+// ─────────────────────────────────────────────
+// NUEVO: Modal de verificación de edad
+// ─────────────────────────────────────────────
+function ModalVerificacionEdad({
+  onConfirmar,
+  onDenegar,
+}: {
+  onConfirmar: () => void;
+  onDenegar: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="bg-background rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center space-y-6 border border-border">
+        {/* Icono */}
+        <div className="text-5xl">🔞</div>
+
+        {/* Título */}
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Verificación de edad</h2>
+          <p className="text-muted-foreground text-sm">
+            Este catálogo incluye productos con contenido alcohólico.
+            La venta de alcohol está prohibida para menores de 18 años
+            según la Ley N° 19.925 de Chile.
+          </p>
+        </div>
+
+        {/* Pregunta */}
+        <p className="font-semibold text-base">
+          ¿Confirmas que eres mayor de 18 años?
+        </p>
+
+        {/* Botones — CAMBIO: agregar min-w-0 a cada Button */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
+          <Button
+            className="flex-1 min-w-0 bg-primary hover:bg-primary/90"
+            onClick={onConfirmar}
+          >
+            ✅ Sí, soy mayor de 18 años
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1 min-w-0 border-destructive text-destructive hover:bg-destructive/10"
+            onClick={onDenegar}
+          >
+            ❌ No, soy menor de edad
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Al confirmar, declaras bajo tu responsabilidad ser mayor de edad.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ProductCard — sin cambios
+// ─────────────────────────────────────────────
 function ProductCard({
   product,
   seleccionado,
@@ -193,6 +266,9 @@ function ProductCard({
   );
 }
 
+// ─────────────────────────────────────────────
+// MiniResumen — sin cambios
+// ─────────────────────────────────────────────
 function MiniResumen({
   seleccionados,
   onCantidadChange,
@@ -253,6 +329,9 @@ function MiniResumen({
   );
 }
 
+// ─────────────────────────────────────────────
+// COMPONENTE PRINCIPAL — con lógica de edad
+// ─────────────────────────────────────────────
 export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra }: Props) {
   const [productos, setProductos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -263,11 +342,56 @@ export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra }: Pr
   const [selectedSubtipo, setSelectedSubtipo] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"name" | "price-asc" | "price-desc" | "calories">("name");
 
+  // ─── NUEVO: estado de verificación de edad ───
+  // null = aún no se sabe (cargando sesión)
+  // "pendiente" = mostrar modal
+  // "mayor" = confirmó ser mayor, puede ver alcohol
+  // "menor" = es menor, ocultar alcohol
+  const [estadoEdad, setEstadoEdad] = useState<"cargando" | "pendiente" | "mayor" | "menor">("cargando");
+
+  // ─── NUEVO: verificar edad al montar el componente ───
+  useEffect(() => {
+    const verificarEdad = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // Usuario con sesión: verificar fecha de nacimiento en metadata
+          const fechaNac = user.user_metadata?.fecha_nacimiento
+            ?? user.user_metadata?.fechaNacimiento
+            ?? null;
+
+          if (fechaNac) {
+            const nacimiento = new Date(fechaNac);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - nacimiento.getFullYear();
+            const m = hoy.getMonth() - nacimiento.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
+
+            if (edad < 18) {
+              // Menor de edad registrado → ocultar alcohol directo, sin modal
+              setEstadoEdad("menor");
+              return;
+            }
+          }
+        }
+
+        // Sin sesión, o usuario sin fecha, o mayor registrado → mostrar modal
+        setEstadoEdad("pendiente");
+
+      } catch {
+        // Si falla algo, mostrar modal igual
+        setEstadoEdad("pendiente");
+      }
+    };
+
+    verificarEdad();
+  }, []);
+
   useEffect(() => {
     const cargarProductos = async () => {
       try {
         const data = await obtenerProductos();
-        console.log("PRODUCTOS API:", data);
         setProductos(data);
       } catch (error) {
         console.error("Error cargando productos:", error);
@@ -292,6 +416,10 @@ export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra }: Pr
 
   const filteredProducts = productos.filter((p) => {
     if (!p.precioDesde || p.precioDesde <= 0) return false;
+
+    // ─── NUEVO: ocultar alcohol si es menor ───
+    if (estadoEdad === "menor" && esProductoAlcoholico(p)) return false;
+
     const matchesSearch = !searchQuery || p.nombre?.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
     if (selectedCategory === "all") return true;
@@ -300,11 +428,9 @@ export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra }: Pr
     const categoriaResuelta = slugProducto ? (SLUG_A_CATEGORIA[slugProducto] ?? null) : null;
     if (categoriaResuelta !== selectedCategory) return false;
 
-    // Subfiltro proteína — compara directo con p.tipo que viene del backend
     if (selectedCategory === "proteina" && selectedGrupo !== "all") {
       const tipoProducto = (p.tipo ?? "").toLowerCase();
       if (tipoProducto !== selectedGrupo.toLowerCase()) return false;
-      // Subfiltro nivel 2 (magro, intermedio, premium) — busca por keyword en nombre
       if (selectedSubtipo !== "all") {
         const keyword = selectedSubtipo
           .replace(/^(Vacuno|Cerdo|Pollo|Cordero|Pescado|Marisco|Interiores)\s/i, "")
@@ -313,7 +439,6 @@ export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra }: Pr
       }
     }
 
-    // Subfiltro bebestible — compara directo con p.tipo
     if (selectedCategory === "bebestible" && selectedBebGrupo !== "all") {
       const tipoProducto = (p.tipo ?? "").toLowerCase();
       const keyword = (GRUPOS_BEBESTIBLE[selectedBebGrupo] ?? "").toLowerCase();
@@ -351,149 +476,171 @@ export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra }: Pr
     }
   };
 
+  // ─── NUEVO: mientras carga la sesión, no mostrar nada ───
+  if (estadoEdad === "cargando") {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        Verificando acceso...
+      </div>
+    );
+  }
+
   return (
-    <div className="flex gap-6 items-start">
-      <div className="flex-1 space-y-6 min-w-0">
+    <>
+      {/* ─── NUEVO: Modal de verificación de edad ─── */}
+      {estadoEdad === "pendiente" && (
+        <ModalVerificacionEdad
+          onConfirmar={() => setEstadoEdad("mayor")}
+          onDenegar={() => setEstadoEdad("menor")}
+        />
+      )}
 
-        <div>
-          <h2 className="text-2xl font-bold">Selecciona los productos del evento</h2>
-          <p className="text-muted-foreground text-sm mt-1">Productos obtenidos desde backend real 🚀</p>
-        </div>
+      <div className="flex gap-6 items-start">
+        <div className="flex-1 space-y-6 min-w-0">
 
-        {/* ── Barra búsqueda + orden ── */}
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
-            <Input
-              placeholder="Buscar productos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div>
+            <h2 className="text-2xl font-bold">Selecciona los productos del evento</h2>
+            <p className="text-muted-foreground text-sm mt-1">Productos obtenidos desde backend real 🚀</p>
+            {/* ─── NUEVO: badge informativo si es menor ─── */}
+            {estadoEdad === "menor" && (
+              <div className="mt-2 inline-flex items-center gap-2 bg-yellow-50 border border-yellow-300 text-yellow-800 text-xs px-3 py-1.5 rounded-full">
+                🔞 Productos con alcohol no disponibles para menores de 18 años
+              </div>
+            )}
           </div>
-          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <Filter className="size-4 mr-2" />
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Nombre A-Z</SelectItem>
-              <SelectItem value="price-asc">Precio: Menor a Mayor</SelectItem>
-              <SelectItem value="price-desc">Precio: Mayor a Menor</SelectItem>
-              <SelectItem value="calories">Calorías</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* ── Tabs de categoría ── */}
-        <div className="flex flex-wrap gap-2">
-          {(["all", "proteina", "bebestible", "ensalada", "insumo"] as const).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                selectedCategory === cat
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border hover:bg-muted"
-              }`}
-            >
-              {cat === "all" ? "Todos"
-                : cat === "proteina" ? "Proteínas"
-                : cat === "bebestible" ? "Bebestibles"
-                : cat === "ensalada" ? "Ensaladas"
-                : "Insumos"}
-            </button>
-          ))}
-        </div>
+          {/* Barra búsqueda + orden */}
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+              <Input
+                placeholder="Buscar productos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <Filter className="size-4 mr-2" />
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nombre A-Z</SelectItem>
+                <SelectItem value="price-asc">Precio: Menor a Mayor</SelectItem>
+                <SelectItem value="price-desc">Precio: Mayor a Menor</SelectItem>
+                <SelectItem value="calories">Calorías</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* ── Subfiltros proteína ── */}
-        {selectedCategory === "proteina" && (
-          <div className="space-y-2">
+          {/* Tabs de categoría */}
+          <div className="flex flex-wrap gap-2">
+            {(["all", "proteina", "bebestible", "ensalada", "insumo"] as const).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${selectedCategory === cat
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border hover:bg-muted"
+                  }`}
+              >
+                {cat === "all" ? "Todos"
+                  : cat === "proteina" ? "Proteínas"
+                    : cat === "bebestible" ? "Bebestibles"
+                      : cat === "ensalada" ? "Ensaladas"
+                        : "Insumos"}
+              </button>
+            ))}
+          </div>
+
+          {/* Subfiltros proteína */}
+          {selectedCategory === "proteina" && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {Object.keys(GRUPOS_PROTEINA).map((grupo) => (
+                  <button
+                    key={grupo}
+                    onClick={() => {
+                      setSelectedGrupo(selectedGrupo === grupo ? "all" : grupo);
+                      setSelectedSubtipo("all");
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${selectedGrupo === grupo
+                        ? "bg-red-600 text-white border-red-600"
+                        : "border-border hover:bg-muted"
+                      }`}
+                  >
+                    {grupo}
+                  </button>
+                ))}
+              </div>
+              {selectedGrupo !== "all" && subtipesDelGrupo.length > 0 && (
+                <div className="flex flex-wrap gap-2 pl-2">
+                  {subtipesDelGrupo.map((sub) => (
+                    <button
+                      key={sub}
+                      onClick={() => setSelectedSubtipo(selectedSubtipo === sub ? "all" : sub)}
+                      className={`px-3 py-1 rounded-full text-xs border transition-colors ${selectedSubtipo === sub
+                          ? "bg-red-100 text-red-800 border-red-300"
+                          : "border-border hover:bg-muted"
+                        }`}
+                    >
+                      {sub.replace(/^(Vacuno|Cerdo|Pollo|Cordero|Pescado|Marisco|Interiores)\s/, "")}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Subfiltros bebestible */}
+          {selectedCategory === "bebestible" && (
             <div className="flex flex-wrap gap-2">
-              {Object.keys(GRUPOS_PROTEINA).map((grupo) => (
+              {/* ─── NUEVO: si es menor, mostrar solo sin alcohol ─── */}
+              {Object.keys(estadoEdad === "menor" ? GRUPOS_BEBESTIBLE_SIN_ALCOHOL : GRUPOS_BEBESTIBLE).map((grupo) => (
                 <button
                   key={grupo}
-                  onClick={() => {
-                    setSelectedGrupo(selectedGrupo === grupo ? "all" : grupo);
-                    setSelectedSubtipo("all");
-                  }}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    selectedGrupo === grupo
-                      ? "bg-red-600 text-white border-red-600"
+                  onClick={() => setSelectedBebGrupo(selectedBebGrupo === grupo ? "all" : grupo)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${selectedBebGrupo === grupo
+                      ? "bg-blue-600 text-white border-blue-600"
                       : "border-border hover:bg-muted"
-                  }`}
+                    }`}
                 >
                   {grupo}
                 </button>
               ))}
             </div>
-            {selectedGrupo !== "all" && subtipesDelGrupo.length > 0 && (
-              <div className="flex flex-wrap gap-2 pl-2">
-                {subtipesDelGrupo.map((sub) => (
-                  <button
-                    key={sub}
-                    onClick={() => setSelectedSubtipo(selectedSubtipo === sub ? "all" : sub)}
-                    className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                      selectedSubtipo === sub
-                        ? "bg-red-100 text-red-800 border-red-300"
-                        : "border-border hover:bg-muted"
-                    }`}
-                  >
-                    {sub.replace(/^(Vacuno|Cerdo|Pollo|Cordero|Pescado|Marisco|Interiores)\s/, "")}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {/* ── Subfiltros bebestible ── */}
-        {selectedCategory === "bebestible" && (
-          <div className="flex flex-wrap gap-2">
-            {Object.keys(GRUPOS_BEBESTIBLE).map((grupo) => (
-              <button
-                key={grupo}
-                onClick={() => setSelectedBebGrupo(selectedBebGrupo === grupo ? "all" : grupo)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  selectedBebGrupo === grupo
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
-                {grupo}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Grid de productos */}
+          {loading ? (
+            <div className="text-center py-16 text-muted-foreground">Cargando productos...</div>
+          ) : sortedProducts.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">No se encontraron productos</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sortedProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  seleccionado={seleccionados.find((s) => s.product.id === product.id)}
+                  onToggle={() => toggleProducto(product)}
+                  onCantidadChange={(delta) => cambiarCantidad(product, delta)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* ── Grid de productos ── */}
-        {loading ? (
-          <div className="text-center py-16 text-muted-foreground">Cargando productos...</div>
-        ) : sortedProducts.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No se encontraron productos</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                seleccionado={seleccionados.find((s) => s.product.id === product.id)}
-                onToggle={() => toggleProducto(product)}
-                onCantidadChange={(delta) => cambiarCantidad(product, delta)}
-              />
-            ))}
-          </div>
-        )}
+        <div className="hidden lg:block w-64 shrink-0 self-start sticky top-24 space-y-4">
+          <MiniResumen
+            seleccionados={seleccionados}
+            onCantidadChange={cambiarCantidad}
+            onQuitar={toggleProducto}
+          />
+          {sidebarExtra}
+        </div>
       </div>
-
-      <div className="hidden lg:block w-64 shrink-0 self-start sticky top-24 space-y-4">
-        <MiniResumen
-          seleccionados={seleccionados}
-          onCantidadChange={cambiarCantidad}
-          onQuitar={toggleProducto}
-        />
-        {sidebarExtra}
-      </div>
-    </div>
+    </>
   );
 }

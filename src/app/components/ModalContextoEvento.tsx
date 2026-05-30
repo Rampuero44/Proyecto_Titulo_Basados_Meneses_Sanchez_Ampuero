@@ -24,8 +24,8 @@ export function ModalContextoEvento({ onConfirmar }: Props) {
   const [errorAsistentes, setErrorAsistentes] = useState("");
 
   const handleConfirmar = () => {
-    if (!asistentes || Number(asistentes) < 1) {
-      setErrorAsistentes("Ingresa al menos 1 asistente para continuar");
+    if (!asistentes || Number(asistentes) < 2) {
+      setErrorAsistentes("Un asado necesita al menos 2 personas 🔥");
       return;
     }
     onConfirmar({
@@ -56,7 +56,7 @@ export function ModalContextoEvento({ onConfirmar }: Props) {
             </Label>
             <Input
               type="number"
-              min={1}
+              min={2}
               placeholder="Ej: 10"
               className="text-lg h-12"
               value={asistentes}
@@ -109,6 +109,14 @@ export function ModalContextoEvento({ onConfirmar }: Props) {
           <Button className="w-full" onClick={handleConfirmar}>
             Comenzar a planificar
           </Button>
+
+          <button
+            onClick={() => onConfirmar({ asistentes: 0, tipoAsado: "General", presupuesto: 0 })}
+            className="w-full text-xs text-muted-foreground hover:underline text-center"
+          >
+            Omitir por ahora
+          </button>
+
         </CardContent>
       </Card>
     </div>
