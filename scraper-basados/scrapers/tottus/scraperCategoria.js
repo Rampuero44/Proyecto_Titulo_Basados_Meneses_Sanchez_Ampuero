@@ -111,9 +111,9 @@ async function extraerProductosCategoria(slugCategoria) {
 
                         const card = cards[i];
 
-                        // Extraer nombre desde texto (selector corregido)
+                        // Extraer nombre desde subtítulo (nombre real del producto)
                         const nombreTexto = await card
-                            .locator('[class*="pod-title"], [class*="title--rebranding"]')
+                            .locator('[class*="pod-subTitle"], [class*="subTitle-rebrand"]')
                             .first()
                             .innerText()
                             .catch(() => null);
@@ -122,6 +122,13 @@ async function extraerProductosCategoria(slugCategoria) {
                             .locator('a[href]')
                             .first()
                             .getAttribute('href')
+                            .catch(() => null);
+
+                        // Extraer marca desde pod-title (es la marca real en Tottus)
+                        const marcaTexto = await card
+                            .locator('[class*="pod-title"][class*="title-rebrand"]')
+                            .first()
+                            .innerText()
                             .catch(() => null);
 
                         // Fallback: extraer nombre desde URL (posición 7)
@@ -178,6 +185,7 @@ async function extraerProductosCategoria(slugCategoria) {
                             categoriaBasados: slugCategoria,
                             categoriaOrigen: subcategoria.nombre,
                             comercio: 'Tottus',
+                            marcaScraping: marcaTexto ? marcaTexto.trim() : null,
                             fechaScraping: new Date().toISOString()
                         };
 

@@ -86,7 +86,7 @@ async function extraerProductosCategoria(slugCategoria) {
                     waitUntil: 'domcontentloaded'
                 });
 
-                await page.waitForTimeout(5000);
+                await page.waitForTimeout(3000);
 
                 const cards = await page
                     .locator('[data-item-id]')

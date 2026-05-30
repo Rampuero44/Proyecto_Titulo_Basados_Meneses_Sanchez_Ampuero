@@ -76,7 +76,19 @@ app.get('/categoria/:slug', async (req, res) => {
     const slug = req.params.slug;
     try {
         const productos = await extraerProductosCategoria(slug);
-        res.json({ categoria: slug, total: productos.length, productos });
+        res.json({ comercio: 'Lider', categoria: slug, total: productos.length, productos });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Alias para consistencia con otros scrapers
+app.get('/lider/:slug', async (req, res) => {
+    const slug = req.params.slug;
+    try {
+        const productos = await extraerProductosCategoria(slug);
+        res.json({ comercio: 'Lider', categoria: slug, total: productos.length, productos });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: error.message });

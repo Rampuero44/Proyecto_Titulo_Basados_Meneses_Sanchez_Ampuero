@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const categoriasJumbo = require('../../config/categoriasJumbo');
 const filtrosCategorias = require('../../config/filtrosCategorias');
 const { normalizarTexto } = require('../../utils/normalizadorTexto');
-const { guardarProducto } = require('../../services/productoService');
+const { guardarProducto, obtenerComercioId } = require('../../services/productoService');
 const {
     iniciarLog,
     finalizarLog
