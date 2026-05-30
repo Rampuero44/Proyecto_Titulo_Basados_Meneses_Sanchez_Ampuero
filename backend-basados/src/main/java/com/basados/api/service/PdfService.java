@@ -26,12 +26,11 @@ import java.io.ByteArrayOutputStream;
 @Service
 public class PdfService {
 
-    // Paleta naranja/negro que coincide con el nuevo logo BASADOS
-    private static final DeviceRgb COLOR_NEGRO      = new DeviceRgb(18, 18, 18);
-    private static final DeviceRgb COLOR_NARANJA     = new DeviceRgb(220, 80, 0);
+    private static final DeviceRgb COLOR_NEGRO       = new DeviceRgb(18, 18, 18);
+    private static final DeviceRgb COLOR_NARANJA      = new DeviceRgb(220, 80, 0);
     private static final DeviceRgb COLOR_NARANJA_CLARO = new DeviceRgb(255, 120, 30);
-    private static final DeviceRgb COLOR_FONDO      = new DeviceRgb(248, 248, 248);
-    private static final DeviceRgb COLOR_BORDE      = new DeviceRgb(220, 220, 220);
+    private static final DeviceRgb COLOR_FONDO       = new DeviceRgb(248, 248, 248);
+    private static final DeviceRgb COLOR_BORDE       = new DeviceRgb(220, 220, 220);
 
     public byte[] generarPdfResumen(ResumenEventoRequest request, DestinatarioDto destinatario) {
         try {
@@ -41,7 +40,7 @@ public class PdfService {
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
-            document.setMargins(30, 36, 30, 36);
+            document.setMargins(20, 30, 20, 30);
 
             agregarLogo(document);
             agregarTitulo(document);
@@ -64,10 +63,9 @@ public class PdfService {
             byte[] logoBytes = logoResource.getInputStream().readAllBytes();
 
             Image logo = new Image(ImageDataFactory.create(logoBytes));
-            logo.setWidth(150);
+            logo.setWidth(110);
             logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
 
-            // Celda con fondo negro para que el logo (fondo negro) se vea bien
             Table logoTable = new Table(UnitValue.createPercentArray(new float[]{1}))
                     .useAllAvailableWidth();
 
@@ -76,12 +74,12 @@ public class PdfService {
                     .setBackgroundColor(COLOR_NEGRO)
                     .setBorder(Border.NO_BORDER)
                     .setTextAlignment(TextAlignment.CENTER)
-                    .setPaddingTop(16)
-                    .setPaddingBottom(16);
+                    .setPaddingTop(10)
+                    .setPaddingBottom(10);
 
             logoTable.addCell(logoCell);
             document.add(logoTable);
-            document.add(new Paragraph(" "));
+            document.add(new Paragraph(" ").setFontSize(4));
 
         } catch (Exception e) {
             System.out.println("⚠️ No se encontró logo.png, se genera PDF sin logo");
@@ -91,33 +89,33 @@ public class PdfService {
     private void agregarTitulo(Document document) {
         Paragraph titulo = new Paragraph("BASADOS")
                 .setBold()
-                .setFontSize(22)
+                .setFontSize(18)
                 .setFontColor(COLOR_NARANJA)
                 .setTextAlignment(TextAlignment.CENTER);
 
         Paragraph subtitulo = new Paragraph("Resumen personalizado del evento")
-                .setFontSize(12)
+                .setFontSize(11)
                 .setFontColor(COLOR_NARANJA_CLARO)
                 .setTextAlignment(TextAlignment.CENTER);
 
         document.add(titulo);
         document.add(subtitulo);
-        document.add(new Paragraph(" "));
+        document.add(new Paragraph(" ").setFontSize(4));
     }
 
     private void agregarSaludo(Document document, DestinatarioDto destinatario) {
         Paragraph saludo = new Paragraph("Hola " + valorSeguro(destinatario.getNombre()))
-                .setFontSize(14)
+                .setFontSize(12)
                 .setBold()
                 .setFontColor(ColorConstants.BLACK);
 
         Paragraph descripcion = new Paragraph(
                 "Te compartimos el resumen de tu participación en el evento organizado con BASADOS."
-        ).setFontSize(11);
+        ).setFontSize(10);
 
         document.add(saludo);
         document.add(descripcion);
-        document.add(new Paragraph(" "));
+        document.add(new Paragraph(" ").setFontSize(4));
     }
 
     private void agregarBloqueAporte(Document document, DestinatarioDto destinatario) {
@@ -125,21 +123,21 @@ public class PdfService {
                 .useAllAvailableWidth();
 
         Cell celda = new Cell()
-                .add(new Paragraph("Tu aporte").setFontSize(11).setFontColor(ColorConstants.WHITE))
+                .add(new Paragraph("Tu aporte").setFontSize(10).setFontColor(ColorConstants.WHITE))
                 .add(new Paragraph("$" + valorNumero(destinatario.getMonto()))
-                        .setFontSize(20)
+                        .setFontSize(16)
                         .setBold()
                         .setFontColor(ColorConstants.WHITE))
                 .setBackgroundColor(COLOR_NARANJA)
                 .setBorder(new SolidBorder(COLOR_NARANJA, 1))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                .setPaddingTop(12)
-                .setPaddingBottom(12);
+                .setPaddingTop(8)
+                .setPaddingBottom(8);
 
         bloque.addCell(celda);
         document.add(bloque);
-        document.add(new Paragraph(" "));
+        document.add(new Paragraph(" ").setFontSize(4));
     }
 
     private void agregarTablaResumen(Document document, ResumenEventoRequest request) {
@@ -155,6 +153,9 @@ public class PdfService {
 
         tabla.addCell(crearLabel("Fecha"));
         tabla.addCell(crearValor(valorSeguro(request.getFecha())));
+
+        tabla.addCell(crearLabel("Dirección"));
+        tabla.addCell(crearValor(valorSeguro(request.getDireccion())));
 
         tabla.addCell(crearLabel("Organizador"));
         tabla.addCell(crearValor(valorSeguro(request.getOrganizador())));
@@ -178,40 +179,40 @@ public class PdfService {
         tabla.addCell(crearValor(valorSeguro(request.getCotizacionSeleccionada())));
 
         document.add(tabla);
-        document.add(new Paragraph(" "));
+        document.add(new Paragraph(" ").setFontSize(4));
     }
 
     private Cell crearHeader(String texto) {
         return new Cell()
-                .add(new Paragraph(texto).setBold().setFontColor(ColorConstants.WHITE))
+                .add(new Paragraph(texto).setBold().setFontColor(ColorConstants.WHITE).setFontSize(10))
                 .setBackgroundColor(COLOR_NARANJA)
                 .setBorder(new SolidBorder(COLOR_NARANJA, 1))
-                .setPadding(8)
+                .setPadding(6)
                 .setTextAlignment(TextAlignment.CENTER);
     }
 
     private Cell crearLabel(String texto) {
         return new Cell()
-                .add(new Paragraph(texto).setBold())
+                .add(new Paragraph(texto).setBold().setFontSize(9))
                 .setBackgroundColor(COLOR_FONDO)
                 .setBorder(new SolidBorder(COLOR_BORDE, 1))
-                .setPadding(8);
+                .setPadding(5);
     }
 
     private Cell crearValor(String texto) {
         return new Cell()
-                .add(new Paragraph(texto))
+                .add(new Paragraph(texto).setFontSize(9))
                 .setBorder(new SolidBorder(COLOR_BORDE, 1))
-                .setPadding(8);
+                .setPadding(5);
     }
 
     private void agregarPie(Document document) {
         Paragraph pie = new Paragraph("Gracias por usar BASADOS")
                 .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(10)
+                .setFontSize(9)
                 .setFontColor(ColorConstants.DARK_GRAY);
 
-        document.add(new Paragraph(" "));
+        document.add(new Paragraph(" ").setFontSize(4));
         document.add(pie);
     }
 

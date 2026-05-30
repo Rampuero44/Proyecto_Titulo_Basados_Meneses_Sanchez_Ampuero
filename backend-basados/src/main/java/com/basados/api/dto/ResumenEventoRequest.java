@@ -14,101 +14,45 @@ public class ResumenEventoRequest {
     private Integer caloriasTotales;
     private Integer caloriasPorPersona;
     private String cotizacionSeleccionada;
+    private String direccion;
     private List<DestinatarioDto> destinatarios;
 
-    public String getEventoId() {
-        return eventoId;
-    }
+    public String getEventoId() { return eventoId; }
+    public void setEventoId(String eventoId) { this.eventoId = eventoId; }
 
-    public void setEventoId(String eventoId) {
-        this.eventoId = eventoId;
-    }
+    public String getNombreEvento() { return nombreEvento; }
+    public void setNombreEvento(String nombreEvento) { this.nombreEvento = nombreEvento; }
 
-    public String getNombreEvento() {
-        return nombreEvento;
-    }
+    public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
 
-    public void setNombreEvento(String nombreEvento) {
-        this.nombreEvento = nombreEvento;
-    }
+    public String getOrganizador() { return organizador; }
+    public void setOrganizador(String organizador) { this.organizador = organizador; }
 
-    public String getFecha() {
-        return fecha;
-    }
+    public String getOrganizadorEmail() { return organizadorEmail; }
+    public void setOrganizadorEmail(String organizadorEmail) { this.organizadorEmail = organizadorEmail; }
 
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
-    }
+    public Integer getParticipantes() { return participantes; }
+    public void setParticipantes(Integer participantes) { this.participantes = participantes; }
 
-    public String getOrganizador() {
-        return organizador;
-    }
+    public Integer getCostoTotal() { return costoTotal; }
+    public void setCostoTotal(Integer costoTotal) { this.costoTotal = costoTotal; }
 
-    public void setOrganizador(String organizador) {
-        this.organizador = organizador;
-    }
+    public Integer getCostoPromedio() { return costoPromedio; }
+    public void setCostoPromedio(Integer costoPromedio) { this.costoPromedio = costoPromedio; }
 
-    public Integer getParticipantes() {
-        return participantes;
-    }
+    public Integer getCaloriasTotales() { return caloriasTotales; }
+    public void setCaloriasTotales(Integer caloriasTotales) { this.caloriasTotales = caloriasTotales; }
 
-    public void setParticipantes(Integer participantes) {
-        this.participantes = participantes;
-    }
+    public Integer getCaloriasPorPersona() { return caloriasPorPersona; }
+    public void setCaloriasPorPersona(Integer caloriasPorPersona) { this.caloriasPorPersona = caloriasPorPersona; }
 
-    public Integer getCostoTotal() {
-        return costoTotal;
-    }
+    public String getCotizacionSeleccionada() { return cotizacionSeleccionada; }
+    public void setCotizacionSeleccionada(String cotizacionSeleccionada) { this.cotizacionSeleccionada = cotizacionSeleccionada; }
 
-    public void setCostoTotal(Integer costoTotal) {
-        this.costoTotal = costoTotal;
-    }
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
 
-    public Integer getCostoPromedio() {
-        return costoPromedio;
-    }
-
-    public void setCostoPromedio(Integer costoPromedio) {
-        this.costoPromedio = costoPromedio;
-    }
-
-    public Integer getCaloriasTotales() {
-        return caloriasTotales;
-    }
-
-    public void setCaloriasTotales(Integer caloriasTotales) {
-        this.caloriasTotales = caloriasTotales;
-    }
-
-    public Integer getCaloriasPorPersona() {
-        return caloriasPorPersona;
-    }
-
-    public void setCaloriasPorPersona(Integer caloriasPorPersona) {
-        this.caloriasPorPersona = caloriasPorPersona;
-    }
-
-    public String getCotizacionSeleccionada() {
-        return cotizacionSeleccionada;
-    }
-
-    public void setCotizacionSeleccionada(String cotizacionSeleccionada) {
-        this.cotizacionSeleccionada = cotizacionSeleccionada;
-    }
-
-    public List<DestinatarioDto> getDestinatarios() {
-        return destinatarios;
-    }
-
-    public void setDestinatarios(List<DestinatarioDto> destinatarios) {
-        this.destinatarios = destinatarios;
-    }
-
-    public String getOrganizadorEmail() {
-        return organizadorEmail;
-    }
-
-    public void setOrganizadorEmail(String organizadorEmail) {
-        this.organizadorEmail = organizadorEmail;
-    }
+    public List<DestinatarioDto> getDestinatarios() { return destinatarios; }
+    public void setDestinatarios(List<DestinatarioDto> destinatarios) { this.destinatarios = destinatarios; }
 }

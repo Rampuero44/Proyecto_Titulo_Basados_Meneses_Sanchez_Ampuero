@@ -20,6 +20,7 @@ export type ResumenEventoPayload = {
   caloriasPorPersona: number;
   cotizacionSeleccionada?: string;
   destinatarios: DestinatarioNotificacion[];
+  direccion?: string;
 };
 
 export async function enviarResumenEvento(payload: ResumenEventoPayload) {

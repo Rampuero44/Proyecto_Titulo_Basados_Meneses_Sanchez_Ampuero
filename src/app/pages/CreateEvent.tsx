@@ -423,6 +423,7 @@ export function CreateEvent() {
           caloriasTotales: Math.round(caloriasTotales),
           caloriasPorPersona: Math.round(caloriasPorPersona),
           cotizacionSeleccionada: cotizacionActiva.comercio,
+          direccion: direccion.trim(),  // ← AGREGAR
           destinatarios,
         });
       } catch {
@@ -474,11 +475,18 @@ export function CreateEvent() {
           />
         ) : step === "quote" ? (
           <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Cotización simulada</h1>
-              <p className="mt-2 text-muted-foreground">
-                Compara comercios y elige la mejor opción para tu asado.
-              </p>
+            <div className="flex items-center gap-4">
+              <img
+                src="/logo.png"
+                alt="BASADOS"
+                className="h-14 w-14 rounded-full object-contain bg-black p-1"
+              />
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Cotización simulada</h1>
+                <p className="mt-1 text-muted-foreground">
+                  Compara comercios y elige la mejor opción para tu asado.
+                </p>
+              </div>
             </div>
             <div className="grid gap-4 lg:grid-cols-3">
               {cotizaciones.map((cotizacion, index) => {
@@ -529,6 +537,14 @@ export function CreateEvent() {
                   </Card>
                 );
               })}
+              {/* Logo BASADOS en espacio vacío */}
+              <div className="flex items-center justify-center rounded-xl border bg-muted/30">
+                <img
+                  src="/logo.png"
+                  alt="BASADOS"
+                  className="w-48 object-contain opacity-80"
+                />
+              </div>
             </div>
             <Card>
               <CardHeader>
