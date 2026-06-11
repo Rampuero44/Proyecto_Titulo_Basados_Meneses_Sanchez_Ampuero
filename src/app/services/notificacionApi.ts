@@ -1,3 +1,5 @@
+import { apiFetch } from "../utils/apiClient";
+
 const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 export type DestinatarioNotificacion = {
@@ -24,22 +26,15 @@ export type ResumenEventoPayload = {
 };
 
 export async function enviarResumenEvento(payload: ResumenEventoPayload) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notificaciones/resumen`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const response = await apiFetch(`${API_BASE_URL}/notificaciones/resumen`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "No se pudo enviar el resumen");
-    }
-
-    return response.json();
-
-  } catch (error) {
-    console.error("Error enviando notificación:", error);
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "No se pudo enviar el resumen");
   }
+
+  return response.json();
 }

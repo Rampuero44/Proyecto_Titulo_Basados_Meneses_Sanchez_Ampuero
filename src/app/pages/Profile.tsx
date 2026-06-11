@@ -36,12 +36,11 @@ export function Profile() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { navigate("/login"); return; }
     setNuevoNombre(nombre);
-    obtenerEventosPorUsuario(user.id)
+    obtenerEventosPorUsuario(user!.id)
       .then((eventos) => setCantidadEventos(eventos.length))
       .catch(() => {});
-  }, [user, loading, navigate, nombre]);
+  }, [user, loading, nombre]);
 
   const handleLogout = async () => {
     await logout();
@@ -49,7 +48,7 @@ export function Profile() {
     navigate("/");
   };
 
-  if (loading || !user) return null;
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-background">

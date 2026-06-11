@@ -1,3 +1,5 @@
+import { apiFetch } from "../utils/apiClient";
+
 const API_URL = `${import.meta.env.VITE_API_URL}/api/ia`;
 
 export interface ProductoIaDTO {
@@ -33,9 +35,8 @@ export interface IaResponse {
 }
 
 export async function obtenerSugerencias(req: SugerenciasRequest): Promise<IaResponse> {
-  const response = await fetch(`${API_URL}/sugerencias`, {
+  const response = await apiFetch(`${API_URL}/sugerencias`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
   if (!response.ok) throw new Error("Error obteniendo sugerencias");
@@ -43,9 +44,8 @@ export async function obtenerSugerencias(req: SugerenciasRequest): Promise<IaRes
 }
 
 export async function analizarCotizacion(req: CotizacionIaRequest): Promise<IaResponse> {
-  const response = await fetch(`${API_URL}/cotizacion`, {
+  const response = await apiFetch(`${API_URL}/cotizacion`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
   if (!response.ok) throw new Error("Error analizando cotización");

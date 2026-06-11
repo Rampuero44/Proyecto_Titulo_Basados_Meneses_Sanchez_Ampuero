@@ -34,14 +34,13 @@ export function EventDetail() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { navigate("/login"); return; }
     if (!id) { navigate("/dashboard"); return; }
 
     fetch(`${API_URL}/${id}/detalle`)
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then(setEvento)
       .catch(() => { toast.error("Evento no encontrado"); navigate("/dashboard"); });
-  }, [id, user, loading, navigate]);
+  }, [id, loading, navigate]);
 
   const handleCambiarEstado = async (nuevoEstado: string) => {
     if (!evento) return;

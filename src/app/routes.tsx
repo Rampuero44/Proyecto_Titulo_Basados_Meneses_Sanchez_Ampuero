@@ -11,6 +11,8 @@ import { NotFound } from "./pages/NotFound";
 import { Profile } from "./pages/Profile";
 import { SeleccionServicio } from "./pages/SeleccionServicio";
 import { ContratarAsador } from "./pages/ContratarAsador";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 
 export const router = createBrowserRouter([
   {
@@ -20,14 +22,24 @@ export const router = createBrowserRouter([
       { index: true, Component: Home },
       { path: "login", Component: Login },
       { path: "register", Component: Register },
-      { path: "dashboard", Component: Dashboard },
-      { path: "admin", Component: AdminDashboard },
-      { path: "create-event", Component: CreateEvent },
-      { path: "event/:id", Component: EventDetail },
-      { path: "profile", Component: Profile },
+      {
+        Component: ProtectedRoute,
+        children: [
+          { path: "dashboard", Component: Dashboard },
+          { path: "create-event", Component: CreateEvent },
+          { path: "event/:id", Component: EventDetail },
+          { path: "profile", Component: Profile },
+          { path: "seleccion-servicio", Component: SeleccionServicio },
+          { path: "contratar-asador", Component: ContratarAsador },
+        ],
+      },
+      {
+        Component: AdminRoute,
+        children: [
+          { path: "admin", Component: AdminDashboard },
+        ],
+      },
       { path: "*", Component: NotFound },
-      { path: "/seleccion-servicio", element: <SeleccionServicio /> },
-      { path: "/contratar-asador", element: <ContratarAsador /> },
     ],
   },
 ]);

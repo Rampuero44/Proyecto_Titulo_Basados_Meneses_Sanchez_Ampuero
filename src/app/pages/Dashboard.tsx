@@ -18,13 +18,12 @@ export function Dashboard() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { navigate("/login"); return; }
 
-    obtenerEventosPorUsuario(user.id)
+    obtenerEventosPorUsuario(user!.id)
       .then(setEventos)
       .catch(() => toast.error("Error cargando eventos"))
       .finally(() => setCargando(false));
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
   const handleDeleteEvento = async (idEvento: string) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este evento?")) return;
@@ -52,7 +51,6 @@ export function Dashboard() {
   };
 
   if (loading || cargando) return null;
-  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background">

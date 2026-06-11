@@ -13,6 +13,7 @@ const {
 function pasaFiltros(producto, slugCategoria) {
     const filtros = filtrosCategorias[slugCategoria];
     if (!filtros) return true;
+    
 
     const textoProducto = normalizarTexto(producto.nombre || '');
     const incluir = filtros.incluir || [];
