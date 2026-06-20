@@ -2,6 +2,8 @@ package com.basados.api.service.ia;
 
 import com.basados.api.dto.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class IaService {
+
+    private static final Logger log = LoggerFactory.getLogger(IaService.class);
 
     @Value("${anthropic.api.key}")
     private String apiKey;
@@ -176,7 +180,7 @@ public class IaService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                System.out.println("ERROR ANTHROPIC: " + response.statusCode() + " - " + response.body());
+                log.error("Error al llamar a la API de Anthropic: status {}", response.statusCode());
                 return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);
             }
 
@@ -188,6 +192,7 @@ public class IaService {
             return new IaResponseDTO(texto, true);
 
         } catch (Exception e) {
+            log.error("Error al generar recomendaciones con Claude", e);
             return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);
         }
     }

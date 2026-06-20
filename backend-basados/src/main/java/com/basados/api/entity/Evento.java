@@ -54,10 +54,6 @@ public class Evento {
     @JoinColumn(name = "id_organizador", nullable = false)
     private Usuario organizador;
 
-    @ManyToOne
-    @JoinColumn(name = "id_usuario")
-    private Usuario usuario;
-
     public Evento() {
     }
 
@@ -171,13 +167,5 @@ public class Evento {
 
     public void setOrganizador(Usuario organizador) {
         this.organizador = organizador;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
     }
 }

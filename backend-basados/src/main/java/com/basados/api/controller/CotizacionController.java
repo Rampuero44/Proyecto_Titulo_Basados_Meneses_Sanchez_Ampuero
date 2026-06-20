@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/cotizaciones")
-@CrossOrigin(origins = "*")
 public class CotizacionController {
 
     private final CotizacionService cotizacionService;

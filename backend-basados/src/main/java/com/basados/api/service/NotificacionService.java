@@ -3,10 +3,14 @@ package com.basados.api.service;
 import com.basados.api.dto.DestinatarioDto;
 import com.basados.api.dto.NotificacionResponse;
 import com.basados.api.dto.ResumenEventoRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class NotificacionService {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificacionService.class);
 
     private final WhatsAppService whatsAppService;
     private final EmailService emailService;
@@ -57,10 +61,9 @@ public class NotificacionService {
                 try {
                     whatsAppService.enviarMensaje(destinatario.getDestino(), mensajeWhatsapp);
                     enviadosWhatsapp++;
-                    System.out.println("WhatsApp enviado a " + destinatario.getDestino());
+                    log.info("WhatsApp enviado a {}", destinatario.getDestino());
                 } catch (Exception e) {
-                    System.err.println("Error enviando WhatsApp a " + destinatario.getDestino());
-                    e.printStackTrace();
+                    log.error("Error enviando WhatsApp a {}", destinatario.getDestino(), e);
                 }
             } else if ("email".equalsIgnoreCase(destinatario.getCanal())) {
                 try {
@@ -75,11 +78,10 @@ public class NotificacionService {
                     );
 
                     enviadosEmail++;
-                    System.out.println("Email con PDF enviado a " + destinatario.getDestino());
+                    log.info("Email con PDF enviado a {}", destinatario.getDestino());
 
                 } catch (Exception e) {
-                    System.err.println("Error enviando email a " + destinatario.getDestino());
-                    e.printStackTrace();
+                    log.error("Error enviando email a {}", destinatario.getDestino(), e);
                 }
             }
         }

@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/historial-precios")
-@CrossOrigin(origins = "*")
 public class HistorialPrecioController {
 
     private final HistorialPrecioRepository historialPrecioRepository;

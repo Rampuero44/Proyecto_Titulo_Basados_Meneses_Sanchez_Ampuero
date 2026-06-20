@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/ia")
-@CrossOrigin(origins = "*")
 public class IaController {
 
     private final IaService iaService;

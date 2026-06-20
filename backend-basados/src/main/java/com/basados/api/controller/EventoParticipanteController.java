@@ -16,7 +16,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/evento-participantes")
-@CrossOrigin(origins = "*")
 public class EventoParticipanteController {
 
     private final EventoParticipanteRepository repository;

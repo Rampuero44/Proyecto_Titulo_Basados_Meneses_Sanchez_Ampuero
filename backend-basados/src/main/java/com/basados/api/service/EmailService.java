@@ -1,6 +1,8 @@
 package com.basados.api.service;
 
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     private final JavaMailSender mailSender;
 
@@ -28,7 +32,7 @@ public class EmailService {
         message.setText(contenido);
 
         mailSender.send(message);
-        System.out.println("✅ Correo enviado a: " + destinatario);
+        log.info("Correo enviado a: {}", destinatario);
     }
 
     public void enviarCorreoConAdjunto(String destinatario, String asunto, String contenido, byte[] pdf) {
@@ -43,7 +47,7 @@ public class EmailService {
             helper.addAttachment("resumen_evento_basados.pdf", new ByteArrayResource(pdf));
 
             mailSender.send(message);
-            System.out.println("📎 Correo con PDF enviado a: " + destinatario);
+            log.info("Correo con PDF enviado a: {}", destinatario);
 
         } catch (Exception e) {
             throw new RuntimeException("Error enviando correo con adjunto", e);

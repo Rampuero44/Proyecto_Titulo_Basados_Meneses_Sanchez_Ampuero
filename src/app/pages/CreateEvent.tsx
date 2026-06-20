@@ -67,7 +67,7 @@ export function CreateEvent() {
       setBorradorRevisado(true);
       obtenerBorrador(currentUsuario.id).then((borrador) => {
         if (borrador) {
-          setBorradorId(borrador.idEvento);
+          setBorradorId(borrador.id);
           setMostrarModalBorrador(true);
         } else {
           inicializarNuevoEvento();
@@ -331,7 +331,7 @@ export function CreateEvent() {
         estado: "PLANIFICANDO",
         idOrganizador: currentUsuario.id,
       });
-      const eventoId = eventoCreado.idEvento;
+      const eventoId = eventoCreado.id;
       for (const seleccionado of seleccionados) {
         await crearEventoProducto({
           idEvento: eventoId,

@@ -20,11 +20,15 @@ import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 
 @Service
 public class PdfService {
+
+    private static final Logger log = LoggerFactory.getLogger(PdfService.class);
 
     private static final DeviceRgb COLOR_NEGRO       = new DeviceRgb(18, 18, 18);
     private static final DeviceRgb COLOR_NARANJA      = new DeviceRgb(220, 80, 0);
@@ -82,7 +86,7 @@ public class PdfService {
             document.add(new Paragraph(" ").setFontSize(4));
 
         } catch (Exception e) {
-            System.out.println("⚠️ No se encontró logo.png, se genera PDF sin logo");
+            log.warn("No se encontró logo.png, se genera PDF sin logo");
         }
     }
 
