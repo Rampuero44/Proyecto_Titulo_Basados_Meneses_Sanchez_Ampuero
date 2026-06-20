@@ -1,15 +1,11 @@
 package com.basados.api.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-public class EventoProductoRequestDTO {
-
-    @NotBlank(message = "El idEvento es obligatorio")
-    private String idEvento;
+public class EventoCompletoProductoDTO {
 
     @NotNull(message = "El idProducto es obligatorio")
     private Long idProducto;
@@ -19,10 +15,7 @@ public class EventoProductoRequestDTO {
     private BigDecimal cantidad;
     private Boolean seleccionado;
 
-    public EventoProductoRequestDTO() {}
-
-    public String getIdEvento() { return idEvento; }
-    public void setIdEvento(String idEvento) { this.idEvento = idEvento; }
+    public EventoCompletoProductoDTO() {}
 
     public Long getIdProducto() { return idProducto; }
     public void setIdProducto(Long idProducto) { this.idProducto = idProducto; }

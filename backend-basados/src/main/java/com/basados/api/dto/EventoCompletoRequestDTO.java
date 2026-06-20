@@ -1,15 +1,23 @@
 package com.basados.api.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
-public class EventoRequestDTO {
+public class EventoCompletoRequestDTO {
 
+    @NotBlank(message = "El nombre del evento es obligatorio")
     private String nombre;
     private String descripcion;
+
+    @NotNull(message = "La fecha del evento es obligatoria")
     private LocalDateTime fechaEvento;
     private String direccion;
 
@@ -19,9 +27,15 @@ public class EventoRequestDTO {
     @Positive(message = "La cantidad de personas debe ser mayor a cero")
     private Integer cantidadPersonas;
     private String estado;
+
+    @NotBlank(message = "El idOrganizador es obligatorio")
     private String idOrganizador;
 
-    public EventoRequestDTO() {}
+    @NotEmpty(message = "Debe incluir al menos un producto")
+    @Valid
+    private List<EventoCompletoProductoDTO> productos;
+
+    public EventoCompletoRequestDTO() {}
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
@@ -46,4 +60,7 @@ public class EventoRequestDTO {
 
     public String getIdOrganizador() { return idOrganizador; }
     public void setIdOrganizador(String idOrganizador) { this.idOrganizador = idOrganizador; }
+
+    public List<EventoCompletoProductoDTO> getProductos() { return productos; }
+    public void setProductos(List<EventoCompletoProductoDTO> productos) { this.productos = productos; }
 }

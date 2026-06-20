@@ -3,6 +3,7 @@ package com.basados.api.controller;
 import com.basados.api.dto.NotificacionResponse;
 import com.basados.api.dto.ResumenEventoRequest;
 import com.basados.api.service.NotificacionService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class NotificacionController {
     }
 
     @PostMapping("/resumen")
-    public ResponseEntity<NotificacionResponse> enviarResumen(@RequestBody ResumenEventoRequest request) {
+    public ResponseEntity<NotificacionResponse> enviarResumen(@Valid @RequestBody ResumenEventoRequest request) {
         NotificacionResponse response = notificacionService.enviarResumenEvento(request);
         return ResponseEntity.ok(response);
     }

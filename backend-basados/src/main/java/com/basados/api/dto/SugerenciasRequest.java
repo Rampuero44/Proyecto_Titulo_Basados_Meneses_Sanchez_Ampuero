@@ -1,10 +1,15 @@
 package com.basados.api.dto;
 
+import jakarta.validation.constraints.PositiveOrZero;
+
 import java.util.List;
 
 public class SugerenciasRequest {
+    @PositiveOrZero(message = "La cantidad de asistentes no puede ser negativa")
     private int asistentes;
     private String tipoAsado;
+
+    @PositiveOrZero(message = "El presupuesto no puede ser negativo")
     private int presupuesto;
     private List<ProductoIaDTO> productos;
 

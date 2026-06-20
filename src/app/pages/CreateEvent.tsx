@@ -12,8 +12,7 @@ import { enviarResumenEvento } from "../services/notificacionApi";
 import { toast } from "sonner";
 import { CostSplitParticipant, CostSplitStep } from "../components/CostSplitStep";
 import { ProductCatalogStep, ProductoSeleccionado } from "../components/ProductCatalogStep";
-import { crearEvento } from "../services/eventosApi";
-import { crearEventoProducto } from "../services/eventoProductosApi";
+import { crearEventoCompleto } from "../services/eventosApi";
 import { AsadorStep } from "../components/AsadorStep";
 import { MaestroParrillero } from "../services/asadoresApi";
 import { ModalContextoEvento, ContextoEvento } from "../components/ModalContextoEvento";
@@ -321,7 +320,7 @@ export function CreateEvent() {
       const presupuestoFinal = Math.round(
         participantesConCostos.reduce((sum, p) => sum + p.monto, 0)
       );
-      const eventoCreado = await crearEvento({
+      const eventoCreado = await crearEventoCompleto({
         nombre: nombre.trim(),
         descripcion: "Evento creado desde frontend",
         fechaEvento: `${fecha}T20:00:00`,
@@ -330,19 +329,16 @@ export function CreateEvent() {
         cantidadPersonas: participantes.length,
         estado: "PLANIFICANDO",
         idOrganizador: currentUsuario.id,
-      });
-      const eventoId = eventoCreado.id;
-      for (const seleccionado of seleccionados) {
-        await crearEventoProducto({
-          idEvento: eventoId,
+        productos: seleccionados.map((seleccionado) => ({
           idProducto: seleccionado.product.id,
           idHistorial: cotizacionActiva?.items?.find(
             (item: any) => item.nombreProducto === seleccionado.product.nombre
           )?.idHistorial,
           cantidad: seleccionado.cantidad,
           seleccionado: true,
-        });
-      }
+        })),
+      });
+      const eventoId = eventoCreado.id;
       toast.success("Evento creado correctamente");
       try {
         const destinatarios = participantesConCostos

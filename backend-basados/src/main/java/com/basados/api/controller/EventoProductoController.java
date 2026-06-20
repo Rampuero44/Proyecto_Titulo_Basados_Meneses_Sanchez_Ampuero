@@ -11,6 +11,7 @@ import com.basados.api.repository.HistorialPrecioRepository;
 import com.basados.api.repository.ProductoRepository;
 
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,7 +43,7 @@ public class EventoProductoController {
     }
 
     @PostMapping
-    public EventoProducto crear(@RequestBody EventoProductoRequestDTO dto) {
+    public EventoProducto crear(@Valid @RequestBody EventoProductoRequestDTO dto) {
         Evento evento = eventoRepository.findById(UUID.fromString(dto.getIdEvento())).orElseThrow();
         Producto producto = productoRepository.findById(dto.getIdProducto()).orElseThrow();
 

@@ -8,6 +8,7 @@ import com.basados.api.repository.EventoParticipanteRepository;
 import com.basados.api.repository.EventoRepository;
 import com.basados.api.repository.UsuarioRepository;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -38,7 +39,7 @@ public class EventoParticipanteController {
     }
 
     @PostMapping
-    public EventoParticipante crear(@RequestBody EventoParticipanteRequestDTO dto) {
+    public EventoParticipante crear(@Valid @RequestBody EventoParticipanteRequestDTO dto) {
         Evento evento = eventoRepository.findById(UUID.fromString(dto.getIdEvento())).orElseThrow();
         Usuario usuario = usuarioRepository.findById(UUID.fromString(dto.getIdUsuario())).orElseThrow();
 
