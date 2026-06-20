@@ -6,11 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { ArrowLeft, Calendar, Users, DollarSign, ShoppingCart, Store, CheckCircle2, XCircle, Send } from "lucide-react";
+import { ArrowLeft, Calendar, Users, DollarSign, ShoppingCart, Store, CheckCircle2, XCircle, Send, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatearFecha, formatPrice } from "../utils/format";
 import { useAuth } from "../context/AuthContext";
 import { actualizarEvento, obtenerDetalleEvento } from "../services/eventosApi";
+import { descargarResumenPdf } from "../services/notificacionApi";
 
 
 const SLUG_LABEL: Record<string, string> = {
@@ -27,6 +28,7 @@ export function EventDetail() {
   const { user, loading } = useAuth();
   const [evento, setEvento] = useState<any | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [descargandoPdf, setDescargandoPdf] = useState(false);
 
 useEffect(() => {
     if (loading) return;
@@ -60,6 +62,43 @@ useEffect(() => {
   const totalAportes = evento?.participantes?.reduce((sum: number, p: any) =>
     sum + (p.aporte ?? 0), 0) ?? 0;
 
+  const handleDescargarPdf = async () => {
+    if (!evento) return;
+    setDescargandoPdf(true);
+    try {
+      const comercios = (evento.productos ?? [])
+        .map((p: any) => p.comercio)
+        .filter(Boolean);
+      const comercioMasFrecuente = comercios.length
+        ? comercios.sort((a: string, b: string) =>
+            comercios.filter((c: string) => c === b).length -
+            comercios.filter((c: string) => c === a).length
+          )[0]
+        : "No definido";
+
+      await descargarResumenPdf({
+        eventoId: evento.id,
+        nombreEvento: evento.nombre,
+        fecha: evento.fechaEvento ? formatearFecha(evento.fechaEvento) : "Sin fecha",
+        organizador: evento.organizador ?? "",
+        organizadorEmail: user?.email ?? "",
+        participantes: evento.cantidadPersonas ?? 0,
+        costoTotal: Math.round(totalGeneral),
+        costoPromedio: Math.round(evento.cantidadPersonas ? totalGeneral / evento.cantidadPersonas : 0),
+        caloriasTotales: 0,
+        caloriasPorPersona: 0,
+        cotizacionSeleccionada: comercioMasFrecuente,
+        direccion: evento.direccion ?? "",
+        destinatarios: [],
+      });
+      toast.success("PDF descargado");
+    } catch {
+      toast.error("No se pudo descargar el PDF");
+    } finally {
+      setDescargandoPdf(false);
+    }
+  };
+
   if (loading || !evento) return null;
 
   const estados = ["BORRADOR", "PLANIFICANDO", "CONFIRMADO", "FINALIZADO"];
@@ -79,6 +118,10 @@ useEffect(() => {
               <Badge variant={evento.estado === "FINALIZADO" ? "outline" : evento.estado === "CONFIRMADO" ? "default" : "secondary"}>
                 {evento.estado}
               </Badge>
+              <Button variant="outline" size="sm" onClick={handleDescargarPdf} disabled={descargandoPdf}>
+                <Download className="mr-2 h-4 w-4" />
+                {descargandoPdf ? "Generando..." : "Descargar PDF"}
+              </Button>
             </div>
           </div>
           <div className="flex flex-wrap gap-4 text-muted-foreground">

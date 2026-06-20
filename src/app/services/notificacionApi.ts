@@ -38,3 +38,24 @@ export async function enviarResumenEvento(payload: ResumenEventoPayload) {
 
   return response.json();
 }
+
+export async function descargarResumenPdf(payload: ResumenEventoPayload) {
+  const response = await apiFetch(`${API_BASE_URL}/notificaciones/resumen/pdf`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("No se pudo generar el PDF");
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `resumen-${payload.nombreEvento.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
