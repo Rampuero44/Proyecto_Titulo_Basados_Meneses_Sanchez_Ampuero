@@ -32,3 +32,6 @@ export const formatearCantidad = (cantidad: number, unidad: string): string => {
   const cantidadFormateada = Number.isInteger(cantidad) ? cantidad.toString() : cantidad.toFixed(2);
   return `${cantidadFormateada} ${unidad}`;
 };
+
+export const formatPrice = (price: number): string =>
+  new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);

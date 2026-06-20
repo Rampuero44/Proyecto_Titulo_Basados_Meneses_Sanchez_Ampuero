@@ -10,15 +10,7 @@ import { CalendarDays, Home, LogOut, Plus, User2, ShieldCheck, ShieldX, Pencil, 
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { obtenerEventosPorUsuario } from "../services/eventosApi";
-
-const calcularEdad = (fechaNacimiento: string): number => {
-  const hoy = new Date();
-  const nacimiento = new Date(fechaNacimiento);
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const m = hoy.getMonth() - nacimiento.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
-  return edad;
-};
+import { calcularEdad } from "../utils/age";
 
 export function Profile() {
   const navigate = useNavigate();

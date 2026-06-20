@@ -38,3 +38,9 @@ export async function eliminarEvento(id: string) {
   });
   if (!response.ok) throw new Error("Error eliminando evento");
 }
+
+export async function obtenerDetalleEvento(id: string) {
+  const response = await apiFetch(`${API_URL}/${id}/detalle`);
+  if (!response.ok) throw new Error("Error obteniendo detalle del evento");
+  return response.json();
+}

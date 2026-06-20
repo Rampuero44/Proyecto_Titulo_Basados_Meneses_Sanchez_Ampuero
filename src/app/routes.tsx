@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router";
-import { Root } from "./pages/Root";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -15,31 +14,25 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
 export const router = createBrowserRouter([
+  { index: true, Component: Home },
+  { path: "login", Component: Login },
+  { path: "register", Component: Register },
   {
-    path: "/",
-    Component: Root,
+    Component: ProtectedRoute,
     children: [
-      { index: true, Component: Home },
-      { path: "login", Component: Login },
-      { path: "register", Component: Register },
-      {
-        Component: ProtectedRoute,
-        children: [
-          { path: "dashboard", Component: Dashboard },
-          { path: "create-event", Component: CreateEvent },
-          { path: "event/:id", Component: EventDetail },
-          { path: "profile", Component: Profile },
-          { path: "seleccion-servicio", Component: SeleccionServicio },
-          { path: "contratar-asador", Component: ContratarAsador },
-        ],
-      },
-      {
-        Component: AdminRoute,
-        children: [
-          { path: "admin", Component: AdminDashboard },
-        ],
-      },
-      { path: "*", Component: NotFound },
+      { path: "dashboard", Component: Dashboard },
+      { path: "create-event", Component: CreateEvent },
+      { path: "event/:id", Component: EventDetail },
+      { path: "profile", Component: Profile },
+      { path: "seleccion-servicio", Component: SeleccionServicio },
+      { path: "contratar-asador", Component: ContratarAsador },
     ],
   },
+  {
+    Component: AdminRoute,
+    children: [
+      { path: "admin", Component: AdminDashboard },
+    ],
+  },
+  { path: "*", Component: NotFound },
 ]);

@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Calendar, Users, Plus, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { formatearFecha } from "../utils/format";
+import { formatearFecha, formatPrice } from "../utils/format";
 import { useAuth } from "../context/AuthContext";
 import { obtenerEventosPorUsuario, eliminarEvento } from "../services/eventosApi";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { useConfirm } from "../hooks/useConfirm";
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -25,8 +27,16 @@ export function Dashboard() {
       .finally(() => setCargando(false));
   }, [user, loading]);
 
+  const { confirm, open, options, handleConfirm, handleCancel } = useConfirm();
+
   const handleDeleteEvento = async (idEvento: string) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este evento?")) return;
+    const confirmado = await confirm({
+      title: "Eliminar evento",
+      description: "¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      cancelLabel: "Cancelar",
+    });
+    if (!confirmado) return;
     try {
       await eliminarEvento(idEvento);
       setEventos((prev) => prev.filter((e) => e.id !== idEvento));
@@ -109,7 +119,7 @@ export function Dashboard() {
                   <div className="flex items-center justify-between gap-2">
                     {getEstadoBadge(evento.estado ?? "BORRADOR")}
                     <span className="text-sm font-semibold">
-                      ${(evento.presupuesto ?? 0).toLocaleString("es-CL")}
+                      {formatPrice(evento.presupuesto ?? 0)}
                     </span>
                   </div>
                   <Button
@@ -127,6 +137,15 @@ export function Dashboard() {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={open}
+        title={options.title}
+        description={options.description}
+        confirmLabel={options.confirmLabel}
+        cancelLabel={options.cancelLabel}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

@@ -7,11 +7,8 @@ import { MaestroParrillero, obtenerMaestros } from "../services/asadoresApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Separator } from "../components/ui/separator";
 import { toast } from "sonner";
-
-const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
+import { formatPrice } from "../utils/format";
+import { crearContratacion } from "../services/contratacionesApi";
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
@@ -45,16 +42,10 @@ export function ContratarAsador() {
 
     setContratando(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/contrataciones`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idMaestro: asadorSeleccionado.idMaestro,
-          valorAcordado: asadorSeleccionado.valorServicio,
-        }),
+      await crearContratacion({
+        idMaestro: asadorSeleccionado.idMaestro,
+        valorAcordado: asadorSeleccionado.valorServicio,
       });
-
-      if (!response.ok) throw new Error("Error al registrar la contratación");
 
       toast.success(`¡${asadorSeleccionado.nombre} contratado! Nos pondremos en contacto contigo pronto.`);
       setAsadorSeleccionado(null);

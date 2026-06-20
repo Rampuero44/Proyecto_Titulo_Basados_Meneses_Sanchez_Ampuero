@@ -8,14 +8,10 @@ import { Separator } from "../components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { ArrowLeft, Calendar, Users, DollarSign, ShoppingCart, Store, CheckCircle2, XCircle, Send } from "lucide-react";
 import { toast } from "sonner";
-import { formatearFecha } from "../utils/format";
+import { formatearFecha, formatPrice } from "../utils/format";
 import { useAuth } from "../context/AuthContext";
-import { actualizarEvento } from "../services/eventosApi";
+import { actualizarEvento, obtenerDetalleEvento } from "../services/eventosApi";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/eventos`;
-
-const formatPrice = (n: number) =>
-  new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(n);
 
 const SLUG_LABEL: Record<string, string> = {
   "vacunos": "Proteína", "pollo": "Proteína", "cerdos": "Proteína",
@@ -32,15 +28,15 @@ export function EventDetail() {
   const [evento, setEvento] = useState<any | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     if (loading) return;
     if (!id) { navigate("/dashboard"); return; }
 
-    fetch(`${API_URL}/${id}/detalle`)
-      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+    obtenerDetalleEvento(id)
       .then(setEvento)
       .catch(() => { toast.error("Evento no encontrado"); navigate("/dashboard"); });
   }, [id, loading, navigate]);
+
 
   const handleCambiarEstado = async (nuevoEstado: string) => {
     if (!evento) return;

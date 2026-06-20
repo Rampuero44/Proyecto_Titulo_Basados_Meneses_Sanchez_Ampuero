@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { obtenerSugerencias, ProductoIaDTO } from "../services/iaApi";
 import { ContextoEvento } from "./ModalContextoEvento";
+import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 
 interface Props {
   contexto: ContextoEvento;
@@ -11,12 +12,9 @@ interface Props {
 export function IaSugerencias({ contexto, productos }: Props) {
   const [texto, setTexto] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
+  useDebouncedCallback(
+    async () => {
       setCargando(true);
       try {
         const res = await obtenerSugerencias({
@@ -29,12 +27,10 @@ export function IaSugerencias({ contexto, productos }: Props) {
       } finally {
         setCargando(false);
       }
-    }, 1500);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [productos, contexto]);
+    },
+    [productos, contexto],
+    1500,
+  );
 
   return (
     <div className="rounded-xl border bg-primary/5 p-4 space-y-3">

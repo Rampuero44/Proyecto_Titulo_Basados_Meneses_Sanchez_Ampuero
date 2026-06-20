@@ -16,6 +16,8 @@ import { Badge } from "./ui/badge";
 import { DollarSign, Mail, Phone, Undo2, Send } from "lucide-react";
 import { Participante } from "../types/product";
 import { toast } from "sonner";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { useConfirm } from "../hooks/useConfirm";
 
 export type MetodoNotificacion = "sin_notificacion" | "correo" | "telefono";
 
@@ -119,6 +121,7 @@ const makeInitialRows = (participantes: Participante[], total: number, alcoholTo
 
 export function CostSplitStep({ participantes, total, costoAlcoholTotal, onBack, onConfirm }: CostSplitStepProps) {
   const [rows, setRows] = useState<CostSplitParticipant[]>(() => makeInitialRows(participantes, total, costoAlcoholTotal));
+  const { confirm, open, options, handleConfirm, handleCancel } = useConfirm();
 
   useEffect(() => {
     setRows(makeInitialRows(participantes, total, costoAlcoholTotal));
@@ -204,7 +207,7 @@ export function CostSplitStep({ participantes, total, costoAlcoholTotal, onBack,
     );
   };
 
-  const handleFinalizar = () => {
+  const handleFinalizar = async () => {
     if (todosManuales && Math.abs(diferencia) >= 0.01) {
       toast.error("Los montos manuales no cuadran con el total del asado");
       return;
@@ -219,8 +222,13 @@ export function CostSplitStep({ participantes, total, costoAlcoholTotal, onBack,
       return;
     }
 
-    const confirmar = window.confirm("¿Estás seguro de finalizar el evento y enviar notificaciones a los participantes?");
-    if (!confirmar) return;
+    const confirmado = await confirm({
+      title: "Finalizar evento",
+      description: "¿Estás seguro de finalizar el evento y enviar notificaciones a los participantes?",
+      confirmLabel: "Finalizar y enviar",
+      cancelLabel: "Cancelar",
+    });
+    if (!confirmado) return;
 
     onConfirm(rows.map((row) => ({ ...row, monto: roundMoney(row.monto) })));
   };
@@ -372,6 +380,15 @@ export function CostSplitStep({ participantes, total, costoAlcoholTotal, onBack,
           ))}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={open}
+        title={options.title}
+        description={options.description}
+        confirmLabel={options.confirmLabel}
+        cancelLabel={options.cancelLabel}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

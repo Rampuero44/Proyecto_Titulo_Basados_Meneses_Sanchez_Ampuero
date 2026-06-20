@@ -5,9 +5,8 @@ import { ProductoSeleccionado } from "./ProductCatalogStep";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
+import { formatPrice } from "../utils/format";
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
