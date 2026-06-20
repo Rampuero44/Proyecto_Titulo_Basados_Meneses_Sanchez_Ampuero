@@ -23,6 +23,15 @@ export async function crearEvento(evento: any) {
   return response.json();
 }
 
+export async function crearEventoCompleto(eventoCompleto: any) {
+  const response = await apiFetch(`${API_URL}/completo`, {
+    method: "POST",
+    body: JSON.stringify(eventoCompleto),
+  });
+  if (!response.ok) throw new Error("Error creando evento");
+  return response.json();
+}
+
 export async function actualizarEvento(id: string, evento: any) {
   const response = await apiFetch(`${API_URL}/${id}`, {
     method: "PUT",
@@ -37,10 +46,4 @@ export async function eliminarEvento(id: string) {
     method: "DELETE",
   });
   if (!response.ok) throw new Error("Error eliminando evento");
-}
-
-export async function obtenerDetalleEvento(id: string) {
-  const response = await apiFetch(`${API_URL}/${id}/detalle`);
-  if (!response.ok) throw new Error("Error obteniendo detalle del evento");
-  return response.json();
 }

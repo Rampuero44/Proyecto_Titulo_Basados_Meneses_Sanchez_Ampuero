@@ -8,6 +8,7 @@ import com.basados.api.repository.ContratacionRepository;
 import com.basados.api.repository.MaestroParrilleroRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,7 +29,7 @@ public class ContratacionController {
     }
 
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody ContratacionRequest request) {
+    public ResponseEntity<?> crear(@Valid @RequestBody ContratacionRequest request) {
         MaestroParrillero maestro = maestroRepository.findById(request.getIdMaestro())
             .orElse(null);
 

@@ -1,9 +1,14 @@
 package com.basados.api.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 import java.util.List;
 
 public class ResumenEventoRequest {
+    @NotBlank(message = "El eventoId es obligatorio")
     private String eventoId;
+
+    @NotBlank(message = "El nombreEvento es obligatorio")
     private String nombreEvento;
     private String fecha;
     private String organizador;

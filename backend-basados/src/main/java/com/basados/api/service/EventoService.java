@@ -1,5 +1,7 @@
 package com.basados.api.service;
 
+import com.basados.api.dto.EventoCompletoProductoDTO;
+import com.basados.api.dto.EventoCompletoRequestDTO;
 import com.basados.api.dto.EventoDetalleDTO;
 import com.basados.api.dto.EventoRequestDTO;
 import com.basados.api.dto.EventoResponseDTO;
@@ -7,11 +9,15 @@ import com.basados.api.entity.ContratacionAsador;
 import com.basados.api.entity.Evento;
 import com.basados.api.entity.EventoParticipante;
 import com.basados.api.entity.EventoProducto;
+import com.basados.api.entity.HistorialPrecio;
+import com.basados.api.entity.Producto;
 import com.basados.api.entity.Usuario;
 import com.basados.api.repository.ContratacionRepository;
 import com.basados.api.repository.EventoParticipanteRepository;
 import com.basados.api.repository.EventoProductoRepository;
 import com.basados.api.repository.EventoRepository;
+import com.basados.api.repository.HistorialPrecioRepository;
+import com.basados.api.repository.ProductoRepository;
 import com.basados.api.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,19 +36,25 @@ public class EventoService {
     private final EventoParticipanteRepository participanteRepository;
     private final EventoProductoRepository productoEventoRepository;
     private final ContratacionRepository contratacionRepository;
+    private final ProductoRepository productoRepository;
+    private final HistorialPrecioRepository historialPrecioRepository;
 
     public EventoService(
             EventoRepository eventoRepository,
             UsuarioRepository usuarioRepository,
             EventoParticipanteRepository participanteRepository,
             EventoProductoRepository productoEventoRepository,
-            ContratacionRepository contratacionRepository
+            ContratacionRepository contratacionRepository,
+            ProductoRepository productoRepository,
+            HistorialPrecioRepository historialPrecioRepository
     ) {
         this.eventoRepository = eventoRepository;
         this.usuarioRepository = usuarioRepository;
         this.participanteRepository = participanteRepository;
         this.productoEventoRepository = productoEventoRepository;
         this.contratacionRepository = contratacionRepository;
+        this.productoRepository = productoRepository;
+        this.historialPrecioRepository = historialPrecioRepository;
     }
 
     @Transactional(readOnly = true)
@@ -171,6 +183,48 @@ public class EventoService {
 
         Evento guardado = eventoRepository.save(evento);
         return toResponseDTO(guardado);
+    }
+
+    @Transactional
+    public EventoResponseDTO crearCompleto(EventoCompletoRequestDTO dto) {
+        UUID organizadorId = UUID.fromString(dto.getIdOrganizador());
+        Usuario organizador = usuarioRepository.findById(organizadorId).orElseThrow();
+
+        Evento evento = new Evento();
+        evento.setIdEvento(UUID.randomUUID());
+        evento.setNombre(dto.getNombre());
+        evento.setDescripcion(dto.getDescripcion());
+        evento.setFechaEvento(dto.getFechaEvento());
+        evento.setDireccion(dto.getDireccion());
+        evento.setPresupuesto(dto.getPresupuesto());
+        evento.setCantidadPersonas(dto.getCantidadPersonas());
+        evento.setEstado(dto.getEstado() != null ? dto.getEstado() : "BORRADOR");
+        evento.setActivo(true);
+        evento.setFechaCreacion(LocalDateTime.now());
+        evento.setOrganizador(organizador);
+
+        Evento eventoGuardado = eventoRepository.save(evento);
+
+        for (EventoCompletoProductoDTO productoDto : dto.getProductos()) {
+            Producto producto = productoRepository.findById(productoDto.getIdProducto()).orElseThrow();
+
+            HistorialPrecio historial = null;
+            if (productoDto.getIdHistorial() != null) {
+                historial = historialPrecioRepository.findById(productoDto.getIdHistorial()).orElse(null);
+            }
+
+            EventoProducto ep = new EventoProducto();
+            ep.setIdEventoProducto(UUID.randomUUID());
+            ep.setEvento(eventoGuardado);
+            ep.setProducto(producto);
+            ep.setCantidad(productoDto.getCantidad());
+            ep.setHistorialPrecio(historial);
+            ep.setSeleccionado(productoDto.getSeleccionado());
+
+            productoEventoRepository.save(ep);
+        }
+
+        return toResponseDTO(eventoGuardado);
     }
 
     @Transactional

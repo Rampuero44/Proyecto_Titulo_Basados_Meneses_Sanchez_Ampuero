@@ -1,12 +1,20 @@
 package com.basados.api.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+
 import java.math.BigDecimal;
 
 public class EventoParticipanteRequestDTO {
 
+    @NotBlank(message = "El idEvento es obligatorio")
     private String idEvento;
+
+    @NotBlank(message = "El idUsuario es obligatorio")
     private String idUsuario;
     private String rol;
+
+    @PositiveOrZero(message = "El aporte no puede ser negativo")
     private BigDecimal aporte;
     private Boolean asistencia;
 

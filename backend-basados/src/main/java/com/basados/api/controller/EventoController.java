@@ -1,10 +1,12 @@
 package com.basados.api.controller;
 
+import com.basados.api.dto.EventoCompletoRequestDTO;
 import com.basados.api.dto.EventoDetalleDTO;
 import com.basados.api.dto.EventoRequestDTO;
 import com.basados.api.dto.EventoResponseDTO;
 import com.basados.api.service.EventoService;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,8 +47,13 @@ public class EventoController {
     }
 
     @PostMapping
-    public EventoResponseDTO crear(@RequestBody EventoRequestDTO dto) {
+    public EventoResponseDTO crear(@Valid @RequestBody EventoRequestDTO dto) {
         return eventoService.crear(dto);
+    }
+
+    @PostMapping("/completo")
+    public EventoResponseDTO crearCompleto(@Valid @RequestBody EventoCompletoRequestDTO dto) {
+        return eventoService.crearCompleto(dto);
     }
 
     @PutMapping("/{id}")

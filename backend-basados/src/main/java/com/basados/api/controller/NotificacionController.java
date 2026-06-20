@@ -5,6 +5,7 @@ import com.basados.api.dto.NotificacionResponse;
 import com.basados.api.dto.ResumenEventoRequest;
 import com.basados.api.service.NotificacionService;
 import com.basados.api.service.PdfService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +24,13 @@ public class NotificacionController {
     }
 
     @PostMapping("/resumen")
-    public ResponseEntity<NotificacionResponse> enviarResumen(@RequestBody ResumenEventoRequest request) {
+    public ResponseEntity<NotificacionResponse> enviarResumen(@Valid @RequestBody ResumenEventoRequest request) {
         NotificacionResponse response = notificacionService.enviarResumenEvento(request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/resumen/pdf")
-    public ResponseEntity<byte[]> descargarPdf(@RequestBody ResumenEventoRequest request) {
+    public ResponseEntity<byte[]> descargarPdf(@Valid @RequestBody ResumenEventoRequest request) {
         DestinatarioDto destinatario = new DestinatarioDto();
         destinatario.setNombre(request.getOrganizador());
         destinatario.setMonto(request.getCostoPromedio());
