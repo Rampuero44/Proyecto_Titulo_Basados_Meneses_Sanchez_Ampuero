@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { obtenerEventosPorUsuario } from "../services/eventosApi";
 import { calcularEdad } from "../utils/age";
+import { supabase } from "../lib/supabase";
 
 export function Profile() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export function Profile() {
   const [cantidadEventos, setCantidadEventos] = useState(0);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
+  const [guardandoNombre, setGuardandoNombre] = useState(false);
 
   const nombre = user?.user_metadata?.nombre ?? user?.email ?? "Usuario";
   const email = user?.email ?? "";
@@ -38,6 +40,34 @@ export function Profile() {
     await logout();
     toast.success("Sesión cerrada");
     navigate("/");
+  };
+
+  const handleGuardarNombre = async () => {
+    const nombreLimpio = nuevoNombre.trim();
+    if (!nombreLimpio) {
+      toast.error("El nombre no puede estar vacío");
+      setNuevoNombre(nombre);
+      return;
+    }
+    if (nombreLimpio === nombre) {
+      setEditandoNombre(false);
+      return;
+    }
+    setGuardandoNombre(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { nombre: nombreLimpio },
+      });
+      if (error) throw error;
+      setEditandoNombre(false);
+      toast.success("Nombre actualizado");
+    } catch (error) {
+      console.error("Error actualizando nombre:", error);
+      setNuevoNombre(nombre);
+      toast.error("No se pudo actualizar el nombre. Intenta nuevamente.");
+    } finally {
+      setGuardandoNombre(false);
+    }
   };
 
   if (loading) return null;
@@ -69,12 +99,13 @@ export function Profile() {
                       value={nuevoNombre}
                       onChange={(e) => setNuevoNombre(e.target.value)}
                       className="h-8 max-w-xs"
-                      onKeyDown={(e) => e.key === "Enter" && setEditandoNombre(false)}
+                      disabled={guardandoNombre}
+                      onKeyDown={(e) => e.key === "Enter" && handleGuardarNombre()}
                     />
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditandoNombre(false)}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" disabled={guardandoNombre} onClick={handleGuardarNombre}>
                       <Check className="h-4 w-4 text-green-600" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEditandoNombre(false); setNuevoNombre(nombre); }}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" disabled={guardandoNombre} onClick={() => { setEditandoNombre(false); setNuevoNombre(nombre); }}>
                       <X className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
