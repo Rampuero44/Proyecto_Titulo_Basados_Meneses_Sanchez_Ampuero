@@ -178,10 +178,22 @@ public class IaService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            int statusCode = response.statusCode();
 
-            if (response.statusCode() != 200) {
-                log.error("Error al llamar a la API de Anthropic: status {}", response.statusCode());
-                return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);
+            if (statusCode != 200) {
+                if (statusCode == 401) {
+                    log.error("Error al llamar a la API de Anthropic: API key inválida o no autorizada (401)");
+                    return new IaResponseDTO("Servicio de IA no disponible: credenciales inválidas.", false);
+                } else if (statusCode == 429) {
+                    log.error("Error al llamar a la API de Anthropic: límite de uso alcanzado (429)");
+                    return new IaResponseDTO("El servicio de IA está saturado en este momento. Intenta nuevamente en unos minutos.", false);
+                } else if (statusCode >= 500) {
+                    log.error("Error al llamar a la API de Anthropic: error del servicio ({})", statusCode);
+                    return new IaResponseDTO("El servicio de IA no está disponible en este momento. Intenta más tarde.", false);
+                } else {
+                    log.error("Error al llamar a la API de Anthropic: status {}", statusCode);
+                    return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);
+                }
             }
 
             Map<?, ?> responseMap = mapper.readValue(response.body(), Map.class);
@@ -191,6 +203,12 @@ public class IaService {
 
             return new IaResponseDTO(texto, true);
 
+        } catch (java.net.http.HttpTimeoutException e) {
+            log.error("Timeout al llamar a la API de Anthropic", e);
+            return new IaResponseDTO("El servicio de IA demoró demasiado en responder. Intenta nuevamente.", false);
+        } catch (java.io.IOException e) {
+            log.error("Error de red al llamar a la API de Anthropic", e);
+            return new IaResponseDTO("No fue posible conectarse al servicio de IA. Verifica tu conexión e intenta nuevamente.", false);
         } catch (Exception e) {
             log.error("Error al generar recomendaciones con Claude", e);
             return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);

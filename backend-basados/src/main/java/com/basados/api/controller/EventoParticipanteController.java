@@ -1,6 +1,7 @@
 package com.basados.api.controller;
 
 import com.basados.api.dto.EventoParticipanteRequestDTO;
+import com.basados.api.dto.EventoParticipanteResponseDTO;
 import com.basados.api.entity.Evento;
 import com.basados.api.entity.EventoParticipante;
 import com.basados.api.entity.Usuario;
@@ -34,12 +35,14 @@ public class EventoParticipanteController {
     }
 
     @GetMapping
-    public List<EventoParticipante> listar() {
-        return repository.findAll();
+    public List<EventoParticipanteResponseDTO> listar() {
+        return repository.findAll().stream()
+            .map(this::toResponseDTO)
+            .toList();
     }
 
     @PostMapping
-    public EventoParticipante crear(@Valid @RequestBody EventoParticipanteRequestDTO dto) {
+    public EventoParticipanteResponseDTO crear(@Valid @RequestBody EventoParticipanteRequestDTO dto) {
         Evento evento = eventoRepository.findById(UUID.fromString(dto.getIdEvento())).orElseThrow();
         Usuario usuario = usuarioRepository.findById(UUID.fromString(dto.getIdUsuario())).orElseThrow();
 
@@ -52,6 +55,19 @@ public class EventoParticipanteController {
         ep.setAsistencia(dto.getAsistencia());
         ep.setFechaUnion(LocalDateTime.now());
 
-        return repository.save(ep);
+        return toResponseDTO(repository.save(ep));
+    }
+
+    private EventoParticipanteResponseDTO toResponseDTO(EventoParticipante ep) {
+        return new EventoParticipanteResponseDTO(
+            ep.getIdEventoParticipante(),
+            ep.getEvento() != null ? ep.getEvento().getIdEvento() : null,
+            ep.getUsuario() != null ? ep.getUsuario().getIdUsuario() : null,
+            ep.getUsuario() != null ? ep.getUsuario().getNombre() : null,
+            ep.getRol(),
+            ep.getAporte(),
+            ep.getAsistencia(),
+            ep.getFechaUnion()
+        );
     }
 }

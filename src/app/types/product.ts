@@ -25,16 +25,21 @@ export interface CartItem {
 }
 
 export interface CotizacionItem {
+  idHistorial?: number;
   nombreProducto: string;
   cantidad: number;
   precioUnitario: number;
+  precioUnitarioTexto?: string;
   subtotal: number;
+  comercio?: string;
   encontrado: boolean;
 }
 
 export interface Cotizacion {
   comercio: string;
   total: number;
+  productosEncontrados?: number;
+  productosFaltantes?: number;
   items: CotizacionItem[];
 }
 export interface ContactoParticipante {
