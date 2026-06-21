@@ -1,4 +1,5 @@
 import { apiFetch } from "../utils/apiClient";
+import { Cotizacion } from "../types/product";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/cotizaciones`;
 
@@ -11,7 +12,11 @@ export interface CotizacionRequest {
   productos: CotizacionProductoRequest[];
 }
 
-export async function generarCotizacion(request: CotizacionRequest) {
+export interface CotizacionResultado {
+  cotizaciones: Cotizacion[];
+}
+
+export async function generarCotizacion(request: CotizacionRequest): Promise<CotizacionResultado> {
   const response = await apiFetch(API_URL, {
     method: "POST",
     body: JSON.stringify(request),

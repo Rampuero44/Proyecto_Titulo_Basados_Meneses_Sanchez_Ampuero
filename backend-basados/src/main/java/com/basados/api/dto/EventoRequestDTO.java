@@ -1,5 +1,7 @@
 package com.basados.api.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
@@ -8,8 +10,11 @@ import java.time.LocalDateTime;
 
 public class EventoRequestDTO {
 
+    @NotBlank(message = "El nombre del evento es obligatorio")
     private String nombre;
     private String descripcion;
+
+    @NotNull(message = "La fecha del evento es obligatoria")
     private LocalDateTime fechaEvento;
     private String direccion;
 
@@ -19,6 +24,8 @@ public class EventoRequestDTO {
     @Positive(message = "La cantidad de personas debe ser mayor a cero")
     private Integer cantidadPersonas;
     private String estado;
+
+    @NotBlank(message = "El idOrganizador es obligatorio")
     private String idOrganizador;
 
     public EventoRequestDTO() {}

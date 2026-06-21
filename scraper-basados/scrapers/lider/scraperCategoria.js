@@ -3,7 +3,7 @@ const categoriasLider = require('../../config/categoriasLider');
 const filtrosCategorias = require('../../config/filtrosCategorias');
 const { normalizarTexto } = require('../../utils/normalizadorTexto');
 const { extraerSku } = require('../../utils/extraerSku');
-const { guardarProducto } = require('../../services/productoService');
+const { guardarProducto, obtenerComercioId } = require('../../services/productoService');
 const {
     iniciarLog,
     finalizarLog
@@ -48,7 +48,7 @@ async function extraerProductosCategoria(slugCategoria) {
     }
 
     const browser = await chromium.launch({
-        headless: false
+        headless: true
     });
 
     const resultados = [];
@@ -62,7 +62,7 @@ async function extraerProductosCategoria(slugCategoria) {
             let productosActualizados = 0;
 
             const idLog = await iniciarLog({
-                idComercio: 1,
+                idComercio: await obtenerComercioId('Lider'),
                 subcategoria: subcategoria.nombre
             });
 

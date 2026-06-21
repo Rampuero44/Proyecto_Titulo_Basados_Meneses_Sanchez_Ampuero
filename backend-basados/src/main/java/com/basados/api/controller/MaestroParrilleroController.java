@@ -1,52 +1,32 @@
 package com.basados.api.controller;
 
 import com.basados.api.dto.MaestroParrilleroDTO;
-import com.basados.api.entity.MaestroParrillero;
-import com.basados.api.repository.MaestroParrilleroRepository;
+import com.basados.api.service.MaestroParrilleroService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/maestros-parrilleros")
 public class MaestroParrilleroController {
 
-    private final MaestroParrilleroRepository repository;
+    private final MaestroParrilleroService maestroParrilleroService;
 
-    public MaestroParrilleroController(MaestroParrilleroRepository repository) {
-        this.repository = repository;
+    public MaestroParrilleroController(MaestroParrilleroService maestroParrilleroService) {
+        this.maestroParrilleroService = maestroParrilleroService;
     }
 
     @GetMapping
     public ResponseEntity<List<MaestroParrilleroDTO>> getAll() {
-        List<MaestroParrilleroDTO> maestros = repository.findAllDisponibles()
-            .stream()
-            .map(this::toDTO)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(maestros);
+        return ResponseEntity.ok(maestroParrilleroService.listarDisponibles());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MaestroParrilleroDTO> getById(@PathVariable Long id) {
-        return repository.findById(id)
-            .map(m -> ResponseEntity.ok(toDTO(m)))
+        return maestroParrilleroService.obtenerPorId(id)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
-    }
-
-    private MaestroParrilleroDTO toDTO(MaestroParrillero m) {
-        return new MaestroParrilleroDTO(
-            m.getIdMaestro(),
-            m.getUsuario() != null ? m.getUsuario().getNombre() : null,
-            m.getUsuario() != null ? m.getUsuario().getApellido() : null,
-            m.getUsuario() != null ? m.getUsuario().getCorreo() : null,
-            m.getUsuario() != null ? m.getUsuario().getTelefono() : null,
-            m.getDescripcion(),
-            m.getExperienciaAnos(),
-            m.getValorServicio(),
-            m.getDisponibilidad(),
-            m.getPuntuacion()
-        );
     }
 }
