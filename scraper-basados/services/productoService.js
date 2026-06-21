@@ -82,6 +82,32 @@ async function obtenerOCrearFormato(pesoGramos) {
     return inserted.rows[0]?.id_formato ?? null;
 }
 
+async function registrarAuditoriaProducto(idProducto, accion, datosAnteriores, datosNuevos, usuarioResponsable) {
+
+    await pool.query(
+        `
+        INSERT INTO auditoria_productos (
+            id_producto,
+            accion,
+            datos_anteriores,
+            datos_nuevos,
+            fecha_cambio,
+            usuario_responsable
+        )
+        VALUES (
+            $1, $2, $3, $4, CURRENT_TIMESTAMP, $5
+        )
+        `,
+        [
+            idProducto,
+            accion,
+            datosAnteriores ? JSON.stringify(datosAnteriores) : null,
+            JSON.stringify(datosNuevos),
+            usuarioResponsable
+        ]
+    );
+}
+
 async function insertarProducto(producto) {
 
     const idCategoria = await obtenerCategoriaId(
@@ -126,7 +152,21 @@ async function insertarProducto(producto) {
         ]
     );
 
-    return result.rows[0].id_producto;
+    const idProducto = result.rows[0].id_producto;
+
+    try {
+        await registrarAuditoriaProducto(idProducto, 'creado', null, {
+            nombre: producto.nombre,
+            categoria: producto.categoriaBasados,
+            comercio: producto.comercio,
+            skuScraping: producto.skuScraping
+        }, 'scraper');
+    } catch (error) {
+        console.log('[AUDITORIA] Error registrando creación de producto');
+        console.log(error.message);
+    }
+
+    return idProducto;
 }
 
 function limpiarPrecio(precioTexto) {
@@ -237,5 +277,6 @@ async function guardarProducto(producto) {
 
 module.exports = {
     guardarProducto,
-    obtenerComercioId
+    obtenerComercioId,
+    registrarAuditoriaProducto
 };

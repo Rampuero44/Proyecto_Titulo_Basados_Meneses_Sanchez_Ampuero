@@ -29,7 +29,7 @@ export function CreateEvent() {
     direccion, setDireccion,
     participantes,
     nuevoParticipante, setNuevoParticipante,
-    selectedComercio, setSelectedComercio,
+    setSelectedComercio,
     cotizaciones,
     contextoEvento, setContextoEvento,
     mostrarModalBorrador,
@@ -95,7 +95,6 @@ export function CreateEvent() {
           <QuoteStep
             cotizaciones={cotizaciones}
             cotizacionActiva={cotizacionActiva}
-            selectedComercio={selectedComercio}
             onSelectComercio={setSelectedComercio}
             caloriasTotales={caloriasTotales}
             caloriasPorPersona={caloriasPorPersona}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
-import { obtenerSugerencias, ProductoIaDTO } from "../services/iaApi";
+import { obtenerSugerencias, ProductoIaDTO, LIMITE_IA_ALCANZADO } from "../services/iaApi";
 import { ContextoEvento } from "./ModalContextoEvento";
 import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 
@@ -22,8 +22,12 @@ export function IaSugerencias({ contexto, productos }: Props) {
           productos,
         });
         setTexto(res.texto);
-      } catch {
-        setTexto("No se pudieron cargar las sugerencias.");
+      } catch (error) {
+        setTexto(
+          error instanceof Error && error.message === LIMITE_IA_ALCANZADO
+            ? "Alcanzaste el límite diario de uso de IA. Inténtalo de nuevo mañana."
+            : "No se pudieron cargar las sugerencias."
+        );
       } finally {
         setCargando(false);
       }

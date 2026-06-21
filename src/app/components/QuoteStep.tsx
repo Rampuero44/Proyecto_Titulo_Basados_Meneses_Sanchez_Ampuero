@@ -12,7 +12,6 @@ const formatCalories = (value: number) => `${Math.round(value).toLocaleString()}
 interface QuoteStepProps {
   cotizaciones: any[];
   cotizacionActiva: any | null;
-  selectedComercio: string;
   onSelectComercio: (comercio: string) => void;
   caloriasTotales: number;
   caloriasPorPersona: number;
@@ -25,7 +24,6 @@ interface QuoteStepProps {
 export function QuoteStep({
   cotizaciones,
   cotizacionActiva,
-  selectedComercio,
   onSelectComercio,
   caloriasTotales,
   caloriasPorPersona,

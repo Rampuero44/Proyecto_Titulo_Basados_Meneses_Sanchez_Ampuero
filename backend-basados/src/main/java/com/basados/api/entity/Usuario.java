@@ -43,6 +43,12 @@ public class Usuario {
     @Column(name = "ultimo_login")
     private LocalDateTime ultimoLogin;
 
+    @Column(name = "ia_tokens_consumidos")
+    private Integer iaTokensConsumidos;
+
+    @Column(name = "ia_fecha_reset")
+    private java.time.LocalDate iaFechaReset;
+
     public Usuario() {
     }
 
@@ -132,5 +138,21 @@ public class Usuario {
 
     public void setUltimoLogin(LocalDateTime ultimoLogin) {
         this.ultimoLogin = ultimoLogin;
+    }
+
+    public Integer getIaTokensConsumidos() {
+        return iaTokensConsumidos;
+    }
+
+    public void setIaTokensConsumidos(Integer iaTokensConsumidos) {
+        this.iaTokensConsumidos = iaTokensConsumidos;
+    }
+
+    public java.time.LocalDate getIaFechaReset() {
+        return iaFechaReset;
+    }
+
+    public void setIaFechaReset(java.time.LocalDate iaFechaReset) {
+        this.iaFechaReset = iaFechaReset;
     }
 }

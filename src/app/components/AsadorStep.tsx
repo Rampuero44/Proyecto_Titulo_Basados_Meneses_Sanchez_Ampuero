@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, Phone, Mail, CreditCard, ChevronRight, X, UserCheck, Users, ClipboardList } from "lucide-react";
+import { Star, Phone, Mail, ChevronRight, X, UserCheck, Users, ClipboardList } from "lucide-react";
 import { MaestroParrillero, obtenerMaestros } from "../services/asadoresApi";
 import { ProductoSeleccionado } from "./ProductCatalogStep";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";

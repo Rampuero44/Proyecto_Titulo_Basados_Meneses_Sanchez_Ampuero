@@ -201,7 +201,20 @@ public class IaService {
             Map<?, ?> firstBlock = (Map<?, ?>) content.get(0);
             String texto = (String) firstBlock.get("text");
 
-            return new IaResponseDTO(texto, true);
+            int tokensConsumidos = 0;
+            Object usageObj = responseMap.get("usage");
+            if (usageObj instanceof Map<?, ?> usage) {
+                Object inputTokens = usage.get("input_tokens");
+                Object outputTokens = usage.get("output_tokens");
+                if (inputTokens instanceof Number) {
+                    tokensConsumidos += ((Number) inputTokens).intValue();
+                }
+                if (outputTokens instanceof Number) {
+                    tokensConsumidos += ((Number) outputTokens).intValue();
+                }
+            }
+
+            return new IaResponseDTO(texto, true, tokensConsumidos);
 
         } catch (java.net.http.HttpTimeoutException e) {
             log.error("Timeout al llamar a la API de Anthropic", e);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
-import { analizarCotizacion, ProductoIaDTO, CotizacionComercioDTO } from "../services/iaApi";
+import { analizarCotizacion, ProductoIaDTO, CotizacionComercioDTO, LIMITE_IA_ALCANZADO } from "../services/iaApi";
 import { ContextoEvento } from "./ModalContextoEvento";
 
 interface Props {
@@ -19,7 +19,13 @@ export function IaCotizacion({ contexto, productos, cotizaciones }: Props) {
     setCargando(true);
     analizarCotizacion({ ...contexto, productos, cotizaciones })
       .then((res) => setTexto(res.texto))
-      .catch(() => setTexto("No se pudo analizar la cotización."))
+      .catch((error) =>
+        setTexto(
+          error instanceof Error && error.message === LIMITE_IA_ALCANZADO
+            ? "Alcanzaste el límite diario de uso de IA. Inténtalo de nuevo mañana."
+            : "No se pudo analizar la cotización."
+        )
+      )
       .finally(() => setCargando(false));
   }, [cotizaciones]);
 

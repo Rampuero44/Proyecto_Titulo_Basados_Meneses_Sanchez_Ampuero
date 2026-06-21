@@ -1,7 +1,9 @@
 package com.basados.api.service;
 
 import com.basados.api.dto.AdminMetricasDTO;
+import com.basados.api.dto.AuditoriaProductoDTO;
 import com.basados.api.entity.Usuario;
+import com.basados.api.repository.AuditoriaProductoRepository;
 import com.basados.api.repository.EventoProductoRepository;
 import com.basados.api.repository.EventoRepository;
 import com.basados.api.repository.UsuarioRepository;
@@ -13,25 +15,30 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class AdminService {
 
     private static final int TOP_PRODUCTOS_LIMITE = 10;
+    private static final int FEED_AUDITORIA_LIMITE = 20;
 
     private final UsuarioRepository usuarioRepository;
     private final EventoRepository eventoRepository;
     private final EventoProductoRepository eventoProductoRepository;
+    private final AuditoriaProductoRepository auditoriaProductoRepository;
 
     public AdminService(
             UsuarioRepository usuarioRepository,
             EventoRepository eventoRepository,
-            EventoProductoRepository eventoProductoRepository
+            EventoProductoRepository eventoProductoRepository,
+            AuditoriaProductoRepository auditoriaProductoRepository
     ) {
         this.usuarioRepository = usuarioRepository;
         this.eventoRepository = eventoRepository;
         this.eventoProductoRepository = eventoProductoRepository;
+        this.auditoriaProductoRepository = auditoriaProductoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +53,14 @@ public class AdminService {
         var productosMasSeleccionados = eventoProductoRepository.findProductosMasSeleccionados(top10);
 
         return new AdminMetricasDTO(totalUsuarios, eventosPorEstado, productosMasSeleccionados);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AuditoriaProductoDTO> obtenerFeedAuditoriaProductos() {
+        verificarRolAdmin();
+
+        Pageable top20 = PageRequest.of(0, FEED_AUDITORIA_LIMITE);
+        return auditoriaProductoRepository.findFeedReciente(top20);
     }
 
     private void verificarRolAdmin() {

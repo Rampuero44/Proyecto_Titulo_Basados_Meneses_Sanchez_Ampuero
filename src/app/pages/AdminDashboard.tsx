@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Button } from "../components/ui/button";
-import { ExternalLink, BarChart2, Users, ShoppingBag, CalendarCheck } from "lucide-react";
+import { ExternalLink, BarChart2, Users, ShoppingBag, CalendarCheck, History } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { obtenerMetricasAdmin, type AdminMetricas } from "../services/adminApi";
+import { obtenerMetricasAdmin, obtenerFeedAuditoriaProductos, type AdminMetricas, type AuditoriaProducto } from "../services/adminApi";
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador",
@@ -17,12 +17,20 @@ const ESTADO_LABEL: Record<string, string> = {
   FINALIZADO: "Finalizado",
 };
 
+const ACCION_LABEL: Record<string, string> = {
+  creado: "Producto nuevo",
+  enriquecido: "Datos actualizados por IA",
+};
+
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [metricas, setMetricas] = useState<AdminMetricas | null>(null);
   const [errorMetricas, setErrorMetricas] = useState<string | null>(null);
   const [cargandoMetricas, setCargandoMetricas] = useState(true);
+  const [auditoria, setAuditoria] = useState<AuditoriaProducto[]>([]);
+  const [errorAuditoria, setErrorAuditoria] = useState<string | null>(null);
+  const [cargandoAuditoria, setCargandoAuditoria] = useState(true);
 
   const rol = user?.user_metadata?.rol ?? "usuario";
 
@@ -39,6 +47,14 @@ export function AdminDashboard() {
       .then(setMetricas)
       .catch((err) => setErrorMetricas(err.message))
       .finally(() => setCargandoMetricas(false));
+  }, [user, loading, rol]);
+
+  useEffect(() => {
+    if (loading || !user || rol !== "admin") return;
+    obtenerFeedAuditoriaProductos()
+      .then(setAuditoria)
+      .catch((err) => setErrorAuditoria(err.message))
+      .finally(() => setCargandoAuditoria(false));
   }, [user, loading, rol]);
 
   if (loading || !user) return null;
@@ -175,6 +191,51 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <Separator className="my-6" />
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Actividad reciente de productos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {errorAuditoria && (
+              <p className="text-sm text-destructive">{errorAuditoria}</p>
+            )}
+            {cargandoAuditoria ? (
+              <p className="text-sm text-muted-foreground italic">Cargando...</p>
+            ) : !auditoria.length ? (
+              <p className="text-sm text-muted-foreground italic">Sin actividad registrada aún</p>
+            ) : (
+              <div className="space-y-2">
+                {auditoria.map((a) => (
+                  <div
+                    key={a.idAuditoria}
+                    className="flex items-center justify-between border-b py-2 text-sm last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">{a.nombreProducto}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {ACCION_LABEL[a.accion] ?? a.accion} · {a.usuarioResponsable}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(a.fechaCambio).toLocaleString("es-CL", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Separator className="my-6" />
 

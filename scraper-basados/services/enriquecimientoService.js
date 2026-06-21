@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { registrarAuditoriaProducto } = require('./productoService');
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const BATCH_SIZE = Number(process.env.ENRIQUECIMIENTO_BATCH_SIZE) || 20;
@@ -175,7 +176,26 @@ async function obtenerOCrearFormato(cantidad, unidad = 'g') {
     return inserted.rows[0]?.id_formato ?? null;
 }
 
+async function obtenerEstadoActual(idProducto) {
+    const result = await pool.query(`
+        SELECT
+            p.calorias,
+            p.proteinas,
+            p.grasas,
+            p.carbohidratos,
+            m.nombre AS marca,
+            f.nombre AS formato
+        FROM productos p
+        LEFT JOIN marcas m ON m.id_marca = p.id_marca
+        LEFT JOIN formatos f ON f.id_formato = p.id_formato
+        WHERE p.id_producto = $1
+    `, [idProducto]);
+    return result.rows[0] ?? null;
+}
+
 async function actualizarProducto(idProducto, datos) {
+    const estadoAnterior = await obtenerEstadoActual(idProducto);
+
     const idMarca = await obtenerOCrearMarca(datos.marca);
     const idFormato = await obtenerOCrearFormato(datos.peso_gramos, datos.unidad_formato ?? 'g');
 
@@ -200,6 +220,21 @@ async function actualizarProducto(idProducto, datos) {
         idFormato,
         idProducto
     ]);
+
+    try {
+        await registrarAuditoriaProducto(idProducto, 'enriquecido', estadoAnterior, {
+            calorias: datos.calorias,
+            proteinas: datos.proteinas,
+            grasas: datos.grasas,
+            carbohidratos: datos.carbohidratos,
+            marca: datos.marca,
+            peso_gramos: datos.peso_gramos,
+            unidad_formato: datos.unidad_formato
+        }, 'enriquecimiento-ia');
+    } catch (error) {
+        console.log('[AUDITORIA] Error registrando enriquecimiento de producto');
+        console.log(error.message);
+    }
 }
 
 async function marcarIntentado(idProducto) {

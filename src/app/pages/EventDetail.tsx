@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { ArrowLeft, Calendar, Users, DollarSign, ShoppingCart, Store, CheckCircle2, XCircle, Send, Download } from "lucide-react";
+import { ArrowLeft, Calendar, Users, DollarSign, ShoppingCart, Store, CheckCircle2, XCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatearFecha, formatPrice } from "../utils/format";
 import { useAuth } from "../context/AuthContext";
@@ -32,7 +32,6 @@ export function EventDetail() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [evento, setEvento] = useState<EventoDetalleResponse | null>(null);
-  const [enviando, setEnviando] = useState(false);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
 
 useEffect(() => {
