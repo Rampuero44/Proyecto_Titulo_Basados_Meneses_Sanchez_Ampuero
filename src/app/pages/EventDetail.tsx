@@ -12,6 +12,11 @@ import { formatearFecha, formatPrice } from "../utils/format";
 import { useAuth } from "../context/AuthContext";
 import { actualizarEvento, obtenerDetalleEvento } from "../services/eventosApi";
 import { descargarResumenPdf } from "../services/notificacionApi";
+import {
+  EventoDetalleResponse,
+  EventoDetalleProductoResponse,
+  EventoDetalleParticipanteResponse,
+} from "../types/evento";
 
 
 const SLUG_LABEL: Record<string, string> = {
@@ -26,7 +31,7 @@ export function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [evento, setEvento] = useState<any | null>(null);
+  const [evento, setEvento] = useState<EventoDetalleResponse | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
 
@@ -51,7 +56,7 @@ useEffect(() => {
     }
   };
 
-  const totalProductos = evento?.productos?.reduce((sum: number, p: any) => {
+  const totalProductos = evento?.productos?.reduce((sum: number, p: EventoDetalleProductoResponse) => {
     const precio = p.precioUnitario ?? 0;
     return sum + precio * (p.cantidad ?? 1);
   }, 0) ?? 0;
@@ -59,7 +64,7 @@ useEffect(() => {
   const costoAsador = evento?.contratacion?.valorAcordado ?? 0;
   const totalGeneral = totalProductos + costoAsador;
 
-  const totalAportes = evento?.participantes?.reduce((sum: number, p: any) =>
+  const totalAportes = evento?.participantes?.reduce((sum: number, p: EventoDetalleParticipanteResponse) =>
     sum + (p.aporte ?? 0), 0) ?? 0;
 
   const handleDescargarPdf = async () => {
@@ -67,12 +72,12 @@ useEffect(() => {
     setDescargandoPdf(true);
     try {
       const comercios = (evento.productos ?? [])
-        .map((p: any) => p.comercio)
-        .filter(Boolean);
+        .map((p) => p.comercio)
+        .filter((c): c is string => Boolean(c));
       const comercioMasFrecuente = comercios.length
-        ? comercios.sort((a: string, b: string) =>
-            comercios.filter((c: string) => c === b).length -
-            comercios.filter((c: string) => c === a).length
+        ? comercios.sort((a, b) =>
+            comercios.filter((c) => c === b).length -
+            comercios.filter((c) => c === a).length
           )[0]
         : "No definido";
 
@@ -163,12 +168,12 @@ useEffect(() => {
                   <p className="text-sm text-muted-foreground italic">Sin productos registrados</p>
                 ) : (
                   <div className="space-y-2">
-                    {evento.productos?.map((p: any, i: number) => (
+                    {evento.productos?.map((p: EventoDetalleProductoResponse, i: number) => (
                       <div key={i} className="flex items-center justify-between border-b py-2 last:border-0">
                         <div>
                           <p className="font-medium">{p.nombre}</p>
                           <p className="text-xs text-muted-foreground">
-                            {SLUG_LABEL[p.slugCategoria] ?? p.slugCategoria}
+                            {(p.slugCategoria ? SLUG_LABEL[p.slugCategoria] : null) ?? p.slugCategoria}
                             {p.comercio ? ` · ${p.comercio}` : ""}
                           </p>
                         </div>
@@ -202,7 +207,7 @@ useEffect(() => {
                   <p className="text-sm text-muted-foreground italic">Sin participantes registrados</p>
                 ) : (
                   <div className="space-y-3">
-                    {evento.participantes?.map((p: any, i: number) => (
+                    {evento.participantes?.map((p: EventoDetalleParticipanteResponse, i: number) => (
                       <div key={i} className="flex items-center justify-between rounded-lg border p-3">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
@@ -235,27 +240,28 @@ useEffect(() => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {evento.productos?.filter((p: any) => p.comercio).length === 0 ? (
+                {evento.productos?.filter((p: EventoDetalleProductoResponse) => p.comercio).length === 0 ? (
                   <p className="text-sm text-muted-foreground italic">Sin información de precios disponible</p>
                 ) : (
                   <div className="space-y-4">
                     {Object.entries(
                       (evento.productos ?? [])
-                        .filter((p: any) => p.comercio && p.precioUnitario)
-                        .reduce((acc: any, p: any) => {
-                          if (!acc[p.comercio]) acc[p.comercio] = { productos: [], total: 0 };
-                          acc[p.comercio].productos.push(p);
-                          acc[p.comercio].total += (p.precioUnitario ?? 0) * (p.cantidad ?? 1);
+                        .filter((p) => p.comercio && p.precioUnitario)
+                        .reduce<Record<string, { productos: EventoDetalleProductoResponse[]; total: number }>>((acc, p) => {
+                          const comercio = p.comercio as string;
+                          if (!acc[comercio]) acc[comercio] = { productos: [], total: 0 };
+                          acc[comercio].productos.push(p);
+                          acc[comercio].total += (p.precioUnitario ?? 0) * (p.cantidad ?? 1);
                           return acc;
                         }, {})
-                    ).map(([comercio, data]: [string, any]) => (
+                    ).map(([comercio, data]) => (
                       <div key={comercio} className="rounded-lg border p-4 space-y-2">
                         <div className="flex justify-between items-center">
                           <p className="font-semibold">{comercio}</p>
                           <span className="text-primary font-bold">{formatPrice(data.total)}</span>
                         </div>
                         <div className="space-y-1">
-                          {data.productos.map((p: any, i: number) => (
+                          {data.productos.map((p: EventoDetalleProductoResponse, i: number) => (
                             <div key={i} className="flex justify-between text-sm text-muted-foreground">
                               <span>{p.nombre} x{p.cantidad}</span>
                               <span>{formatPrice((p.precioUnitario ?? 0) * (p.cantidad ?? 1))}</span>

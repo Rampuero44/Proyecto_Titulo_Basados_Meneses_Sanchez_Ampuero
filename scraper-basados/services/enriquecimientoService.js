@@ -188,6 +188,7 @@ async function actualizarProducto(idProducto, datos) {
             id_marca = COALESCE($5, id_marca),
             id_formato = COALESCE($6, id_formato),
             enriquecido = true,
+            enriquecimiento_exitoso = true,
             fecha_actualizacion = CURRENT_TIMESTAMP
         WHERE id_producto = $7
     `, [
@@ -203,7 +204,7 @@ async function actualizarProducto(idProducto, datos) {
 
 async function marcarIntentado(idProducto) {
     await pool.query(
-        'UPDATE productos SET enriquecido = true WHERE id_producto = $1',
+        'UPDATE productos SET enriquecido = true, enriquecimiento_exitoso = false WHERE id_producto = $1',
         [idProducto]
     );
 }

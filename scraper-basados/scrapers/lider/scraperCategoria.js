@@ -1,7 +1,6 @@
 const { chromium } = require('playwright');
 const categoriasLider = require('../../config/categoriasLider');
-const filtrosCategorias = require('../../config/filtrosCategorias');
-const { normalizarTexto } = require('../../utils/normalizadorTexto');
+const { pasaFiltros } = require('../../utils/filtrosProducto');
 const { extraerSku } = require('../../utils/extraerSku');
 const { guardarProducto, obtenerComercioId } = require('../../services/productoService');
 const {
@@ -9,37 +8,7 @@ const {
     finalizarLog
 } = require('../../services/scrapingLogService');
 
-function pasaFiltros(producto, slugCategoria) {
-
-    const filtros = filtrosCategorias[slugCategoria];
-
-    if (!filtros) {
-        return true;
-    }
-
-    const textoProducto = normalizarTexto(producto.nombre || '');
-
-    const incluir = filtros.incluir || [];
-    const excluir = filtros.excluir || [];
-
-    const tieneExclusion = excluir.some(keyword =>
-        textoProducto.includes(normalizarTexto(keyword))
-    );
-
-    if (tieneExclusion) {
-        return false;
-    }
-
-    if (incluir.length === 0) {
-        return true;
-    }
-
-    return incluir.some(keyword =>
-        textoProducto.includes(normalizarTexto(keyword))
-    );
-}
-
-async function extraerProductosCategoria(slugCategoria) {
+async function extraerProductosCategoria(slugCategoria, onActividad) {
 
     const categoria = categoriasLider[slugCategoria];
 
@@ -82,11 +51,30 @@ async function extraerProductosCategoria(slugCategoria) {
                 console.log(`[LIDER] Página: ${pagina}`);
                 console.log(`[LIDER] URL paginada: ${urlPaginada}`);
 
-                await page.goto(urlPaginada, {
-                    waitUntil: 'domcontentloaded'
-                });
+                let intentos = 0;
+                let cargada = false;
 
-                await page.waitForTimeout(3000);
+                while (intentos < 3 && !cargada) {
+                    intentos++;
+                    try {
+                        await page.goto(urlPaginada, {
+                            waitUntil: 'domcontentloaded',
+                            timeout: 30000
+                        });
+                        cargada = true;
+                    } catch (error) {
+                        console.log(`[LIDER] Intento ${intentos} fallido cargando página ${pagina}`);
+                        console.log(error.message);
+                    }
+                }
+
+                if (!cargada) {
+                    console.log(`[LIDER] Página ${pagina} no se pudo cargar tras ${intentos} intentos, se omite`);
+                    pagina++;
+                    continue;
+                }
+
+                await page.waitForSelector('[data-item-id]', { timeout: 8000 }).catch(() => null);
 
                 const cards = await page
                     .locator('[data-item-id]')
@@ -95,7 +83,6 @@ async function extraerProductosCategoria(slugCategoria) {
                 console.log(`[LIDER] Productos detectados: ${cards.length}`);
 
                 productosDetectados += cards.length;
-                
 
                 if (cards.length === 0) {
                     seguir = false;
@@ -144,7 +131,7 @@ async function extraerProductosCategoria(slugCategoria) {
                         const urlCompleta = link.startsWith('http')
                             ? link
                             : `https://super.lider.cl${link}`;
-                        const sku = extraerSku(urlCompleta);
+                        const sku = extraerSku(urlCompleta, 'Lider');
 
                         const producto = {
                             skuScraping: sku,
@@ -172,6 +159,7 @@ async function extraerProductosCategoria(slugCategoria) {
 
                                 await guardarProducto(producto);
                                 productosActualizados++;
+                                onActividad?.();
 
                             } catch (error) {
 

@@ -25,7 +25,12 @@ export type ResumenEventoPayload = {
   direccion?: string;
 };
 
-export async function enviarResumenEvento(payload: ResumenEventoPayload) {
+export interface NotificacionResponse {
+  enviadosWhatsapp: number;
+  enviadosEmail: number;
+}
+
+export async function enviarResumenEvento(payload: ResumenEventoPayload): Promise<NotificacionResponse> {
   const response = await apiFetch(`${API_BASE_URL}/notificaciones/resumen`, {
     method: "POST",
     body: JSON.stringify(payload),

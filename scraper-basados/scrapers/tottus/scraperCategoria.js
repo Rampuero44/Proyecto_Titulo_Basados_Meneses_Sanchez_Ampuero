@@ -1,7 +1,6 @@
 const { chromium } = require('playwright');
 const categoriasTottus = require('../../config/categoriasTottus');
-const filtrosCategorias = require('../../config/filtrosCategorias');
-const { normalizarTexto } = require('../../utils/normalizadorTexto');
+const { pasaFiltros } = require('../../utils/filtrosProducto');
 const { extraerSku } = require('../../utils/extraerSku');
 const { guardarProducto, obtenerComercioId } = require('../../services/productoService');
 const {
@@ -9,38 +8,7 @@ const {
     finalizarLog
 } = require('../../services/scrapingLogService');
 
-
-function pasaFiltros(producto, slugCategoria) {
-
-    const filtros = filtrosCategorias[slugCategoria];
-
-    if (!filtros) {
-        return true;
-    }
-
-    const textoProducto = normalizarTexto(producto.nombre || '');
-
-    const incluir = filtros.incluir || [];
-    const excluir = filtros.excluir || [];
-
-    const tieneExclusion = excluir.some(keyword =>
-        textoProducto.includes(normalizarTexto(keyword))
-    );
-
-    if (tieneExclusion) {
-        return false;
-    }
-
-    if (incluir.length === 0) {
-        return true;
-    }
-
-    return incluir.some(keyword =>
-        textoProducto.includes(normalizarTexto(keyword))
-    );
-}
-
-async function extraerProductosCategoria(slugCategoria) {
+async function extraerProductosCategoria(slugCategoria, onActividad) {
 
     const categoria = categoriasTottus[slugCategoria];
 
@@ -54,7 +22,6 @@ async function extraerProductosCategoria(slugCategoria) {
 
     const resultados = [];
     const productosVistos = new Set();
-
 
     try {
 
@@ -84,11 +51,30 @@ async function extraerProductosCategoria(slugCategoria) {
                 console.log(`[TOTTUS] Página: ${pagina}`);
                 console.log(`[TOTTUS] URL paginada: ${urlPaginada}`);
 
-                await page.goto(urlPaginada, {
-                    waitUntil: 'domcontentloaded'
-                });
+                let intentos = 0;
+                let cargada = false;
 
-                await page.waitForTimeout(5000);
+                while (intentos < 3 && !cargada) {
+                    intentos++;
+                    try {
+                        await page.goto(urlPaginada, {
+                            waitUntil: 'domcontentloaded',
+                            timeout: 30000
+                        });
+                        cargada = true;
+                    } catch (error) {
+                        console.log(`[TOTTUS] Intento ${intentos} fallido cargando página ${pagina}`);
+                        console.log(error.message);
+                    }
+                }
+
+                if (!cargada) {
+                    console.log(`[TOTTUS] Página ${pagina} no se pudo cargar tras ${intentos} intentos, se omite`);
+                    pagina++;
+                    continue;
+                }
+
+                await page.waitForSelector('[data-testid="ssr-pod"]', { timeout: 8000 }).catch(() => null);
 
                 const cards = await page
                     .locator('[data-testid="ssr-pod"]')
@@ -111,7 +97,6 @@ async function extraerProductosCategoria(slugCategoria) {
 
                         const card = cards[i];
 
-                        // Extraer nombre desde subtítulo (nombre real del producto)
                         const nombreTexto = await card
                             .locator('[class*="pod-subTitle"], [class*="subTitle-rebrand"]')
                             .first()
@@ -124,21 +109,18 @@ async function extraerProductosCategoria(slugCategoria) {
                             .getAttribute('href')
                             .catch(() => null);
 
-                        // Extraer marca desde pod-title (es la marca real en Tottus)
                         const marcaTexto = await card
                             .locator('[class*="pod-title"][class*="title-rebrand"]')
                             .first()
                             .innerText()
                             .catch(() => null);
 
-                        // Fallback: extraer nombre desde URL (posición 7)
                         const nombreDesdeUrl = link
                             ? link.split('/')[6]?.replace(/-/g, ' ')
                                 .replace(/\b\w/g, c => c.toUpperCase())
                                 .trim()
                             : null;
 
-                        // Usar nombre de texto si es válido, sino usar el de URL
                         const nombre = (nombreTexto && nombreTexto.length > 3 && !/^\d+$/.test(nombreTexto))
                             ? nombreTexto.trim()
                             : nombreDesdeUrl;
@@ -173,7 +155,7 @@ async function extraerProductosCategoria(slugCategoria) {
                             ? link
                             : `https://www.tottus.cl${link}`;
 
-                        const sku = extraerSku(urlCompleta);
+                        const sku = extraerSku(urlCompleta, 'Tottus');
 
                         const producto = {
                             skuScraping: sku,
@@ -201,6 +183,7 @@ async function extraerProductosCategoria(slugCategoria) {
 
                                 await guardarProducto(producto);
                                 productosActualizados++;
+                                onActividad?.();
 
                             } catch (error) {
 

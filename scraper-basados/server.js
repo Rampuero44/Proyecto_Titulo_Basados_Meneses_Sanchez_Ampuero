@@ -31,6 +31,48 @@ const {
 const app = express();
 const PORT = 3001;
 
+const INACTIVIDAD_MS = 5 * 60 * 1000;
+const TECHO_ABSOLUTO_MS = 3 * 60 * 60 * 1000;
+const INTERVALO_CHEQUEO_MS = 30 * 1000;
+
+function ejecutarConVigilancia(factory, { inactividadMs, techoMs }) {
+    return new Promise((resolve, reject) => {
+        let terminado = false;
+        let ultimaActividad = Date.now();
+
+        const marcarActividad = () => {
+            ultimaActividad = Date.now();
+        };
+
+        const finalizar = (callback, valor) => {
+            if (terminado) return;
+            terminado = true;
+            clearInterval(intervalId);
+            clearTimeout(techoId);
+            callback(valor);
+        };
+
+        const intervalId = setInterval(() => {
+            const inactivoPor = Date.now() - ultimaActividad;
+            if (inactivoPor > inactividadMs) {
+                finalizar(reject, new Error(
+                    `Scraping abortado por inactividad: ${Math.round(inactivoPor / 60000)} min sin guardar productos nuevos`
+                ));
+            }
+        }, INTERVALO_CHEQUEO_MS);
+
+        const techoId = setTimeout(() => {
+            finalizar(reject, new Error(
+                `Scraping abortado: superó el techo absoluto de ${techoMs / 3600000} horas`
+            ));
+        }, techoMs);
+
+        factory(marcarActividad)
+            .then((resultado) => finalizar(resolve, resultado))
+            .catch((error) => finalizar(reject, error));
+    });
+}
+
 app.use(express.json());
 
 pool.query('SELECT NOW()')
@@ -39,8 +81,6 @@ pool.query('SELECT NOW()')
         console.log('POSTGRESQL ERROR');
         console.log(error.message);
     });
-
-// ── Lider ────────────────────────────────────────────────────────────────────
 
 app.get('/buscar', async (req, res) => {
     const query = req.query.query;
@@ -84,7 +124,10 @@ app.get('/buscar', async (req, res) => {
 app.get('/categoria/:slug', async (req, res) => {
     const slug = req.params.slug;
     try {
-        const productos = await extraerProductosCategoria(slug);
+        const productos = await ejecutarConVigilancia(
+            (marcarActividad) => extraerProductosCategoria(slug, marcarActividad),
+            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
+        );
         res.json({ comercio: 'Lider', categoria: slug, total: productos.length, productos });
     } catch (error) {
         console.log(error);
@@ -92,24 +135,27 @@ app.get('/categoria/:slug', async (req, res) => {
     }
 });
 
-// Alias para consistencia con otros scrapers
 app.get('/lider/:slug', async (req, res) => {
     const slug = req.params.slug;
     try {
-        const productos = await extraerProductosCategoria(slug);
+        const productos = await ejecutarConVigilancia(
+            (marcarActividad) => extraerProductosCategoria(slug, marcarActividad),
+            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
+        );
         res.json({ comercio: 'Lider', categoria: slug, total: productos.length, productos });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: error.message });
     }
 });
-
-// ── Tottus ───────────────────────────────────────────────────────────────────
 
 app.get('/tottus/:slug', async (req, res) => {
     const slug = req.params.slug;
     try {
-        const productos = await extraerProductosCategoriaTottus(slug);
+        const productos = await ejecutarConVigilancia(
+            (marcarActividad) => extraerProductosCategoriaTottus(slug, marcarActividad),
+            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
+        );
         res.json({ categoria: slug, total: productos.length, productos });
     } catch (error) {
         console.log(error);
@@ -117,21 +163,20 @@ app.get('/tottus/:slug', async (req, res) => {
     }
 });
 
-// ── Jumbo ────────────────────────────────────────────────────────────────────
-
 app.get('/jumbo/:slug', async (req, res) => {
     const slug = req.params.slug;
     try {
         console.log(`[SERVER] Iniciando scraping Jumbo — categoría: ${slug}`);
-        const productos = await extraerProductosCategoriaJumbo(slug);
+        const productos = await ejecutarConVigilancia(
+            (marcarActividad) => extraerProductosCategoriaJumbo(slug, marcarActividad),
+            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
+        );
         res.json({ comercio: 'Jumbo', categoria: slug, total: productos.length, productos });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: error.message });
     }
 });
-
-// ── Enriquecimiento IA ────────────────────────────────────────────────────────
 
 app.post('/enriquecer', async (req, res) => {
     try {

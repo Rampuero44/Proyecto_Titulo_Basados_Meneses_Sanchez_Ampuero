@@ -9,13 +9,14 @@ import { toast } from "sonner";
 import { formatearFecha, formatPrice } from "../utils/format";
 import { useAuth } from "../context/AuthContext";
 import { obtenerEventosPorUsuario, eliminarEvento } from "../services/eventosApi";
+import { EventoResponse } from "../types/evento";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [eventos, setEventos] = useState<any[]>([]);
+  const [eventos, setEventos] = useState<EventoResponse[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {

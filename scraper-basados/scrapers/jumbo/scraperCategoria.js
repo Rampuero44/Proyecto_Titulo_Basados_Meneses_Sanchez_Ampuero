@@ -1,52 +1,12 @@
 const { chromium } = require('playwright');
 const categoriasJumbo = require('../../config/categoriasJumbo');
-const filtrosCategorias = require('../../config/filtrosCategorias');
-const { normalizarTexto } = require('../../utils/normalizadorTexto');
+const { pasaFiltros } = require('../../utils/filtrosProducto');
+const { extraerSku } = require('../../utils/extraerSku');
 const { guardarProducto, obtenerComercioId } = require('../../services/productoService');
 const {
     iniciarLog,
     finalizarLog
 } = require('../../services/scrapingLogService');
-
-// ─── Filtros ──────────────────────────────────────────────────────────────────
-
-function pasaFiltros(producto, slugCategoria) {
-    const filtros = filtrosCategorias[slugCategoria];
-    if (!filtros) return true;
-    
-
-    const textoProducto = normalizarTexto(producto.nombre || '');
-    const incluir = filtros.incluir || [];
-    const excluir = filtros.excluir || [];
-
-    const tieneExclusion = excluir.some(keyword =>
-        textoProducto.includes(normalizarTexto(keyword))
-    );
-    if (tieneExclusion) return false;
-    if (incluir.length === 0) return true;
-
-    return incluir.some(keyword =>
-        textoProducto.includes(normalizarTexto(keyword))
-    );
-}
-
-// ─── Extraer SKU desde URL de Jumbo ──────────────────────────────────────────
-
-function extraerSkuJumbo(url) {
-    const partes = url.replace(/\/$/, '').split('/');
-    const ultimo = partes[partes.length - 1];
-    const penultimo = partes[partes.length - 2];
-    const slug = ultimo === 'p' ? penultimo : ultimo;
-
-    // Intentar extraer ID numérico del slug (ej: 1996518 de lomo-liso-1996518-kg)
-    const match = slug.match(/(\d{5,})/);
-    if (match) return match[1];
-
-    // Si no hay ID numérico, usar el slug completo
-    return slug;
-}
-
-// ─── Scroll infinito: bajar hasta cargar todos los productos ─────────────────
 
 async function scrollHastaElFinal(page, maxScrolls = 20) {
     let scrollsHechos = 0;
@@ -56,7 +16,6 @@ async function scrollHastaElFinal(page, maxScrolls = 20) {
         const alturaActual = await page.evaluate(() => document.body.scrollHeight);
 
         if (alturaActual === alturaAnterior) {
-            // No hubo cambio de altura — ya llegamos al final
             break;
         }
 
@@ -72,9 +31,7 @@ async function scrollHastaElFinal(page, maxScrolls = 20) {
     console.log(`[JUMBO] Scroll finalizado tras ${scrollsHechos} iteraciones`);
 }
 
-// ─── Scraper principal ────────────────────────────────────────────────────────
-
-async function extraerProductosCategoria(slugCategoria) {
+async function extraerProductosCategoria(slugCategoria, onActividad) {
 
     const categoria = categoriasJumbo[slugCategoria];
 
@@ -96,7 +53,6 @@ async function extraerProductosCategoria(slugCategoria) {
             let productosDetectados = 0;
             let productosActualizados = 0;
 
-            // Jumbo tiene id de comercio 2 en la BD
             const idLog = await iniciarLog({
                 idComercio: await obtenerComercioId('Jumbo'),
                 subcategoria: subcategoria.nombre
@@ -104,7 +60,6 @@ async function extraerProductosCategoria(slugCategoria) {
 
             const page = await browser.newPage();
 
-            // Evitar bloqueos — user agent de Chrome real
             await page.setExtraHTTPHeaders({
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
             });
@@ -124,20 +79,33 @@ async function extraerProductosCategoria(slugCategoria) {
                 console.log(`[JUMBO] Página: ${pagina}`);
                 console.log(`[JUMBO] URL paginada: ${urlPaginada}`);
 
-                try {
-                    await page.goto(urlPaginada, {
-                        waitUntil: 'domcontentloaded',
-                        timeout: 30000
-                    });
-                } catch (e) {
-                    console.log(`[JUMBO] Error cargando página: ${e.message}`);
-                    seguir = false;
-                    break;
+                let intentos = 0;
+                let cargada = false;
+
+                while (intentos < 3 && !cargada) {
+                    intentos++;
+                    try {
+                        await page.goto(urlPaginada, {
+                            waitUntil: 'domcontentloaded',
+                            timeout: 30000
+                        });
+                        cargada = true;
+                    } catch (error) {
+                        console.log(`[JUMBO] Intento ${intentos} fallido cargando página ${pagina}`);
+                        console.log(error.message);
+                    }
                 }
 
-                await page.waitForTimeout(4000);
+                if (!cargada) {
+                    console.log(`[JUMBO] Página ${pagina} no se pudo cargar tras ${intentos} intentos, se omite`);
+                    pagina++;
+                    continue;
+                }
 
-                // Si Jumbo usa scroll infinito, bajar hasta cargar todos
+                await page
+                    .waitForSelector('a[href*="/p"]:has([class*="product-card-name"])', { timeout: 8000 })
+                    .catch(() => null);
+
                 await scrollHastaElFinal(page);
 
                 const cards = await page
@@ -152,7 +120,6 @@ async function extraerProductosCategoria(slugCategoria) {
                     break;
                 }
 
-                // Detectar fin de paginación comparando URLs con página anterior
                 const urlsPaginaActual = new Set();
                 for (const card of cards) {
                     const href = await card.getAttribute('href').catch(() => null);
@@ -176,7 +143,6 @@ async function extraerProductosCategoria(slugCategoria) {
                     try {
                         const card = cards[i];
 
-                        // Nombre del producto
                         let nombre = null;
                         try {
                             nombre = await card
@@ -187,7 +153,6 @@ async function extraerProductosCategoria(slugCategoria) {
                             nombre = null;
                         }
 
-                        // Precio principal
                         let precioTexto = null;
                         try {
                             const precioEl = await card
@@ -198,7 +163,6 @@ async function extraerProductosCategoria(slugCategoria) {
                             precioTexto = null;
                         }
 
-                        // Precio unitario (por kg/lt)
                         let precioUnitario = null;
                         try {
                             const unitEl = await card
@@ -209,7 +173,6 @@ async function extraerProductosCategoria(slugCategoria) {
                             precioUnitario = null;
                         }
 
-                        // URL del producto - la card ES el link <a>
                         let link = null;
                         try {
                             link = await card
@@ -218,7 +181,6 @@ async function extraerProductosCategoria(slugCategoria) {
                             link = null;
                         }
 
-                        // Imagen
                         let imagen = null;
                         try {
                             imagen = await card
@@ -237,7 +199,7 @@ async function extraerProductosCategoria(slugCategoria) {
                             ? link
                             : `https://www.jumbo.cl${link}`;
 
-                        const sku = extraerSkuJumbo(urlCompleta);
+                        const sku = extraerSku(urlCompleta, 'Jumbo');
 
                         const lineasPrecio = (precioTexto || '')
                             .split('\n')
@@ -269,6 +231,7 @@ async function extraerProductosCategoria(slugCategoria) {
                             try {
                                 await guardarProducto(producto);
                                 productosActualizados++;
+                                onActividad?.();
                                 console.log(`[JUMBO] ✓ ${nombre.trim()} — ${precioPrincipal}`);
                             } catch (error) {
                                 console.log('[DB] Error guardando producto Jumbo');
