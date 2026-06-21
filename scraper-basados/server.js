@@ -1,3 +1,12 @@
+require('dotenv').config();
+
+if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('[SERVER] ERROR FATAL: falta la variable de entorno ANTHROPIC_API_KEY');
+    console.error('[SERVER] El enriquecimiento de productos no funcionará sin esta key.');
+    console.error('[SERVER] Defínela en scraper-basados/.env antes de iniciar el servidor.');
+    process.exit(1);
+}
+
 const express = require('express');
 const { chromium } = require('playwright');
 
@@ -37,7 +46,7 @@ app.get('/buscar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Debe enviar query' });
 
-    const browser = await chromium.launch({ headless: false });
+    const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
     try {

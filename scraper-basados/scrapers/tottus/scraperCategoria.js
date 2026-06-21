@@ -49,7 +49,7 @@ async function extraerProductosCategoria(slugCategoria) {
     }
 
     const browser = await chromium.launch({
-        headless: false
+        headless: true
     });
 
     const resultados = [];

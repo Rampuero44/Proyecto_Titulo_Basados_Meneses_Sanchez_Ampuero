@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const BATCH_SIZE = 20;
+const BATCH_SIZE = Number(process.env.ENRIQUECIMIENTO_BATCH_SIZE) || 20;
 const DELAY_MS = 1000;
 
 async function obtenerProductosSinEnriquecer() {
