@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { generateId } from "../utils/generateId";
 import { esMayorDeEdad } from "../utils/age";
@@ -23,12 +24,14 @@ export type CreateEventStep = "catalog" | "asador" | "config" | "quote" | "cost"
 
 export function useCreateEvent() {
   const { user, loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const forzarNuevo = searchParams.get("nuevo") === "true";
 
   const currentUsuario = user ? {
     id: user.id,
     nombre: user.user_metadata?.nombre ?? user.email ?? "Usuario",
     email: user.email ?? "",
-    fechaNacimiento: user.user_metadata?.fecha_nacimiento ?? null,
+    fechaNacimiento: user.user_metadata?.fecha_nacimiento ?? user.user_metadata?.fechaNacimiento ?? null,
   } : null;
   const esInvitado = !currentUsuario;
 
@@ -56,6 +59,10 @@ export function useCreateEvent() {
     if (loading) return;
     if (currentUsuario && !borradorRevisado) {
       setBorradorRevisado(true);
+      if (forzarNuevo) {
+        inicializarNuevoEvento();
+        return;
+      }
       obtenerBorrador(currentUsuario.id).then((borrador) => {
         if (borrador) {
           setBorradorId(borrador.id);
@@ -274,8 +281,7 @@ export function useCreateEvent() {
   const handleContinuarDesdeCatalogo = () => {
     if (!validarCatalogo()) return;
     if (tieneProductosAlcoholicos(seleccionados)) {
-      if (currentUsuario?.fechaNacimiento) {
-        const mayor = esMayorDeEdad(currentUsuario.fechaNacimiento);
+      if (currentUsuario?.fechaNacimiento) {        const mayor = esMayorDeEdad(currentUsuario.fechaNacimiento);
         if (!mayor) {
           const sinAlcohol = filtrarAlcohol(seleccionados);
           if (sinAlcohol.length === 0) {

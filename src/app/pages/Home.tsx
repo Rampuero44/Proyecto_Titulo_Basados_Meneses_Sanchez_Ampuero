@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -9,27 +10,45 @@ import {
   Flame,
   CheckCircle2,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { Navbar } from "../components/Navbar";
+import { obtenerBorrador } from "../services/eventosApi";
 
 export function Home() {
+  const { user, loading } = useAuth();
+  const nombre = user?.user_metadata?.nombre ?? user?.email ?? "usuario";
+  const estaLogueado = !loading && !!user;
+  const [tieneBorrador, setTieneBorrador] = useState(false);
+
+  useEffect(() => {
+    if (!estaLogueado || !user) return;
+    obtenerBorrador(user.id)
+      .then((borrador) => setTieneBorrador(!!borrador))
+      .catch(() => setTieneBorrador(false));
+  }, [estaLogueado, user]);
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo-basados.jpg" alt="Basados" className="h-11 w-11 rounded-lg object-cover" />
-            <span className="text-xl font-semibold">BASADOS</span>
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Iniciar Sesión</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/create-event"> Comenzar Gratis</Link>
-            </Button>
+      {estaLogueado ? (
+        <Navbar />
+      ) : (
+        <header className="border-b">
+          <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+            <Link to="/" className="flex items-center gap-3">
+              <img src="/logo-basados.jpg" alt="Basados" className="h-11 w-11 rounded-lg object-cover" />
+              <span className="text-xl font-semibold">BASADOS</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" asChild>
+                <Link to="/login">Iniciar Sesión</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/create-event">Comenzar Gratis</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <section className="container mx-auto max-w-6xl px-4 py-20">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -38,24 +57,41 @@ export function Home() {
               <Flame className="h-4 w-4" />
               Planificación inteligente de asados
             </div>
-            <h1 className="text-5xl font-bold tracking-tight">
-              Planifica, cotiza y disfruta tu asado
-            </h1>
-            <p className="max-w-2xl text-xl text-muted-foreground">
-              BASADOS centraliza participantes, insumos, comparación simulada entre supermercados y reparto de costos en una sola experiencia de demo.
-            </p>
-            <div className="flex gap-4 pt-4">
-              <Button size="lg" asChild>
-                <Link to="/register">
-                  Crear Cuenta Gratis
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link to="/create-event">
-                  Comenzar Gratis
-                </Link>
-              </Button>
-            </div>
+            {estaLogueado ? (
+              <>
+                <h1 className="text-5xl font-bold tracking-tight">
+                  ¡Bienvenido de vuelta, {nombre}!
+                </h1>
+                <p className="max-w-2xl text-xl text-muted-foreground">
+                  Retoma donde lo dejaste, revisa tus eventos o crea uno nuevo.
+                </p>
+                <div className="flex gap-4 pt-4">
+                  <Button size="lg" asChild disabled={!tieneBorrador}>
+                    <Link to="/create-event">Continuar con el Evento</Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link to="/create-event?nuevo=true">Crear Evento</Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className="text-5xl font-bold tracking-tight">
+                  Planifica, cotiza y disfruta tu asado
+                </h1>
+                <p className="max-w-2xl text-xl text-muted-foreground">
+                  BASADOS centraliza participantes, insumos, comparación simulada entre supermercados y reparto de costos en una sola experiencia de demo.
+                </p>
+                <div className="flex gap-4 pt-4">
+                  <Button size="lg" asChild>
+                    <Link to="/register">Crear Cuenta Gratis</Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link to="/create-event">Comenzar Gratis</Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex justify-center lg:justify-end">
@@ -192,9 +228,15 @@ export function Home() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center pb-8">
-            <Button size="lg" asChild>
-              <Link to="/register">Empezar ahora</Link>
-            </Button>
+            {estaLogueado ? (
+              <Button size="lg" asChild>
+                <Link to="/create-event">Crear evento</Link>
+              </Button>
+            ) : (
+              <Button size="lg" asChild>
+                <Link to="/register">Empezar ahora</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </section>

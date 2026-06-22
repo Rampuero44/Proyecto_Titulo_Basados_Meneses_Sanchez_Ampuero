@@ -16,7 +16,7 @@ import java.util.UUID;
 @Service
 public class IaCuotaService {
 
-    private static final int LIMITE_TOKENS_INVITADO = 6000;
+    private static final int LIMITE_TOKENS_INVITADO = 20000;
     private static final int LIMITE_TOKENS_USUARIO = 40000;
     private static final ZoneId ZONA_RESET = ZoneId.of("America/Santiago");
 
