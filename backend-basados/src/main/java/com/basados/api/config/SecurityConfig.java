@@ -24,20 +24,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/productos/**").permitAll()
-                .requestMatchers("/api/categorias/**").permitAll()
-                .requestMatchers("/api/comercios/**").permitAll()
-                .requestMatchers("/api/cotizaciones").permitAll()
-                .requestMatchers("/api/maestros-parrilleros/**").permitAll()
-                .requestMatchers("/api/ia/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/productos/**").permitAll()
+                        .requestMatchers("/api/categorias/**").permitAll()
+                        .requestMatchers("/api/comercios/**").permitAll()
+                        .requestMatchers("/api/cotizaciones").permitAll()
+                        .requestMatchers("/api/maestros-parrilleros/**").permitAll()
+                        .requestMatchers("/api/ia/**").permitAll()
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -241,6 +241,28 @@ export function Home() {
         </Card>
       </section>
 
+      {/* Sección inscripción asador */}
+      <section className="container mx-auto max-w-4xl px-4 py-16">
+        <Card className="border-orange-500/20 bg-gradient-to-r from-orange-500/5 via-background to-orange-500/5">
+          <CardHeader className="space-y-4 pb-6 text-center">
+            <div className="flex justify-center">
+              <div className="rounded-full bg-primary/10 p-4">
+                <Flame className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">¿Eres maestro asador profesional?</CardTitle>
+            <CardDescription className="mx-auto max-w-xl text-base">
+              Únete a nuestra red de asadores y conecta con personas que quieren hacer sus asados inolvidables. Inscríbete y te contactamos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center pb-8">
+            <Button size="lg" variant="outline" asChild>
+              <Link to="/inscripcion-asador">Inscribirme como Maestro Asador</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+
       <footer className="border-t bg-muted/50">
         <div className="container mx-auto max-w-6xl px-4 py-12">
           <div className="grid gap-8 md:grid-cols-4 mb-8">

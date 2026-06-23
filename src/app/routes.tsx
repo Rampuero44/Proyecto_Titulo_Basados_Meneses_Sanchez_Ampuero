@@ -10,6 +10,7 @@ import { NotFound } from "./pages/NotFound";
 import { Profile } from "./pages/Profile";
 import { SeleccionServicio } from "./pages/SeleccionServicio";
 import { ContratarAsador } from "./pages/ContratarAsador";
+import { InscripcionAsador } from "./pages/InscripcionAsador";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -17,11 +18,12 @@ export const router = createBrowserRouter([
   { index: true, Component: Home },
   { path: "login", Component: Login },
   { path: "register", Component: Register },
+  { path: "create-event", Component: CreateEvent },
+  { path: "inscripcion-asador", Component: InscripcionAsador },
   {
     Component: ProtectedRoute,
     children: [
       { path: "dashboard", Component: Dashboard },
-      { path: "create-event", Component: CreateEvent },
       { path: "event/:id", Component: EventDetail },
       { path: "profile", Component: Profile },
       { path: "seleccion-servicio", Component: SeleccionServicio },

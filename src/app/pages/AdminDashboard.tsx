@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Button } from "../components/ui/button";
-import { ExternalLink, BarChart2, Users, ShoppingBag, CalendarCheck, History } from "lucide-react";
+import { ExternalLink, BarChart2, Users, ShoppingBag, CalendarCheck, ChefHat, CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { obtenerMetricasAdmin, obtenerFeedAuditoriaProductos, type AdminMetricas, type AuditoriaProducto } from "../services/adminApi";
+import { obtenerMetricasAdmin, obtenerMaestrosPendientes, aprobarMaestro, rechazarMaestro, type AdminMetricas, type MaestroPendiente } from "../services/adminApi";
+import { toast } from "sonner";
 
 const ESTADO_LABEL: Record<string, string> = {
   BORRADOR: "Borrador",
@@ -17,20 +18,14 @@ const ESTADO_LABEL: Record<string, string> = {
   FINALIZADO: "Finalizado",
 };
 
-const ACCION_LABEL: Record<string, string> = {
-  creado: "Producto nuevo",
-  enriquecido: "Datos actualizados por IA",
-};
-
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [metricas, setMetricas] = useState<AdminMetricas | null>(null);
   const [errorMetricas, setErrorMetricas] = useState<string | null>(null);
   const [cargandoMetricas, setCargandoMetricas] = useState(true);
-  const [auditoria, setAuditoria] = useState<AuditoriaProducto[]>([]);
-  const [errorAuditoria, setErrorAuditoria] = useState<string | null>(null);
-  const [cargandoAuditoria, setCargandoAuditoria] = useState(true);
+  const [maestrosPendientes, setMaestrosPendientes] = useState<MaestroPendiente[]>([]);
+  const [cargandoMaestros, setCargandoMaestros] = useState(true);
 
   const rol = user?.user_metadata?.rol ?? "usuario";
 
@@ -47,15 +42,37 @@ export function AdminDashboard() {
       .then(setMetricas)
       .catch((err) => setErrorMetricas(err.message))
       .finally(() => setCargandoMetricas(false));
+
+    cargarMaestrosPendientes();
   }, [user, loading, rol]);
 
-  useEffect(() => {
-    if (loading || !user || rol !== "admin") return;
-    obtenerFeedAuditoriaProductos()
-      .then(setAuditoria)
-      .catch((err) => setErrorAuditoria(err.message))
-      .finally(() => setCargandoAuditoria(false));
-  }, [user, loading, rol]);
+  function cargarMaestrosPendientes() {
+    setCargandoMaestros(true);
+    obtenerMaestrosPendientes()
+      .then(setMaestrosPendientes)
+      .catch(() => toast.error("Error cargando maestros pendientes"))
+      .finally(() => setCargandoMaestros(false));
+  }
+
+  async function handleAprobar(id: number) {
+    try {
+      await aprobarMaestro(id);
+      toast.success("Maestro aprobado correctamente");
+      cargarMaestrosPendientes();
+    } catch {
+      toast.error("Error al aprobar maestro");
+    }
+  }
+
+  async function handleRechazar(id: number) {
+    try {
+      await rechazarMaestro(id);
+      toast.success("Solicitud rechazada");
+      cargarMaestrosPendientes();
+    } catch {
+      toast.error("Error al rechazar solicitud");
+    }
+  }
 
   if (loading || !user) return null;
 
@@ -82,6 +99,7 @@ export function AdminDashboard() {
           </Card>
         )}
 
+        {/* Tarjetas resumen */}
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <Card>
             <CardContent className="flex items-center gap-4 pt-6">
@@ -112,18 +130,64 @@ export function AdminDashboard() {
           <Card>
             <CardContent className="flex items-center gap-4 pt-6">
               <div className="rounded-full bg-primary/10 p-3">
-                <ShoppingBag className="h-5 w-5 text-primary" />
+                <ChefHat className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Productos en ranking</p>
+                <p className="text-sm text-muted-foreground">Maestros pendientes</p>
                 <p className="text-2xl font-bold">
-                  {cargandoMetricas ? "—" : metricas?.productosMasSeleccionados.length ?? 0}
+                  {cargandoMaestros ? "—" : maestrosPendientes.length}
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Maestros pendientes */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ChefHat className="h-5 w-5" />
+              Solicitudes de Maestro Asador pendientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {cargandoMaestros ? (
+              <p className="text-sm text-muted-foreground italic">Cargando...</p>
+            ) : maestrosPendientes.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No hay solicitudes pendientes.</p>
+            ) : (
+              <div className="space-y-4">
+                {maestrosPendientes.map((m) => (
+                  <div key={m.idMaestro} className="rounded-lg border p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">{m.nombre} {m.apellido}</p>
+                        <p className="text-sm text-muted-foreground">{m.correo} · {m.telefono}</p>
+                      </div>
+                      <Badge variant="secondary">Pendiente</Badge>
+                    </div>
+                    <p className="text-sm">{m.descripcion}</p>
+                    <div className="flex gap-2 text-sm text-muted-foreground">
+                      <span>{m.experienciaAnos} años de experiencia</span>
+                      <span>·</span>
+                      <span>Tarifa: ${m.valorServicio?.toLocaleString("es-CL")}</span>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button size="sm" onClick={() => handleAprobar(m.idMaestro)}>
+                        <CheckCircle className="mr-1 h-4 w-4" /> Aprobar
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleRechazar(m.idMaestro)}>
+                        <XCircle className="mr-1 h-4 w-4" /> Rechazar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Gráficos */}
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -197,51 +261,6 @@ export function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Actividad reciente de productos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {errorAuditoria && (
-              <p className="text-sm text-destructive">{errorAuditoria}</p>
-            )}
-            {cargandoAuditoria ? (
-              <p className="text-sm text-muted-foreground italic">Cargando...</p>
-            ) : !auditoria.length ? (
-              <p className="text-sm text-muted-foreground italic">Sin actividad registrada aún</p>
-            ) : (
-              <div className="space-y-2">
-                {auditoria.map((a) => (
-                  <div
-                    key={a.idAuditoria}
-                    className="flex items-center justify-between border-b py-2 text-sm last:border-0"
-                  >
-                    <div>
-                      <p className="font-medium">{a.nombreProducto}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {ACCION_LABEL[a.accion] ?? a.accion} · {a.usuarioResponsable}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(a.fechaCambio).toLocaleString("es-CL", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Separator className="my-6" />
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
               <BarChart2 className="h-5 w-5" />
               Dashboard de Supabase
             </CardTitle>
@@ -251,9 +270,7 @@ export function AdminDashboard() {
               Accede al dashboard de Supabase para consultar usuarios registrados,
               métricas de la base de datos y logs de autenticación.
             </p>
-            <Button
-              onClick={() => window.open("https://supabase.com/dashboard", "_blank")}
-            >
+            <Button onClick={() => window.open("https://supabase.com/dashboard", "_blank")}>
               <ExternalLink className="mr-2 h-4 w-4" />
               Abrir Supabase Dashboard
             </Button>

@@ -2,21 +2,16 @@ package com.basados.api.service;
 
 import com.basados.api.dto.AdminMetricasDTO;
 import com.basados.api.dto.AuditoriaProductoDTO;
-import com.basados.api.entity.Usuario;
 import com.basados.api.repository.AuditoriaProductoRepository;
 import com.basados.api.repository.EventoProductoRepository;
 import com.basados.api.repository.EventoRepository;
 import com.basados.api.repository.UsuarioRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class AdminService {
@@ -43,8 +38,6 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public AdminMetricasDTO obtenerMetricas() {
-        verificarRolAdmin();
-
         long totalUsuarios = usuarioRepository.count();
 
         var eventosPorEstado = eventoRepository.countEventosPorEstado();
@@ -57,33 +50,7 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<AuditoriaProductoDTO> obtenerFeedAuditoriaProductos() {
-        verificarRolAdmin();
-
         Pageable top20 = PageRequest.of(0, FEED_AUDITORIA_LIMITE);
         return auditoriaProductoRepository.findFeedReciente(top20);
-    }
-
-    private void verificarRolAdmin() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication() != null
-            ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
-            : null;
-
-        if (principal == null || "anonymousUser".equals(principal)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
-        }
-
-        UUID userId;
-        try {
-            userId = UUID.fromString(principal.toString());
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
-        }
-
-        Usuario usuario = usuarioRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
-
-        if (!"admin".equalsIgnoreCase(usuario.getRol())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acceso restringido a administradores");
-        }
     }
 }
