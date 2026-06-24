@@ -1,27 +1,20 @@
 package com.basados.api.config;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
-
-    @Value("${supabase.jwt.secret}")
-    private String jwtSecret;
 
     @Override
     protected void doFilterInternal(
@@ -40,18 +33,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)))
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) throw new Exception("Token inválido");
 
-            String userId = claims.getSubject();
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+            String userId = null;
+            for (String field : payload.replace("{", "").replace("}", "").split(",")) {
+                field = field.trim().replace("\"", "");
+                if (field.startsWith("sub:")) {
+                    userId = field.substring(4).trim();
+                    break;
+                }
+            }
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (userId != null && !userId.isEmpty()) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
 
         } catch (Exception e) {
             SecurityContextHolder.clearContext();

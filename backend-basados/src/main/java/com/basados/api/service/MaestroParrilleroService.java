@@ -82,6 +82,7 @@ public class MaestroParrilleroService {
                 nuevo.setPasswordHash("PENDIENTE");
                 nuevo.setRol("MAESTRO_PENDIENTE");
                 nuevo.setActivo(false);
+                nuevo.setIaTokensConsumidos(0);
                 return usuarioRepository.save(nuevo);
             });
 
