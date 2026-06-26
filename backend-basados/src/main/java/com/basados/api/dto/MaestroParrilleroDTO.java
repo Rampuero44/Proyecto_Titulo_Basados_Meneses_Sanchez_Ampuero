@@ -14,13 +14,14 @@ public class MaestroParrilleroDTO {
     private BigDecimal valorServicio;
     private Boolean disponibilidad;
     private BigDecimal puntuacion;
+    private String estadoSolicitud; // "PENDIENTE" | "APROBADO" | "RECHAZADO"
 
     public MaestroParrilleroDTO() {}
 
     public MaestroParrilleroDTO(Long idMaestro, String nombre, String apellido,
             String correo, String telefono, String descripcion,
             Integer experienciaAnos, BigDecimal valorServicio,
-            Boolean disponibilidad, BigDecimal puntuacion) {
+            Boolean disponibilidad, BigDecimal puntuacion, String estadoSolicitud) {
         this.idMaestro = idMaestro;
         this.nombre = nombre;
         this.apellido = apellido;
@@ -31,6 +32,7 @@ public class MaestroParrilleroDTO {
         this.valorServicio = valorServicio;
         this.disponibilidad = disponibilidad;
         this.puntuacion = puntuacion;
+        this.estadoSolicitud = estadoSolicitud;
     }
 
     public Long getIdMaestro() { return idMaestro; }
@@ -62,4 +64,7 @@ public class MaestroParrilleroDTO {
 
     public BigDecimal getPuntuacion() { return puntuacion; }
     public void setPuntuacion(BigDecimal puntuacion) { this.puntuacion = puntuacion; }
+
+    public String getEstadoSolicitud() { return estadoSolicitud; }
+    public void setEstadoSolicitud(String estadoSolicitud) { this.estadoSolicitud = estadoSolicitud; }
 }

@@ -32,20 +32,38 @@ public class AdminController {
         return ResponseEntity.ok(adminService.obtenerFeedAuditoriaProductos());
     }
 
+    // Maestros por estado de solicitud
     @GetMapping("/maestros-pendientes")
     public ResponseEntity<List<MaestroParrilleroDTO>> maestrosPendientes() {
-        return ResponseEntity.ok(maestroParrilleroService.listarPendientes());
+        return ResponseEntity.ok(maestroParrilleroService.listarPorEstado("PENDIENTE"));
     }
 
+    @GetMapping("/maestros-aprobados")
+    public ResponseEntity<List<MaestroParrilleroDTO>> maestrosAprobados() {
+        return ResponseEntity.ok(maestroParrilleroService.listarPorEstado("APROBADO"));
+    }
+
+    @GetMapping("/maestros-rechazados")
+    public ResponseEntity<List<MaestroParrilleroDTO>> maestrosRechazados() {
+        return ResponseEntity.ok(maestroParrilleroService.listarPorEstado("RECHAZADO"));
+    }
+
+    // Acciones sobre solicitudes
     @PutMapping("/maestros-pendientes/{id}/aprobar")
     public ResponseEntity<String> aprobarMaestro(@PathVariable Long id) {
         maestroParrilleroService.aprobar(id);
         return ResponseEntity.ok("Maestro aprobado correctamente");
     }
 
-    @DeleteMapping("/maestros-pendientes/{id}/rechazar")
+    @PutMapping("/maestros-pendientes/{id}/rechazar")
     public ResponseEntity<String> rechazarMaestro(@PathVariable Long id) {
         maestroParrilleroService.rechazar(id);
         return ResponseEntity.ok("Solicitud rechazada");
+    }
+
+    @PutMapping("/maestros-aprobados/{id}/revocar")
+    public ResponseEntity<String> revocarMaestro(@PathVariable Long id) {
+        maestroParrilleroService.revocar(id);
+        return ResponseEntity.ok("Aprobación revocada, maestro vuelve a estado pendiente");
     }
 }

@@ -5,9 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Button } from "../components/ui/button";
-import { ExternalLink, BarChart2, Users, ShoppingBag, CalendarCheck, ChefHat, CheckCircle, XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { ExternalLink, BarChart2, Users, ShoppingBag, CalendarCheck, ChefHat, CheckCircle, XCircle, RotateCcw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { obtenerMetricasAdmin, obtenerMaestrosPendientes, aprobarMaestro, rechazarMaestro, type AdminMetricas, type MaestroPendiente } from "../services/adminApi";
+import {
+  obtenerMetricasAdmin,
+  obtenerMaestrosPendientes,
+  obtenerMaestrosAprobados,
+  obtenerMaestrosRechazados,
+  aprobarMaestro,
+  rechazarMaestro,
+  revocarMaestro,
+  type AdminMetricas,
+  type MaestroPendiente,
+} from "../services/adminApi";
 import { toast } from "sonner";
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -24,7 +35,9 @@ export function AdminDashboard() {
   const [metricas, setMetricas] = useState<AdminMetricas | null>(null);
   const [errorMetricas, setErrorMetricas] = useState<string | null>(null);
   const [cargandoMetricas, setCargandoMetricas] = useState(true);
-  const [maestrosPendientes, setMaestrosPendientes] = useState<MaestroPendiente[]>([]);
+  const [pendientes, setPendientes] = useState<MaestroPendiente[]>([]);
+  const [aprobados, setAprobados] = useState<MaestroPendiente[]>([]);
+  const [rechazados, setRechazados] = useState<MaestroPendiente[]>([]);
   const [cargandoMaestros, setCargandoMaestros] = useState(true);
 
   const rol = user?.user_metadata?.rol ?? "usuario";
@@ -43,22 +56,32 @@ export function AdminDashboard() {
       .catch((err) => setErrorMetricas(err.message))
       .finally(() => setCargandoMetricas(false));
 
-    cargarMaestrosPendientes();
+    cargarTodosMaestros();
   }, [user, loading, rol]);
 
-  function cargarMaestrosPendientes() {
+  async function cargarTodosMaestros() {
     setCargandoMaestros(true);
-    obtenerMaestrosPendientes()
-      .then(setMaestrosPendientes)
-      .catch(() => toast.error("Error cargando maestros pendientes"))
-      .finally(() => setCargandoMaestros(false));
+    try {
+      const [p, a, r] = await Promise.all([
+        obtenerMaestrosPendientes(),
+        obtenerMaestrosAprobados(),
+        obtenerMaestrosRechazados(),
+      ]);
+      setPendientes(p);
+      setAprobados(a);
+      setRechazados(r);
+    } catch {
+      toast.error("Error cargando maestros");
+    } finally {
+      setCargandoMaestros(false);
+    }
   }
 
   async function handleAprobar(id: number) {
     try {
       await aprobarMaestro(id);
       toast.success("Maestro aprobado correctamente");
-      cargarMaestrosPendientes();
+      cargarTodosMaestros();
     } catch {
       toast.error("Error al aprobar maestro");
     }
@@ -68,9 +91,19 @@ export function AdminDashboard() {
     try {
       await rechazarMaestro(id);
       toast.success("Solicitud rechazada");
-      cargarMaestrosPendientes();
+      cargarTodosMaestros();
     } catch {
       toast.error("Error al rechazar solicitud");
+    }
+  }
+
+  async function handleRevocar(id: number) {
+    try {
+      await revocarMaestro(id);
+      toast.success("Aprobación revocada, maestro vuelve a pendiente");
+      cargarTodosMaestros();
+    } catch {
+      toast.error("Error al revocar aprobación");
     }
   }
 
@@ -135,55 +168,146 @@ export function AdminDashboard() {
               <div>
                 <p className="text-sm text-muted-foreground">Maestros pendientes</p>
                 <p className="text-2xl font-bold">
-                  {cargandoMaestros ? "—" : maestrosPendientes.length}
+                  {cargandoMaestros ? "—" : pendientes.length}
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Maestros pendientes */}
+        {/* Maestros asadores — pestañas */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ChefHat className="h-5 w-5" />
-              Solicitudes de Maestro Asador pendientes
+              Gestión de Maestros Asadores
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {cargandoMaestros ? (
-              <p className="text-sm text-muted-foreground italic">Cargando...</p>
-            ) : maestrosPendientes.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No hay solicitudes pendientes.</p>
-            ) : (
-              <div className="space-y-4">
-                {maestrosPendientes.map((m) => (
-                  <div key={m.idMaestro} className="rounded-lg border p-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold">{m.nombre} {m.apellido}</p>
-                        <p className="text-sm text-muted-foreground">{m.correo} · {m.telefono}</p>
+            <Tabs defaultValue="pendientes">
+              <TabsList className="mb-4">
+                <TabsTrigger value="pendientes">
+                  Pendientes
+                  {pendientes.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">{pendientes.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="aprobados">
+                  Aprobados
+                  {aprobados.length > 0 && (
+                    <Badge variant="default" className="ml-2">{aprobados.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="rechazados">
+                  Rechazados
+                  {rechazados.length > 0 && (
+                    <Badge variant="outline" className="ml-2">{rechazados.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* PENDIENTES */}
+              <TabsContent value="pendientes">
+                {cargandoMaestros ? (
+                  <p className="text-sm text-muted-foreground italic">Cargando...</p>
+                ) : pendientes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">No hay solicitudes pendientes.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {pendientes.map((m) => (
+                      <div key={m.idMaestro} className="rounded-lg border p-4 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold">{m.nombre} {m.apellido}</p>
+                            <p className="text-sm text-muted-foreground">{m.correo} · {m.telefono}</p>
+                          </div>
+                          <Badge variant="secondary">Pendiente</Badge>
+                        </div>
+                        <p className="text-sm">{m.descripcion}</p>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          <span>{m.experienciaAnos} años de experiencia</span>
+                          <span>·</span>
+                          <span>Tarifa: ${(m.valorServicio ?? 0).toLocaleString("es-CL")}</span>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <Button size="sm" onClick={() => handleAprobar(m.idMaestro)}>
+                            <CheckCircle className="mr-1 h-4 w-4" /> Aprobar
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleRechazar(m.idMaestro)}>
+                            <XCircle className="mr-1 h-4 w-4" /> Rechazar
+                          </Button>
+                        </div>
                       </div>
-                      <Badge variant="secondary">Pendiente</Badge>
-                    </div>
-                    <p className="text-sm">{m.descripcion}</p>
-                    <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span>{m.experienciaAnos} años de experiencia</span>
-                      <span>·</span>
-                      <span>Tarifa: ${m.valorServicio?.toLocaleString("es-CL")}</span>
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <Button size="sm" onClick={() => handleAprobar(m.idMaestro)}>
-                        <CheckCircle className="mr-1 h-4 w-4" /> Aprobar
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleRechazar(m.idMaestro)}>
-                        <XCircle className="mr-1 h-4 w-4" /> Rechazar
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
+              </TabsContent>
+
+              {/* APROBADOS */}
+              <TabsContent value="aprobados">
+                {cargandoMaestros ? (
+                  <p className="text-sm text-muted-foreground italic">Cargando...</p>
+                ) : aprobados.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">No hay maestros aprobados aún.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {aprobados.map((m) => (
+                      <div key={m.idMaestro} className="rounded-lg border p-4 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold">{m.nombre} {m.apellido}</p>
+                            <p className="text-sm text-muted-foreground">{m.correo} · {m.telefono}</p>
+                          </div>
+                          <Badge variant="default">Aprobado</Badge>
+                        </div>
+                        <p className="text-sm">{m.descripcion}</p>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          <span>{m.experienciaAnos} años de experiencia</span>
+                          <span>·</span>
+                          <span>Tarifa: ${(m.valorServicio ?? 0).toLocaleString("es-CL")}</span>
+                          <span>·</span>
+                          <span>Puntuación: {m.puntuacion ?? 0}</span>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <Button size="sm" variant="outline" onClick={() => handleRevocar(m.idMaestro)}>
+                            <RotateCcw className="mr-1 h-4 w-4" /> Revocar aprobación
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* RECHAZADOS */}
+              <TabsContent value="rechazados">
+                {cargandoMaestros ? (
+                  <p className="text-sm text-muted-foreground italic">Cargando...</p>
+                ) : rechazados.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">No hay solicitudes rechazadas.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {rechazados.map((m) => (
+                      <div key={m.idMaestro} className="rounded-lg border p-4 space-y-2 opacity-75">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold">{m.nombre} {m.apellido}</p>
+                            <p className="text-sm text-muted-foreground">{m.correo} · {m.telefono}</p>
+                          </div>
+                          <Badge variant="outline">Rechazado</Badge>
+                        </div>
+                        <p className="text-sm">{m.descripcion}</p>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          <span>{m.experienciaAnos} años de experiencia</span>
+                          <span>·</span>
+                          <span>Tarifa: ${(m.valorServicio ?? 0).toLocaleString("es-CL")}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 

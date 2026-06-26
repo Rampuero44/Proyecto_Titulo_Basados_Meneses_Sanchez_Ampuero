@@ -27,11 +27,16 @@ public class MaestroParrillero {
     @Column(name = "longitud")
     private BigDecimal longitud;
 
+    // disponibilidad = el asador gestiona si está activo para ser contratado
     @Column(name = "disponibilidad")
     private Boolean disponibilidad;
 
     @Column(name = "puntuacion")
     private BigDecimal puntuacion;
+
+    // estado_solicitud = proceso administrativo: PENDIENTE | APROBADO | RECHAZADO
+    @Column(name = "estado_solicitud")
+    private String estadoSolicitud;
 
     @ManyToOne
     @JoinColumn(name = "id_usuario")
@@ -62,6 +67,9 @@ public class MaestroParrillero {
 
     public BigDecimal getPuntuacion() { return puntuacion; }
     public void setPuntuacion(BigDecimal puntuacion) { this.puntuacion = puntuacion; }
+
+    public String getEstadoSolicitud() { return estadoSolicitud; }
+    public void setEstadoSolicitud(String estadoSolicitud) { this.estadoSolicitud = estadoSolicitud; }
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
