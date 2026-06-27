@@ -29,8 +29,10 @@ public class IaService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public IaResponseDTO generarSugerencias(SugerenciasRequest req) {
-        String productosTexto = req.getProductos() == null || req.getProductos().isEmpty()
+        boolean tieneProductos = req.getProductos() != null && !req.getProductos().isEmpty();
+        boolean tienePresupuesto = req.getPresupuesto() > 0;
 
+        String productosTexto = !tieneProductos
             ? "Ninguno seleccionado aún."
             : req.getProductos().stream()
                 .map(p -> {
@@ -54,15 +56,54 @@ public class IaService {
                 })
                 .collect(Collectors.joining("\n"));
 
+        String contextoPresupuesto = tienePresupuesto
+                ? String.format("$%s CLP", String.format("%,d", req.getPresupuesto()))
+                : "no definido";
 
-        String prompt = String.format(
+        String instruccionPresupuesto = tienePresupuesto
+                ? String.format("""
+                        • PRESUPUESTO: Indica en un punto separado y directo si el presupuesto de $%s CLP alcanza para lo seleccionado o si se va a quedar corto. Si sobra harto, dilo también. Solo el dato, sin rodeos.""",
+                        String.format("%,d", req.getPresupuesto()))
+                : "";
+
+        String prompt;
+
+        if (!tieneProductos && !tienePresupuesto) {
+            prompt = String.format(
+                """
+                        Eres un maestro asador chileno con años de experiencia. Hablas directo y cercano, como un amigo que sabe lo que hace.
+
+                        El usuario está armando un asado para %d personas (%s) pero todavía no ha agregado ningún producto.
+
+                        Escribe UN solo mensaje motivacional corto (máximo 3 líneas) invitándolo a empezar por la carne. Sé específico: sugiere un corte concreto para comenzar. Usa viñeta (•). Sin markdown, solo texto plano.
+                        """,
+                    req.getAsistentes(),
+                    req.getTipoAsado());
+
+        } else if (!tieneProductos && tienePresupuesto) {
+            prompt = String.format(
+                """
+                        Eres un maestro asador chileno con años de experiencia. Hablas directo y cercano, como un amigo que sabe lo que hace.
+
+                        El usuario está armando un asado para %d personas (%s) con un presupuesto de $%s CLP, pero todavía no ha agregado ningún producto.
+
+                        Responde con 2 puntos usando viñetas (•). Sin markdown, solo texto plano:
+                        • Primero, dile si el presupuesto parece suficiente, justo o ajustado para esa cantidad de personas en un asado chileno estándar. Sé directo con los números.
+                        • Luego, invítalo a empezar agregando la carne y sugiere un corte concreto para comenzar.
+                        """,
+                    req.getAsistentes(),
+                    req.getTipoAsado(),
+                    String.format("%,d", req.getPresupuesto()));
+
+        } else {
+            prompt = String.format(
                 """
                         Eres un maestro asador chileno con años de experiencia. Hablas de forma directa y cercana, como si le aconsejaras a un amigo que está organizando su asado. Usas algún modismo chileno de vez en cuando pero sin exagerar. Sin rodeos, sin formalidades.
 
                         Evento:
                         - Asistentes: %d personas
                         - Tipo de asado: %s
-                        - Presupuesto aproximado: $%s CLP
+                        - Presupuesto: %s
 
                         Productos seleccionados hasta ahora:
                         %s
@@ -70,15 +111,17 @@ public class IaService {
                         CÁLCULO DE CARNE: Para evaluar si alcanza la carne, suma (cantidad × peso_gramos) de cada producto cárnico y divídelo por el número de asistentes. El estándar chileno es 300-400g por persona. Si el resultado está bajo ese rango, dilo con los números concretos. Ojo que el vacuno se encoge bastante en la parrilla. Para carnes sin peso indicado, asume 1000g por unidad.
 
                         Responde con máximo 4 puntos cortos usando viñetas (•). Sin markdown, solo texto plano. Indica:
-                        1. Si la carne alcanza para todos — calcula los gramos por persona y dilo directo.
-                        2. Si falta algo importante que no puede faltar en un asado (bebidas, pan, ensalada, insumos) — específico, no genérico.
-                        3. Si el presupuesto está bien o se va a quedar corto.
-                        4. Un consejo concreto y accionable para mejorar este asado en particular.
+                        • Si la carne alcanza para todos — calcula los gramos por persona y dilo directo.
+                        • Si falta algo que no puede faltar en un asado (bebidas, pan, ensalada, insumos) — específico, no genérico.
+                        • Un consejo concreto y accionable para mejorar este asado en particular.
+                        %s
                         """,
-                req.getAsistentes(),
-                req.getTipoAsado(),
-                String.format("%,d", req.getPresupuesto()),
-                productosTexto);
+                    req.getAsistentes(),
+                    req.getTipoAsado(),
+                    contextoPresupuesto,
+                    productosTexto,
+                    instruccionPresupuesto);
+        }
 
         return llamarClaude(prompt);
     }
