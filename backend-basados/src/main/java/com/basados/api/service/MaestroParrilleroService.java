@@ -6,6 +6,8 @@ import com.basados.api.entity.MaestroParrillero;
 import com.basados.api.entity.Usuario;
 import com.basados.api.repository.MaestroParrilleroRepository;
 import com.basados.api.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,16 +21,20 @@ import java.util.UUID;
 @Service
 public class MaestroParrilleroService {
 
+    private static final Logger log = LoggerFactory.getLogger(MaestroParrilleroService.class);
+
     private final MaestroParrilleroRepository repository;
     private final UsuarioRepository usuarioRepository;
+    private final EmailService emailService;
 
     public MaestroParrilleroService(MaestroParrilleroRepository repository,
-                                     UsuarioRepository usuarioRepository) {
+                                     UsuarioRepository usuarioRepository,
+                                     EmailService emailService) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
+        this.emailService = emailService;
     }
 
-    // Vista pública: solo aprobados y disponibles para contratar
     @Transactional(readOnly = true)
     public List<MaestroParrilleroDTO> listarDisponibles() {
         return repository.findAllDisponibles()
@@ -42,7 +48,6 @@ public class MaestroParrilleroService {
         return repository.findById(id).map(this::toDTO);
     }
 
-    // Panel admin: por estado de solicitud
     @Transactional(readOnly = true)
     public List<MaestroParrilleroDTO> listarPorEstado(String estado) {
         return repository.findAllByEstadoSolicitud(estado)
@@ -51,14 +56,12 @@ public class MaestroParrilleroService {
             .toList();
     }
 
-    // Aprobar: estado_solicitud = APROBADO, usuario activo con rol MAESTRO
     @Transactional
     public void aprobar(Long id) {
         MaestroParrillero maestro = repository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Maestro no encontrado"));
 
         maestro.setEstadoSolicitud("APROBADO");
-        // Al aprobar, se activa disponibilidad por defecto
         maestro.setDisponibilidad(true);
 
         if (maestro.getUsuario() != null) {
@@ -67,9 +70,10 @@ public class MaestroParrilleroService {
             usuarioRepository.save(maestro.getUsuario());
         }
         repository.save(maestro);
+
+        enviarCorreoAprobacion(maestro);
     }
 
-    // Rechazar: estado_solicitud = RECHAZADO, registro se conserva para trazabilidad
     @Transactional
     public void rechazar(Long id) {
         MaestroParrillero maestro = repository.findById(id)
@@ -84,9 +88,10 @@ public class MaestroParrilleroService {
             usuarioRepository.save(maestro.getUsuario());
         }
         repository.save(maestro);
+
+        enviarCorreoRechazo(maestro);
     }
 
-    // Revocar aprobación: vuelve a PENDIENTE para revisión
     @Transactional
     public void revocar(Long id) {
         MaestroParrillero maestro = repository.findById(id)
@@ -103,7 +108,6 @@ public class MaestroParrilleroService {
         repository.save(maestro);
     }
 
-    // Inscripción: permite re-inscripción si fue rechazado previamente
     @Transactional
     public void inscribir(InscripcionAsadorRequest req) {
         Optional<Usuario> usuarioExistente = usuarioRepository.findByCorreo(req.getCorreo());
@@ -111,7 +115,6 @@ public class MaestroParrilleroService {
         if (usuarioExistente.isPresent()) {
             Usuario u = usuarioExistente.get();
 
-            // Verificar si ya tiene solicitud PENDIENTE
             boolean tienePendiente = repository.findAllByEstadoSolicitud("PENDIENTE").stream()
                 .anyMatch(m -> m.getUsuario() != null &&
                     m.getUsuario().getIdUsuario().equals(u.getIdUsuario()));
@@ -120,7 +123,6 @@ public class MaestroParrilleroService {
                     "Este correo ya tiene una solicitud pendiente de revisión.");
             }
 
-            // Verificar si ya está aprobado
             boolean estaAprobado = repository.findAllByEstadoSolicitud("APROBADO").stream()
                 .anyMatch(m -> m.getUsuario() != null &&
                     m.getUsuario().getIdUsuario().equals(u.getIdUsuario()));
@@ -129,7 +131,6 @@ public class MaestroParrilleroService {
                     "Este correo ya está registrado como Maestro Asador aprobado.");
             }
 
-            // Si fue rechazado, reutilizar el registro existente y volver a PENDIENTE
             Optional<MaestroParrillero> rechazadoExistente = repository
                 .findAllByEstadoSolicitud("RECHAZADO").stream()
                 .filter(m -> m.getUsuario() != null &&
@@ -152,11 +153,12 @@ public class MaestroParrilleroService {
                 u.setActivo(false);
                 usuarioRepository.save(u);
                 repository.save(maestro);
+
+                enviarCorreoInscripcion(req.getCorreo(), req.getNombre());
                 return;
             }
         }
 
-        // Crear nuevo usuario si no existe
         Usuario usuario = usuarioExistente.orElseGet(() -> {
             Usuario nuevo = new Usuario();
             nuevo.setIdUsuario(UUID.randomUUID());
@@ -182,6 +184,69 @@ public class MaestroParrilleroService {
         maestro.setPuntuacion(BigDecimal.ZERO);
 
         repository.save(maestro);
+
+        enviarCorreoInscripcion(req.getCorreo(), req.getNombre());
+    }
+
+    private void enviarCorreoInscripcion(String correo, String nombre) {
+        try {
+            String asunto = "BASADOS – Solicitud recibida";
+            String cuerpo = String.format(
+                "Hola %s,\n\n" +
+                "Recibimos tu solicitud para unirte como Maestro Asador en BASADOS.\n\n" +
+                "Nuestro equipo revisará tu perfil y te contactaremos a este correo en los próximos días hábiles con la decisión.\n\n" +
+                "Gracias por tu interés.\n\n" +
+                "Equipo BASADOS",
+                nombre
+            );
+            emailService.enviarCorreo(correo, asunto, cuerpo);
+        } catch (Exception e) {
+            log.warn("[EMAIL] No se pudo enviar confirmación de inscripción a {}: {}", correo, e.getMessage());
+        }
+    }
+
+    private void enviarCorreoAprobacion(MaestroParrillero maestro) {
+        if (maestro.getUsuario() == null || maestro.getUsuario().getCorreo() == null) return;
+        try {
+            String nombre = maestro.getUsuario().getNombre() != null
+                ? maestro.getUsuario().getNombre() : "Maestro";
+            String correo = maestro.getUsuario().getCorreo();
+            String asunto = "BASADOS – ¡Tu solicitud fue aprobada!";
+            String cuerpo = String.format(
+                "Hola %s,\n\n" +
+                "¡Buenas noticias! Tu solicitud para ser Maestro Asador en BASADOS fue aprobada.\n\n" +
+                "Tu perfil ya está activo y visible para los usuarios que organicen un asado en la plataforma. " +
+                "Desde ahora podrás recibir contrataciones a través de BASADOS.\n\n" +
+                "Bienvenido al equipo.\n\n" +
+                "Equipo BASADOS",
+                nombre
+            );
+            emailService.enviarCorreo(correo, asunto, cuerpo);
+        } catch (Exception e) {
+            log.warn("[EMAIL] No se pudo enviar aprobación a {}: {}", maestro.getUsuario().getCorreo(), e.getMessage());
+        }
+    }
+
+    private void enviarCorreoRechazo(MaestroParrillero maestro) {
+        if (maestro.getUsuario() == null || maestro.getUsuario().getCorreo() == null) return;
+        try {
+            String nombre = maestro.getUsuario().getNombre() != null
+                ? maestro.getUsuario().getNombre() : "Maestro";
+            String correo = maestro.getUsuario().getCorreo();
+            String asunto = "BASADOS – Actualización sobre tu solicitud";
+            String cuerpo = String.format(
+                "Hola %s,\n\n" +
+                "Luego de revisar tu solicitud, lamentamos informarte que en esta oportunidad no pudimos aprobar tu perfil como Maestro Asador en BASADOS.\n\n" +
+                "Si crees que hubo un error o deseas más información, puedes contactarnos respondiendo este correo.\n\n" +
+                "Podrás volver a postular en el futuro si tus antecedentes cambian.\n\n" +
+                "Muchas gracias por tu interés.\n\n" +
+                "Equipo BASADOS",
+                nombre
+            );
+            emailService.enviarCorreo(correo, asunto, cuerpo);
+        } catch (Exception e) {
+            log.warn("[EMAIL] No se pudo enviar rechazo a {}: {}", maestro.getUsuario().getCorreo(), e.getMessage());
+        }
     }
 
     private String buildDescripcion(InscripcionAsadorRequest req) {
