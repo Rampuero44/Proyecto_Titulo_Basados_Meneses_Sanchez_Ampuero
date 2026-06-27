@@ -20,7 +20,7 @@ export function Navbar() {
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between px-4 mx-auto max-w-7xl">
-        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-3">
+        <Link to={esAdmin ? "/admin" : user ? "/dashboard" : "/"} className="flex items-center gap-3">
           <img src="/logo-basados.jpg" alt="BASADOS" className="w-10 h-10 rounded-lg object-cover" />
           <span className="text-xl font-semibold">BASADOS</span>
         </Link>
@@ -34,7 +34,7 @@ export function Navbar() {
               </Link>
             </Button>
           )}
-          {user && (
+          {user && !esAdmin && (
             <Button variant="ghost" asChild>
               <Link to="/dashboard">Mis Eventos</Link>
             </Button>

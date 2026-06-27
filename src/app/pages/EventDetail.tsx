@@ -317,19 +317,24 @@ useEffect(() => {
               <Card>
                 <CardHeader><CardTitle>Estado del evento</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  {estados.map((estado) => (
-                    <Button
-                      key={estado}
-                      variant={evento.estado === estado ? "default" : "outline"}
-                      className="w-full justify-start"
-                      onClick={() => handleCambiarEstado(estado)}
-                    >
-                      {evento.estado === estado
-                        ? <CheckCircle2 className="mr-2 h-4 w-4" />
-                        : <XCircle className="mr-2 h-4 w-4" />}
-                      {estado.charAt(0) + estado.slice(1).toLowerCase()}
-                    </Button>
-                  ))}
+                  {estados.map((estado) => {
+                    const idxActual = estados.indexOf(evento.estado);
+                    const idxEstado = estados.indexOf(estado);
+                    const completado = idxEstado <= idxActual;
+                    return (
+                      <Button
+                        key={estado}
+                        variant={evento.estado === estado ? "default" : completado ? "secondary" : "outline"}
+                        className="w-full justify-start"
+                        onClick={() => handleCambiarEstado(estado)}
+                      >
+                        {completado
+                          ? <CheckCircle2 className="mr-2 h-4 w-4" />
+                          : <XCircle className="mr-2 h-4 w-4" />}
+                        {estado.charAt(0) + estado.slice(1).toLowerCase()}
+                      </Button>
+                    );
+                  })}
                 </CardContent>
               </Card>
             </div>

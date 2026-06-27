@@ -128,7 +128,7 @@ function ProductCard({
 
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base leading-tight line-clamp-2">{product.nombre}</CardTitle>
+          <CardTitle className="text-base leading-tight line-clamp-3">{product.nombre}</CardTitle>
           <Badge className={`${badgeClass} shrink-0`}>{categoryLabel}</Badge>
         </div>
         {product.marca && <p className="text-xs text-muted-foreground">{product.marca}</p>}
@@ -353,7 +353,7 @@ export function ProductCatalogStep({ seleccionados, onChange, sidebarExtra, ocul
 
         <div>
           <h2 className="text-2xl font-bold">Selecciona los productos del evento</h2>
-          <p className="text-muted-foreground text-sm mt-1">Productos obtenidos desde backend real 🚀</p>
+          <p className="text-muted-foreground text-sm mt-1"></p>
           {ocultarAlcohol && (
             <div className="mt-2 inline-flex items-center gap-2 bg-yellow-50 border border-yellow-300 text-yellow-800 text-xs px-3 py-1.5 rounded-full">
               🔞 Productos con alcohol no disponibles para menores de 18 años

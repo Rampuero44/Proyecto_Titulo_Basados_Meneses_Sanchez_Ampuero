@@ -13,21 +13,27 @@ import { ContratarAsador } from "./pages/ContratarAsador";
 import { InscripcionAsador } from "./pages/InscripcionAsador";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+import { UserRoute } from "./components/UserRoute";
 
 export const router = createBrowserRouter([
   { index: true, Component: Home },
   { path: "login", Component: Login },
   { path: "register", Component: Register },
-  { path: "create-event", Component: CreateEvent },
   { path: "inscripcion-asador", Component: InscripcionAsador },
+  {
+    Component: UserRoute,
+    children: [
+      { path: "dashboard", Component: Dashboard },
+      { path: "create-event", Component: CreateEvent },
+      { path: "event/:id", Component: EventDetail },
+      { path: "seleccion-servicio", Component: SeleccionServicio },
+      { path: "contratar-asador", Component: ContratarAsador },
+    ],
+  },
   {
     Component: ProtectedRoute,
     children: [
-      { path: "dashboard", Component: Dashboard },
-      { path: "event/:id", Component: EventDetail },
       { path: "profile", Component: Profile },
-      { path: "seleccion-servicio", Component: SeleccionServicio },
-      { path: "contratar-asador", Component: ContratarAsador },
     ],
   },
   {

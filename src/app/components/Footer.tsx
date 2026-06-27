@@ -9,14 +9,14 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 w-fit">
               <img
                 src="/logo-basados.jpg"
                 alt="BASADOS"
                 className="w-8 h-8 rounded-md object-cover"
               />
               <span className="font-semibold text-base">BASADOS</span>
-            </div>
+            </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               La forma inteligente de planificar y coordinar tus asados.
             </p>
@@ -34,8 +34,8 @@ export function Footer() {
               <Link to="/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Registrarse
               </Link>
-              <Link to="/price-comparison" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Comparador de precios
+              <Link to="/inscripcion-asador" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Inscripción Maestro Asador
               </Link>
             </nav>
           </div>
@@ -43,7 +43,7 @@ export function Footer() {
           <div className="flex flex-col gap-3">
             <p className="text-sm font-medium">Proyecto</p>
             <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-              <span>Proyecto de Título 2026</span>
+              <span>Proyecto de Título {year}</span>
               <span>Ingeniería en Informática</span>
               <span>Meneses · Sánchez · Ampuero</span>
             </div>
@@ -53,7 +53,24 @@ export function Footer() {
 
         <div className="mt-8 border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>© {year} BASADOS. Todos los derechos reservados.</span>
-          <span>Hecho con dedicación en Chile 🇨🇱</span>
+          <div className="flex gap-6">
+            <a
+              href="https://www.instagram.com/basadoschile?igsh=MWt4OTY2NG1nYzhqOQ=="
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://www.facebook.com/share/1F3HfzGwgL/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Facebook
+            </a>
+          </div>
         </div>
       </div>
     </footer>

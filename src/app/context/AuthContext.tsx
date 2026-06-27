@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null; user: User | null }>;
   register: (email: string, password: string, nombre: string, fechaNacimiento: string) => Promise<{ error: string | null }>;
+  cambiarPassword: (passwordActual: string, passwordNueva: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 }
 
@@ -71,7 +72,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: { nombre, fecha_nacimiento: fechaNacimiento }
       }
     });
-    return { error: error?.message ?? null };
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("user already exists")) {
+        return { error: "Este correo ya está registrado. Intenta iniciar sesión." };
+      }
+      return { error: error.message };
+    }
+
+    return { error: null };
+  };
+
+  const cambiarPassword = async (passwordActual: string, passwordNueva: string) => {
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: user?.email ?? "",
+      password: passwordActual,
+    });
+    if (loginError) {
+      return { error: "La contraseña actual es incorrecta" };
+    }
+    const { error } = await supabase.auth.updateUser({ password: passwordNueva });
+    if (error) return { error: error.message };
+    return { error: null };
   };
 
   const logout = async () => {
@@ -79,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, session, loading, login, register, cambiarPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );

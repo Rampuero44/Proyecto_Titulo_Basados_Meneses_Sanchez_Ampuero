@@ -7,6 +7,8 @@ export interface ProductoIaDTO {
   cantidad: number;
   slugCategoria: string;
   precioUnitario?: string;
+  pesoGramos?: number;
+  unidadFormato?: string;
 }
 
 export interface CotizacionComercioDTO {

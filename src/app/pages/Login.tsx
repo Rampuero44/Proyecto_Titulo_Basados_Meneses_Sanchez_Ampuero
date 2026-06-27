@@ -46,8 +46,10 @@ export function Login() {
             </Button>
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center gap-2 mb-4">
-                <img src="/logo-basados.jpg" alt="BASADOS" className="w-16 h-16 rounded-xl object-cover" />
-                <span className="text-2xl font-bold">BASADOS</span>
+                <Link to="/" className="flex items-center gap-2">
+                  <img src="/logo-basados.jpg" alt="BASADOS" className="w-16 h-16 rounded-xl object-cover" />
+                  <span className="text-2xl font-bold">BASADOS</span>
+                </Link>
               </div>
               <CardTitle>Iniciar Sesión</CardTitle>
               <CardDescription>Ingresa tu email y contraseña para acceder.</CardDescription>

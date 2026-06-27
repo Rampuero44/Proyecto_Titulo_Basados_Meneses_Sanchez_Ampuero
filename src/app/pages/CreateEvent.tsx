@@ -163,6 +163,8 @@ export function CreateEvent() {
                     cantidad: s.cantidad,
                     slugCategoria: s.product.slugCategoria ?? s.product.categoria,
                     precioUnitario: s.product.precioUnitario,
+                    pesoGramos: s.product.pesoGramos,
+                    unidadFormato: s.product.unidadFormato,
                   }))}
                 />
               ) : undefined}

@@ -8,6 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
+import { calcularEdad } from "../utils/age";
+
+const TLD_VALIDOS = [
+  "com", "cl", "net", "org", "edu", "gov", "io",
+  "co", "es", "mx", "ar", "pe", "uy", "bo", "py",
+  "ec", "ve", "info", "biz", "me", "app", "dev"
+];
 
 export function Register() {
   const navigate = useNavigate();
@@ -24,6 +31,12 @@ export function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const tld = email.split(".").pop()?.toLowerCase() ?? "";
+    if (!TLD_VALIDOS.includes(tld)) {
+      toast.error("Ingresa un correo con dominio válido (ej: .com, .cl, .net)");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
@@ -34,6 +47,16 @@ export function Register() {
     }
     if (!fechaNacimiento) {
       toast.error("Debes ingresar tu fecha de nacimiento");
+      return;
+    }
+
+    const edad = calcularEdad(fechaNacimiento);
+    if (edad < 14) {
+      toast.error("Debes tener al menos 14 años para registrarte");
+      return;
+    }
+    if (edad > 100) {
+      toast.error("Fecha de nacimiento no válida");
       return;
     }
 
@@ -62,7 +85,9 @@ export function Register() {
             </Button>
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center gap-2 mb-4">
-                <img src="/logo-basados.jpg" alt="BASADOS" className="w-16 h-16 rounded-xl object-cover" />
+                <Link to="/" className="flex items-center gap-2">
+                  <img src="/logo-basados.jpg" alt="BASADOS" className="w-16 h-16 rounded-xl object-cover" />
+                </Link>
               </div>
               <CardTitle>Crear Cuenta</CardTitle>
               <CardDescription>Completa tus datos para registrarte</CardDescription>

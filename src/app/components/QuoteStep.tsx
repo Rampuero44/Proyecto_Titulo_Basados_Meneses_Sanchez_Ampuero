@@ -36,7 +36,7 @@ export function QuoteStep({
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <img
-          src="/logo.png"
+          src="/logo-basados.jpg"
           alt="BASADOS"
           className="h-14 w-14 rounded-full object-contain bg-black p-1"
         />
@@ -98,7 +98,7 @@ export function QuoteStep({
         })}
         <div className="flex items-center justify-center rounded-xl border bg-muted/30">
           <img
-            src="/logo.png"
+            src="/logo-basados.jpg"
             alt="BASADOS"
             className="w-48 object-contain opacity-80"
           />
@@ -138,6 +138,8 @@ export function QuoteStep({
             cantidad: s.cantidad,
             slugCategoria: s.product.slugCategoria ?? s.product.categoria,
             precioUnitario: s.product.precioUnitario,
+            pesoGramos: s.product.pesoGramos,
+            unidadFormato: s.product.unidadFormato,
           }))}
           cotizaciones={cotizaciones.map((c) => ({
             comercio: c.comercio,
