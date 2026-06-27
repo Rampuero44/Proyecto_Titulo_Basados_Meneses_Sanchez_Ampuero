@@ -20,11 +20,11 @@ export const router = createBrowserRouter([
   { path: "login", Component: Login },
   { path: "register", Component: Register },
   { path: "inscripcion-asador", Component: InscripcionAsador },
+  { path: "create-event", Component: CreateEvent },
   {
     Component: UserRoute,
     children: [
       { path: "dashboard", Component: Dashboard },
-      { path: "create-event", Component: CreateEvent },
       { path: "event/:id", Component: EventDetail },
       { path: "seleccion-servicio", Component: SeleccionServicio },
       { path: "contratar-asador", Component: ContratarAsador },

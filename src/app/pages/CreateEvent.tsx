@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Navbar } from "../components/Navbar";
 import { Button } from "../components/ui/button";
@@ -13,9 +14,18 @@ import { ModalVerificacionEdad } from "../components/ModalVerificacionEdad";
 import { QuoteStep } from "../components/QuoteStep";
 import { ConfigStep } from "../components/ConfigStep";
 import { useCreateEvent } from "../hooks/useCreateEvent";
+import { useAuth } from "../context/AuthContext";
 
 export function CreateEvent() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user?.user_metadata?.rol === "admin") {
+      navigate("/admin", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
   const {
     loading,
     step, setStep,

@@ -81,7 +81,7 @@ export function Home() {
                   Planifica, cotiza y disfruta tu asado
                 </h1>
                 <p className="max-w-2xl text-xl text-muted-foreground">
-                  BASADOS centraliza participantes, insumos, comparación simulada entre supermercados y reparto de costos en una sola experiencia de demo.
+                  BASADOS facilita tu carrete, te ayuda a buscar las mejores ofertas, ordenar tu compra y repartir costos. ¡Nunca ha sido tan facil!
                 </p>
                 <div className="flex gap-4 pt-4">
                   <Button size="lg" asChild>
@@ -193,7 +193,6 @@ export function Home() {
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500" /> Asadores calificados</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500" /> Calificaciones y reseñas</li>
                 <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500" /> Reserva fácil</li>
               </ul>
             </CardContent>

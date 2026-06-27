@@ -115,6 +115,9 @@ export function InscripcionAsador() {
 
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
+            <img src="/logo-basados.jpg" alt="BASADOS" className="w-16 h-16 rounded-xl object-cover" />
+          </div>
+          <div className="mb-4 flex justify-center">
             <div className="rounded-full bg-primary/10 p-4">
               <ChefHat className="h-10 w-10 text-primary" />
             </div>
