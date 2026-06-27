@@ -57,7 +57,7 @@ public class IaService {
 
         String prompt = String.format(
                 """
-                        Eres un asistente experto en asados chilenos. Analiza la siguiente información y entrega recomendaciones breves y prácticas.
+                        Eres un maestro asador chileno con años de experiencia. Hablas de forma directa y cercana, como si le aconsejaras a un amigo que está organizando su asado. Usas algún modismo chileno de vez en cuando pero sin exagerar. Sin rodeos, sin formalidades.
 
                         Evento:
                         - Asistentes: %d personas
@@ -67,21 +67,13 @@ public class IaService {
                         Productos seleccionados hasta ahora:
                         %s
 
+                        CÁLCULO DE CARNE: Para evaluar si alcanza la carne, suma (cantidad × peso_gramos) de cada producto cárnico y divídelo por el número de asistentes. El estándar chileno es 300-400g por persona. Si el resultado está bajo ese rango, dilo con los números concretos. Ojo que el vacuno se encoge bastante en la parrilla. Para carnes sin peso indicado, asume 1000g por unidad.
 
-            IMPORTANTE: Considera el peso/formato de cada producto para calcular cantidades correctas:
-            - Para carnes: 300-400g por persona es el estándar chileno
-            - Si un producto muestra 1000g (1 kg), es el peso de referencia por unidad
-            - Para productos vendidos al peso (carnes, pescados), multiplica el peso unitario por la cantidad seleccionada
-            - Para líquidos (bebidas, aceites): considera el volumen en litros o ml
-
-            Responde en español con máximo 4 puntos cortos. Indica:
-            1. Si la cantidad de carne es suficiente considerando el peso real de los productos (300-400g por persona)
-            2. Si faltan categorías importantes (bebidas, ensaladas, insumos)
-            3. Si el presupuesto es coherente con lo seleccionado
-            4. Una sugerencia específica para mejorar la selección
-
-
-                        Sé directo y usa el contexto chileno. No uses markdown, solo texto plano con viñetas (•).
+                        Responde con máximo 4 puntos cortos usando viñetas (•). Sin markdown, solo texto plano. Indica:
+                        1. Si la carne alcanza para todos — calcula los gramos por persona y dilo directo.
+                        2. Si falta algo importante que no puede faltar en un asado (bebidas, pan, ensalada, insumos) — específico, no genérico.
+                        3. Si el presupuesto está bien o se va a quedar corto.
+                        4. Un consejo concreto y accionable para mejorar este asado en particular.
                         """,
                 req.getAsistentes(),
                 req.getTipoAsado(),
@@ -132,7 +124,7 @@ public class IaService {
 
         String prompt = String.format(
                 """
-                        Eres un asistente experto en compras para asados chilenos. Analiza las cotizaciones y entrega una recomendación clara.
+                        Eres un maestro asador chileno con años de experiencia que también sabe dónde comprar bien. Hablas directo, como un amigo que ya pasó por esto muchas veces. Sin formalidades.
 
                         Evento: %d personas, asado %s, %s
 
@@ -142,12 +134,10 @@ public class IaService {
                         Cotizaciones por comercio:
                         %s
 
-                        Responde en español con máximo 3 puntos usando solo texto plano con viñetas (•). Indica:
-                        1. Qué comercio recomiendas y por qué (el más económico o mejor relación calidad-precio)
-                        2. Si conviene dividir la compra entre distintos comercios (ej: carnes en uno, bebidas en otro)
+                        Responde con máximo 3 puntos usando viñetas (•). Sin markdown, solo texto plano. Indica:
+                        1. Qué comercio conviene y cuánto se ahorra respecto al más caro — menciona el monto concreto en pesos.
+                        2. Si vale la pena dividir la compra entre comercios y qué comprar en cada uno — solo si la diferencia justifica el viaje.
                         %s
-
-                        Sé específico con los nombres de los comercios. No uses markdown.
                         """,
                 req.getAsistentes(),
                 req.getTipoAsado(),

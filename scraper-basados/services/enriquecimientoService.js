@@ -32,23 +32,22 @@ Formato exacto requerido:
 [
   {
     "index": 1,
-    "marca": "nombre de la marca comercial registrada (ej: Agrosuper, Don Pollo, Belmont, Sureña, Tottus, Lider, Ariztía, Sopraval, Miraflores, Natura, Chef) o null. REGLAS ESTRICTAS: (1) Solo devuelve una marca si es claramente un nombre comercial registrado. (2) NO devuelvas partes descriptivas del producto como marca: 'Trutro', 'Vacuno', 'Pechuga', 'Maravilla', 'Canola', 'Oliva', 'Coco', 'Entero', 'Trozado' son tipos/cortes, NO marcas. (3) NO devuelvas tipos de carne, cortes, verduras o ingredientes como marca. (4) Capitaliza correctamente: primera letra mayúscula, resto minúsculas (ej: 'TOTTUS' → 'Tottus', 'DON POLLO' → 'Don Pollo', 'BELMONT' → 'Belmont')",
-    "peso_gramos": número entero en gramos o null. Reglas estrictas: (1) Si el nombre incluye peso fijo (ej: "850 g", "2 kg"), conviértelo a gramos. (2) Si es una CARNE DE RES, AVE O PESCADO sin peso indicado (se vende al corte por kilo), usa 1000. (3) Si es un aceite, bebida, salsa u otro líquido, usa null aunque el precio sea por litro. (4) Para packs múltiples (ej: "6 unidades", "12 pack"), multiplica el peso unitario por la cantidad. (5) Para cualquier otro producto sin peso indicado, usa null,
-    "unidad_formato": "g" para sólidos (carnes, embutidos, verduras), "ml" para líquidos (aceites, bebidas, salsas) o "un" para productos contables (packs de cerveza, cartones de huevos, paquetes múltiples). Si es líquido sin volumen indicado usa "ml". Para packs múltiples usa "un",
+    "marca": "nombre de la marca comercial registrada o null. REGLAS ESTRICTAS: (1) Solo devuelve una marca si es claramente un nombre comercial registrado (ej: Agrosuper, Don Pollo, Ariztía, Sopraval, Miraflores, Belmont, Sureña, Natura, Chef, Super Cerdo, Cuisine & Co). (2) Los nombres de supermercados NO son marcas de producto: 'Tottus' y 'Lider' son tiendas, no marcas — usa null si el producto no tiene otra marca identificable. (3) NO devuelvas cortes, tipos o ingredientes como marca: 'Trutro', 'Vacuno', 'Pechuga', 'Maravilla', 'Canola', 'Oliva', 'Coco', 'Entero', 'Trozado' NO son marcas. (4) Capitaliza correctamente: primera letra mayúscula, resto minúsculas (ej: 'AGROSUPER' → 'Agrosuper', 'DON POLLO' → 'Don Pollo')",
+    "peso_gramos": número entero en gramos o ml según unidad, o null. Reglas estrictas: (1) Si el nombre incluye peso fijo (ej: '850 g', '2 kg', '500 ml', '1 L'), conviértelo a la unidad base (gramos para sólidos, ml para líquidos). (2) Si es una CARNE DE RES, AVE, CERDO O PESCADO sin peso indicado (se vende al corte por kilo), usa 1000. (3) Si es un líquido (aceite, bebida, salsa, vinagre) sin volumen indicado, usa null. (4) Para packs múltiples (ej: '6 unidades', '12 pack'), usa null en peso_gramos y registra la cantidad en cantidad_pack. (5) Para cualquier otro producto sin peso indicado, usa null,
+    "unidad_formato": "g" para sólidos (carnes, embutidos, verduras, quesos), "ml" para líquidos (aceites, bebidas, salsas, vinagres) o "un" para productos contables (packs de cerveza, cartones de huevos, paquetes múltiples). Si es líquido sin volumen indicado usa "ml". Para packs múltiples usa "un",
     "cantidad_pack": número entero de unidades en el pack (ej: cerveza 6 pack → 6, cartón 12 huevos → 12) o null si es unidad individual,
-    "calorias_100g": número entero de calorías por 100g o null,
-    "proteinas_100g": número con decimales de proteínas por 100g o null,
-    "grasas_100g": número con decimales de grasas por 100g o null,
-    "carbohidratos_100g": número con decimales de carbohidratos por 100g o null
+    "calorias_100g": número entero de calorías por 100g o null. Rango válido: 0 a 900,
+    "proteinas_100g": número con decimales de proteínas por 100g o null. Rango válido: 0 a 100,
+    "grasas_100g": número con decimales de grasas por 100g o null. Rango válido: 0 a 100,
+    "carbohidratos_100g": número con decimales de carbohidratos por 100g o null. Rango válido: 0 a 100
   }
 ]
 
 Reglas adicionales:
 - Para carnes sin marca visible, usa null en marca
-- peso_gramos debe ser el peso del envase en gramos (ej: "850 g" → 850, "2 kg" → 2000). Para carnes/pescados sin peso indicado usa 1000. Para líquidos sin volumen indicado usa 1000 (representa 1 litro base)
-- Para líquidos con volumen indicado (ej: "1 L", "500 ml") usa ese valor en ml como peso_gramos con unidad "ml"
-- Para packs múltiples: detecta palabras clave como "pack", "unidades", "cartón" y extrae la cantidad en cantidad_pack
-- calorias_100g debe estar entre 0 y 900
+- Líquidos con volumen indicado (ej: '1 L', '500 ml'): usa ese valor en ml en peso_gramos con unidad_formato 'ml'
+- Líquidos sin volumen indicado: peso_gramos = null, unidad_formato = 'ml'
+- Para packs múltiples: detecta 'pack', 'unidades', 'cartón', 'display' y registra cantidad en cantidad_pack, peso_gramos = null
 - Si no puedes determinar un valor con confianza razonable, usa null`;
 
     const response = await fetch(ANTHROPIC_API_URL, {
