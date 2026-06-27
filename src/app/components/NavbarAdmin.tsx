@@ -1,12 +1,13 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "./ui/button";
-import { LogOut, Users, BarChart3, Shield, Home } from "lucide-react";
+import { LogOut, Users, BarChart3, Shield, Home, ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
 import { useAuth } from "../context/AuthContext";
 
 export function NavbarAdmin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
 
   const handleLogout = async () => {
@@ -14,6 +15,8 @@ export function NavbarAdmin() {
     toast.success("Sesión cerrada");
     navigate("/");
   };
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -34,29 +37,45 @@ export function NavbarAdmin() {
           </Badge>
         </div>
 
-        <nav className="flex items-center gap-2">
-          <Button variant="ghost" asChild>
+        <nav className="flex items-center gap-1">
+          <Button
+            variant={isActive("/admin") ? "secondary" : "ghost"}
+            asChild
+          >
             <Link to="/admin" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Estadísticas
             </Link>
           </Button>
 
-          <Button variant="ghost" asChild>
-            <Link to="/admin" className="flex items-center gap-2">
+          <Button
+            variant={isActive("/admin/usuarios") ? "secondary" : "ghost"}
+            asChild
+          >
+            <Link to="/admin/usuarios" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Usuarios
             </Link>
           </Button>
 
+          <Button
+            variant={isActive("/admin/asadores") ? "secondary" : "ghost"}
+            asChild
+          >
+            <Link to="/admin/asadores" className="flex items-center gap-2">
+              <ChefHat className="h-4 w-4" />
+              Asadores
+            </Link>
+          </Button>
+
           <Button variant="ghost" asChild>
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <Home className="h-4 w-4" />
               Ver app
             </Link>
           </Button>
 
-          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2 ml-2">
             <LogOut className="h-4 w-4" />
             Salir
           </Button>

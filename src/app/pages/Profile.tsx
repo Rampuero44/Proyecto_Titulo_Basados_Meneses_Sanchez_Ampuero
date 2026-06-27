@@ -38,10 +38,12 @@ export function Profile() {
   useEffect(() => {
     if (loading) return;
     setNuevoNombre(nombre);
-    obtenerEventosPorUsuario(user!.id)
-      .then((eventos) => setCantidadEventos(eventos.length))
-      .catch(() => {});
-  }, [user, loading, nombre]);
+    if (!esAdmin) {
+      obtenerEventosPorUsuario(user!.id)
+        .then((eventos) => setCantidadEventos(eventos.length))
+        .catch(() => {});
+    }
+  }, [user, loading, nombre, esAdmin]);
 
   const handleLogout = async () => {
     await logout();
@@ -262,10 +264,12 @@ export function Profile() {
                     {rol === "admin" ? "Administrador" : "Usuario"}
                   </Badge>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Eventos creados</p>
-                  <p className="font-medium text-lg">{cantidadEventos}</p>
-                </div>
+                {!esAdmin && (
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Eventos creados</p>
+                    <p className="font-medium text-lg">{cantidadEventos}</p>
+                  </div>
+                )}
               </div>
 
             </CardContent>
@@ -289,8 +293,8 @@ export function Profile() {
                   <Shield className="mr-2 h-4 w-4" /> Panel de administración
                 </Button>
               )}
-              <Button variant="outline" onClick={() => navigate("/")} className="justify-start">
-                <Home className="mr-2 h-4 w-4" /> Volver al inicio
+              <Button variant="outline" onClick={() => navigate(esAdmin ? "/admin" : "/")} className="justify-start">
+                <Home className="mr-2 h-4 w-4" /> {esAdmin ? "Volver al panel" : "Volver al inicio"}
               </Button>
               <Button variant="destructive" onClick={handleLogout} className="justify-start sm:col-span-2">
                 <LogOut className="mr-2 h-4 w-4" /> Cerrar sesión

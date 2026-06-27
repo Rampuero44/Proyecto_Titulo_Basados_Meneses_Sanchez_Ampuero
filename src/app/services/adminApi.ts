@@ -1,7 +1,6 @@
 import { apiFetch } from "../utils/apiClient";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/admin`;
-const MAESTROS_URL = `${import.meta.env.VITE_API_URL}/api/admin`;
 
 export type EventosPorEstado = {
   estado: string;
@@ -13,10 +12,24 @@ export type ProductoMasSeleccionado = {
   vecesSeleccionado: number;
 };
 
+export type UsuariosPorRol = {
+  rol: string;
+  cantidad: number;
+};
+
+export type RegistrosPorMes = {
+  mes: string;
+  cantidad: number;
+};
+
 export type AdminMetricas = {
   totalUsuarios: number;
+  usuariosActivos: number;
+  usuariosInactivos: number;
   eventosPorEstado: EventosPorEstado[];
   productosMasSeleccionados: ProductoMasSeleccionado[];
+  usuariosPorRol: UsuariosPorRol[];
+  registrosPorMes: RegistrosPorMes[];
 };
 
 export type MaestroPendiente = {
@@ -43,34 +56,34 @@ export async function obtenerMetricasAdmin(): Promise<AdminMetricas> {
 }
 
 export async function obtenerMaestrosPendientes(): Promise<MaestroPendiente[]> {
-  const response = await apiFetch(`${MAESTROS_URL}/maestros-pendientes`);
+  const response = await apiFetch(`${API_URL}/maestros-pendientes`);
   if (!response.ok) throw new Error("Error obteniendo maestros pendientes");
   return response.json();
 }
 
 export async function obtenerMaestrosAprobados(): Promise<MaestroPendiente[]> {
-  const response = await apiFetch(`${MAESTROS_URL}/maestros-aprobados`);
+  const response = await apiFetch(`${API_URL}/maestros-aprobados`);
   if (!response.ok) throw new Error("Error obteniendo maestros aprobados");
   return response.json();
 }
 
 export async function obtenerMaestrosRechazados(): Promise<MaestroPendiente[]> {
-  const response = await apiFetch(`${MAESTROS_URL}/maestros-rechazados`);
+  const response = await apiFetch(`${API_URL}/maestros-rechazados`);
   if (!response.ok) throw new Error("Error obteniendo maestros rechazados");
   return response.json();
 }
 
 export async function aprobarMaestro(id: number): Promise<void> {
-  const response = await apiFetch(`${MAESTROS_URL}/maestros-pendientes/${id}/aprobar`, { method: "PUT" });
+  const response = await apiFetch(`${API_URL}/maestros-pendientes/${id}/aprobar`, { method: "PUT" });
   if (!response.ok) throw new Error("Error aprobando maestro");
 }
 
 export async function rechazarMaestro(id: number): Promise<void> {
-  const response = await apiFetch(`${MAESTROS_URL}/maestros-pendientes/${id}/rechazar`, { method: "PUT" });
+  const response = await apiFetch(`${API_URL}/maestros-pendientes/${id}/rechazar`, { method: "PUT" });
   if (!response.ok) throw new Error("Error rechazando maestro");
 }
 
 export async function revocarMaestro(id: number): Promise<void> {
-  const response = await apiFetch(`${MAESTROS_URL}/maestros-aprobados/${id}/revocar`, { method: "PUT" });
+  const response = await apiFetch(`${API_URL}/maestros-aprobados/${id}/revocar`, { method: "PUT" });
   if (!response.ok) throw new Error("Error revocando maestro");
 }

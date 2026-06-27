@@ -6,6 +6,8 @@ import { Dashboard } from "./pages/Dashboard";
 import { CreateEvent } from "./pages/CreateEvent";
 import { EventDetail } from "./pages/EventDetail";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { AdminUsuarios } from "./pages/AdminUsuarios";
+import { AdminAsadores } from "./pages/AdminAsadores";
 import { NotFound } from "./pages/NotFound";
 import { Profile } from "./pages/Profile";
 import { SeleccionServicio } from "./pages/SeleccionServicio";
@@ -40,6 +42,8 @@ export const router = createBrowserRouter([
     Component: AdminRoute,
     children: [
       { path: "admin", Component: AdminDashboard },
+      { path: "admin/usuarios", Component: AdminUsuarios },
+      { path: "admin/asadores", Component: AdminAsadores },
     ],
   },
   { path: "*", Component: NotFound },

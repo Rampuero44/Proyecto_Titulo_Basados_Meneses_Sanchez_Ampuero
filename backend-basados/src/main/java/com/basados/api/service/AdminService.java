@@ -39,13 +39,40 @@ public class AdminService {
     @Transactional(readOnly = true)
     public AdminMetricasDTO obtenerMetricas() {
         long totalUsuarios = usuarioRepository.count();
+        long usuariosActivos = usuarioRepository.countActivos();
+        long usuariosInactivos = usuarioRepository.countInactivos();
 
         var eventosPorEstado = eventoRepository.countEventosPorEstado();
 
         Pageable top10 = PageRequest.of(0, TOP_PRODUCTOS_LIMITE);
         var productosMasSeleccionados = eventoProductoRepository.findProductosMasSeleccionados(top10);
 
-        return new AdminMetricasDTO(totalUsuarios, eventosPorEstado, productosMasSeleccionados);
+        var usuariosPorRolRaw = usuarioRepository.countUsuariosPorRol();
+        var usuariosPorRol = usuariosPorRolRaw.stream()
+            .map(row -> new AdminMetricasDTO.UsuariosPorRolDTO(
+                row[0] != null ? row[0].toString() : "SIN_ROL",
+                ((Number) row[1]).longValue()
+            ))
+            .toList();
+
+        var registrosPorMesRaw = usuarioRepository.countRegistrosPorMes();
+        var registrosPorMes = registrosPorMesRaw.stream()
+            .map(row -> new AdminMetricasDTO.RegistrosPorMesDTO(
+                row[0] != null ? row[0].toString() : "Sin fecha",
+                ((Number) row[1]).longValue()
+            ))
+            .limit(6)
+            .toList();
+
+        return new AdminMetricasDTO(
+            totalUsuarios,
+            usuariosActivos,
+            usuariosInactivos,
+            eventosPorEstado,
+            productosMasSeleccionados,
+            usuariosPorRol,
+            registrosPorMes
+        );
     }
 
     @Transactional(readOnly = true)
