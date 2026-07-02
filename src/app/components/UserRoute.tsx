@@ -2,13 +2,12 @@ import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../context/AuthContext";
 
 export function UserRoute() {
-  const { user, loading } = useAuth();
+  const { user, perfil, loading } = useAuth();
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-
-  const rol = user.user_metadata?.rol ?? "usuario";
-  if (rol === "admin") return <Navigate to="/admin" replace />;
+  if (perfil === null) return null;
+  if (perfil.rol === "admin") return <Navigate to="/admin" replace />;
 
   return <Outlet />;
 }

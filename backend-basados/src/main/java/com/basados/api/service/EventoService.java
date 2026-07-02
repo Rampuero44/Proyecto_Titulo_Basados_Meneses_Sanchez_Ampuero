@@ -20,6 +20,8 @@ import com.basados.api.repository.HistorialPrecioRepository;
 import com.basados.api.repository.ProductoRepository;
 import com.basados.api.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -55,6 +57,22 @@ public class EventoService {
         this.contratacionRepository = contratacionRepository;
         this.productoRepository = productoRepository;
         this.historialPrecioRepository = historialPrecioRepository;
+    }
+
+    private UUID obtenerUsuarioAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        return UUID.fromString(auth.getPrincipal().toString());
+    }
+
+    private void verificarPropiedadEvento(Evento evento, UUID usuarioId) {
+        if (evento.getOrganizador() == null ||
+                !evento.getOrganizador().getIdUsuario().equals(usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No tienes permiso para modificar este evento");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -146,9 +164,12 @@ public class EventoService {
 
     @Transactional
     public void eliminar(String id) {
+        UUID usuarioId = obtenerUsuarioAutenticado();
         UUID uuid = UUID.fromString(id);
         Evento evento = eventoRepository.findById(uuid).orElseThrow();
+        verificarPropiedadEvento(evento, usuarioId);
         evento.setActivo(false);
+        evento.setFechaEliminacion(LocalDateTime.now());
         eventoRepository.save(evento);
     }
 
@@ -165,7 +186,7 @@ public class EventoService {
 
     @Transactional
     public EventoResponseDTO crear(EventoRequestDTO dto) {
-        UUID organizadorId = UUID.fromString(dto.getIdOrganizador());
+        UUID organizadorId = obtenerUsuarioAutenticado();
         Usuario organizador = usuarioRepository.findById(organizadorId).orElseThrow();
 
         Evento evento = new Evento();
@@ -187,7 +208,7 @@ public class EventoService {
 
     @Transactional
     public EventoResponseDTO crearCompleto(EventoCompletoRequestDTO dto) {
-        UUID organizadorId = UUID.fromString(dto.getIdOrganizador());
+        UUID organizadorId = obtenerUsuarioAutenticado();
         Usuario organizador = usuarioRepository.findById(organizadorId).orElseThrow();
 
         Evento evento = new Evento();
@@ -206,7 +227,9 @@ public class EventoService {
         Evento eventoGuardado = eventoRepository.save(evento);
 
         for (EventoCompletoProductoDTO productoDto : dto.getProductos()) {
-            Producto producto = productoRepository.findById(productoDto.getIdProducto()).orElseThrow();
+            Producto producto = productoRepository.findById(productoDto.getIdProducto())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Producto no encontrado: " + productoDto.getIdProducto()));
 
             HistorialPrecio historial = null;
             if (productoDto.getIdHistorial() != null) {
@@ -229,8 +252,10 @@ public class EventoService {
 
     @Transactional
     public EventoResponseDTO actualizar(String id, EventoRequestDTO dto) {
+        UUID usuarioId = obtenerUsuarioAutenticado();
         UUID uuid = UUID.fromString(id);
         Evento evento = eventoRepository.findById(uuid).orElseThrow();
+        verificarPropiedadEvento(evento, usuarioId);
 
         if (dto.getNombre() != null) evento.setNombre(dto.getNombre());
         if (dto.getDescripcion() != null) evento.setDescripcion(dto.getDescripcion());
