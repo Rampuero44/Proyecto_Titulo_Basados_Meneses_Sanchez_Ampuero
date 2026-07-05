@@ -1,0 +1,230 @@
+package com.basados.api.service;
+
+import com.basados.api.dto.DestinatarioDto;
+import com.basados.api.dto.ResumenEventoRequest;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+
+@Service
+public class PdfService {
+
+    private static final Logger log = LoggerFactory.getLogger(PdfService.class);
+
+    private static final DeviceRgb COLOR_NEGRO       = new DeviceRgb(18, 18, 18);
+    private static final DeviceRgb COLOR_NARANJA      = new DeviceRgb(220, 80, 0);
+    private static final DeviceRgb COLOR_NARANJA_CLARO = new DeviceRgb(255, 120, 30);
+    private static final DeviceRgb COLOR_FONDO       = new DeviceRgb(248, 248, 248);
+    private static final DeviceRgb COLOR_BORDE       = new DeviceRgb(220, 220, 220);
+
+    public byte[] generarPdfResumen(ResumenEventoRequest request, DestinatarioDto destinatario) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            document.setMargins(20, 30, 20, 30);
+
+            agregarLogo(document);
+            agregarTitulo(document);
+            agregarSaludo(document, destinatario);
+            agregarBloqueAporte(document, destinatario);
+            agregarTablaResumen(document, request);
+            agregarPie(document);
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generando PDF", e);
+        }
+    }
+
+    private void agregarLogo(Document document) {
+        try {
+            ClassPathResource logoResource = new ClassPathResource("logo.png");
+            byte[] logoBytes = logoResource.getInputStream().readAllBytes();
+
+            Image logo = new Image(ImageDataFactory.create(logoBytes));
+            logo.setWidth(110);
+            logo.setHorizontalAlignment(HorizontalAlignment.CENTER);
+
+            Table logoTable = new Table(UnitValue.createPercentArray(new float[]{1}))
+                    .useAllAvailableWidth();
+
+            Cell logoCell = new Cell()
+                    .add(logo)
+                    .setBackgroundColor(COLOR_NEGRO)
+                    .setBorder(Border.NO_BORDER)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setPaddingTop(10)
+                    .setPaddingBottom(10);
+
+            logoTable.addCell(logoCell);
+            document.add(logoTable);
+            document.add(new Paragraph(" ").setFontSize(4));
+
+        } catch (Exception e) {
+            log.warn("No se encontró logo.png, se genera PDF sin logo");
+        }
+    }
+
+    private void agregarTitulo(Document document) {
+        Paragraph titulo = new Paragraph("BASADOS")
+                .setBold()
+                .setFontSize(18)
+                .setFontColor(COLOR_NARANJA)
+                .setTextAlignment(TextAlignment.CENTER);
+
+        Paragraph subtitulo = new Paragraph("Resumen personalizado del evento")
+                .setFontSize(11)
+                .setFontColor(COLOR_NARANJA_CLARO)
+                .setTextAlignment(TextAlignment.CENTER);
+
+        document.add(titulo);
+        document.add(subtitulo);
+        document.add(new Paragraph(" ").setFontSize(4));
+    }
+
+    private void agregarSaludo(Document document, DestinatarioDto destinatario) {
+        Paragraph saludo = new Paragraph("Hola " + valorSeguro(destinatario.getNombre()))
+                .setFontSize(12)
+                .setBold()
+                .setFontColor(ColorConstants.BLACK);
+
+        Paragraph descripcion = new Paragraph(
+                "Te compartimos el resumen de tu participación en el evento organizado con BASADOS."
+        ).setFontSize(10);
+
+        document.add(saludo);
+        document.add(descripcion);
+        document.add(new Paragraph(" ").setFontSize(4));
+    }
+
+    private void agregarBloqueAporte(Document document, DestinatarioDto destinatario) {
+        Table bloque = new Table(UnitValue.createPercentArray(new float[]{1}))
+                .useAllAvailableWidth();
+
+        Cell celda = new Cell()
+                .add(new Paragraph("Tu aporte").setFontSize(10).setFontColor(ColorConstants.WHITE))
+                .add(new Paragraph("$" + valorNumero(destinatario.getMonto()))
+                        .setFontSize(16)
+                        .setBold()
+                        .setFontColor(ColorConstants.WHITE))
+                .setBackgroundColor(COLOR_NARANJA)
+                .setBorder(new SolidBorder(COLOR_NARANJA, 1))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPaddingTop(8)
+                .setPaddingBottom(8);
+
+        bloque.addCell(celda);
+        document.add(bloque);
+        document.add(new Paragraph(" ").setFontSize(4));
+    }
+
+    private void agregarTablaResumen(Document document, ResumenEventoRequest request) {
+        float[] columnas = {3, 5};
+        Table tabla = new Table(UnitValue.createPercentArray(columnas))
+                .useAllAvailableWidth();
+
+        tabla.addHeaderCell(crearHeader("Campo"));
+        tabla.addHeaderCell(crearHeader("Detalle"));
+
+        tabla.addCell(crearLabel("Evento"));
+        tabla.addCell(crearValor(valorSeguro(request.getNombreEvento())));
+
+        tabla.addCell(crearLabel("Fecha"));
+        tabla.addCell(crearValor(valorSeguro(request.getFecha())));
+
+        tabla.addCell(crearLabel("Dirección"));
+        tabla.addCell(crearValor(valorSeguro(request.getDireccion())));
+
+        tabla.addCell(crearLabel("Organizador"));
+        tabla.addCell(crearValor(valorSeguro(request.getOrganizador())));
+
+        tabla.addCell(crearLabel("Participantes"));
+        tabla.addCell(crearValor(String.valueOf(valorNumero(request.getParticipantes()))));
+
+        tabla.addCell(crearLabel("Costo total"));
+        tabla.addCell(crearValor("$" + valorNumero(request.getCostoTotal())));
+
+        tabla.addCell(crearLabel("Promedio por persona"));
+        tabla.addCell(crearValor("$" + valorNumero(request.getCostoPromedio())));
+
+        tabla.addCell(crearLabel("Calorías totales"));
+        tabla.addCell(crearValor(valorNumero(request.getCaloriasTotales()) + " kcal"));
+
+        tabla.addCell(crearLabel("Calorías por persona"));
+        tabla.addCell(crearValor(valorNumero(request.getCaloriasPorPersona()) + " kcal"));
+
+        tabla.addCell(crearLabel("Supermercado sugerido"));
+        tabla.addCell(crearValor(valorSeguro(request.getCotizacionSeleccionada())));
+
+        document.add(tabla);
+        document.add(new Paragraph(" ").setFontSize(4));
+    }
+
+    private Cell crearHeader(String texto) {
+        return new Cell()
+                .add(new Paragraph(texto).setBold().setFontColor(ColorConstants.WHITE).setFontSize(10))
+                .setBackgroundColor(COLOR_NARANJA)
+                .setBorder(new SolidBorder(COLOR_NARANJA, 1))
+                .setPadding(6)
+                .setTextAlignment(TextAlignment.CENTER);
+    }
+
+    private Cell crearLabel(String texto) {
+        return new Cell()
+                .add(new Paragraph(texto).setBold().setFontSize(9))
+                .setBackgroundColor(COLOR_FONDO)
+                .setBorder(new SolidBorder(COLOR_BORDE, 1))
+                .setPadding(5);
+    }
+
+    private Cell crearValor(String texto) {
+        return new Cell()
+                .add(new Paragraph(texto).setFontSize(9))
+                .setBorder(new SolidBorder(COLOR_BORDE, 1))
+                .setPadding(5);
+    }
+
+    private void agregarPie(Document document) {
+        Paragraph pie = new Paragraph("Gracias por usar BASADOS")
+                .setTextAlignment(TextAlignment.CENTER)
+                .setFontSize(9)
+                .setFontColor(ColorConstants.DARK_GRAY);
+
+        document.add(new Paragraph(" ").setFontSize(4));
+        document.add(pie);
+    }
+
+    private String valorSeguro(String valor) {
+        return valor == null || valor.isBlank() ? "No definido" : valor;
+    }
+
+    private int valorNumero(Integer valor) {
+        return valor == null ? 0 : valor;
+    }
+}

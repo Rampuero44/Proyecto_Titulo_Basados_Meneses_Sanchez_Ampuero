@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+backend-basados/.env
+scraper-basados/.env
+.DS_Store
+*.local
+backend-basados/target/
