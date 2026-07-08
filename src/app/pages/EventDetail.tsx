@@ -18,6 +18,7 @@ import {
   EventoDetalleParticipanteResponse,
 } from "../types/evento";
 
+const ESTADOS = ["BORRADOR", "PLANIFICANDO", "CONFIRMADO", "FINALIZADO"];
 
 const SLUG_LABEL: Record<string, string> = {
   "vacunos": "Proteína", "pollo": "Proteína", "cerdos": "Proteína",
@@ -34,7 +35,7 @@ export function EventDetail() {
   const [evento, setEvento] = useState<EventoDetalleResponse | null>(null);
   const [descargandoPdf, setDescargandoPdf] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     if (loading) return;
     if (!id) { navigate("/dashboard"); return; }
 
@@ -43,9 +44,18 @@ useEffect(() => {
       .catch(() => { toast.error("Evento no encontrado"); navigate("/dashboard"); });
   }, [id, loading, navigate]);
 
-
   const handleCambiarEstado = async (nuevoEstado: string) => {
     if (!evento) return;
+    if (nuevoEstado === "BORRADOR") return;
+    if (nuevoEstado === evento.estado) return;
+
+    if (nuevoEstado === "FINALIZADO") {
+      const confirmar = window.confirm(
+        "¿Estás seguro de finalizar el evento? Podrás reactivarlo después si lo necesitas."
+      );
+      if (!confirmar) return;
+    }
+
     try {
       await actualizarEvento(evento.id, { estado: nuevoEstado });
       setEvento({ ...evento, estado: nuevoEstado });
@@ -73,12 +83,13 @@ useEffect(() => {
       const comercios = (evento.productos ?? [])
         .map((p) => p.comercio)
         .filter((c): c is string => Boolean(c));
-      const comercioMasFrecuente = comercios.length
-        ? comercios.sort((a, b) =>
-            comercios.filter((c) => c === b).length -
-            comercios.filter((c) => c === a).length
-          )[0]
-        : "No definido";
+
+      const frecuencias = comercios.reduce<Map<string, number>>((acc, c) => {
+        acc.set(c, (acc.get(c) ?? 0) + 1);
+        return acc;
+      }, new Map());
+      const comercioMasFrecuente = [...frecuencias.entries()]
+        .sort((a, b) => b[1] - a[1])[0]?.[0] ?? "No definido";
 
       await descargarResumenPdf({
         eventoId: evento.id,
@@ -89,8 +100,16 @@ useEffect(() => {
         participantes: evento.cantidadPersonas ?? 0,
         costoTotal: Math.round(totalGeneral),
         costoPromedio: Math.round(evento.cantidadPersonas ? totalGeneral / evento.cantidadPersonas : 0),
-        caloriasTotales: 0,
-        caloriasPorPersona: 0,
+        caloriasTotales: evento.productos?.reduce((sum, p) => {
+          const calorias = (p as any).calorias ?? 0;
+          return sum + calorias * (p.cantidad ?? 1);
+        }, 0) ?? 0,
+        caloriasPorPersona: evento.cantidadPersonas
+          ? Math.round((evento.productos?.reduce((sum, p) => {
+              const calorias = (p as any).calorias ?? 0;
+              return sum + calorias * (p.cantidad ?? 1);
+            }, 0) ?? 0) / evento.cantidadPersonas)
+          : 0,
         cotizacionSeleccionada: comercioMasFrecuente,
         direccion: evento.direccion ?? "",
         destinatarios: [],
@@ -104,8 +123,6 @@ useEffect(() => {
   };
 
   if (loading || !evento) return null;
-
-  const estados = ["BORRADOR", "PLANIFICANDO", "CONFIRMADO", "FINALIZADO"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,16 +334,19 @@ useEffect(() => {
               <Card>
                 <CardHeader><CardTitle>Estado del evento</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  {estados.map((estado) => {
-                    const idxActual = estados.indexOf(evento.estado);
-                    const idxEstado = estados.indexOf(estado);
+                  {ESTADOS.filter(e => e !== "BORRADOR").map((estado) => {
+                    const esActual = evento.estado === estado;
+                    const idxActual = ESTADOS.indexOf(evento.estado);
+                    const idxEstado = ESTADOS.indexOf(estado);
                     const completado = idxEstado <= idxActual;
+
                     return (
                       <Button
                         key={estado}
-                        variant={evento.estado === estado ? "default" : completado ? "secondary" : "outline"}
+                        variant={esActual ? "default" : completado ? "secondary" : "outline"}
                         className="w-full justify-start"
                         onClick={() => handleCambiarEstado(estado)}
+                        disabled={esActual}
                       >
                         {completado
                           ? <CheckCircle2 className="mr-2 h-4 w-4" />

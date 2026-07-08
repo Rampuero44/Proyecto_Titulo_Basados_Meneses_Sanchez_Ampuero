@@ -63,6 +63,8 @@ export function ConfigStep({
   onBack,
   onContinue,
 }: ConfigStepProps) {
+  const fechaMinima = new Date().toISOString().split("T")[0];
+
   return (
     <div className="space-y-6">
       <div>
@@ -113,7 +115,14 @@ export function ConfigStep({
               <Label htmlFor="fecha-evento">Fecha</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="fecha-evento" type="date" value={fecha} onChange={(e) => onFechaChange(e.target.value)} className="pl-9" />
+                <Input
+                  id="fecha-evento"
+                  type="date"
+                  min={fechaMinima}
+                  value={fecha}
+                  onChange={(e) => onFechaChange(e.target.value)}
+                  className="pl-9"
+                />
               </div>
             </div>
             <div className="space-y-2 md:col-span-2">

@@ -10,12 +10,6 @@ import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { calcularEdad } from "../utils/age";
 
-const TLD_VALIDOS = [
-  "com", "cl", "net", "org", "edu", "gov", "io",
-  "co", "es", "mx", "ar", "pe", "uy", "bo", "py",
-  "ec", "ve", "info", "biz", "me", "app", "dev"
-];
-
 export function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -31,9 +25,8 @@ export function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const tld = email.split(".").pop()?.toLowerCase() ?? "";
-    if (!TLD_VALIDOS.includes(tld)) {
-      toast.error("Ingresa un correo con dominio válido (ej: .com, .cl, .net)");
+    if (!nombre.trim()) {
+      toast.error("El nombre no puede estar vacío");
       return;
     }
 
@@ -61,7 +54,7 @@ export function Register() {
     }
 
     setCargando(true);
-    const { error } = await register(email, password, nombre, fechaNacimiento);
+    const { error } = await register(email, password, nombre.trim(), fechaNacimiento);
 
     if (error) {
       toast.error(error);

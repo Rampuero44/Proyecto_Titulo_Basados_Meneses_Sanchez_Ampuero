@@ -18,14 +18,15 @@ import { useAuth } from "../context/AuthContext";
 
 export function CreateEvent() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, perfil, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (authLoading) return;
-    if (user?.user_metadata?.rol === "admin") {
+    if (perfil?.rol === "admin") {
       navigate("/admin", { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [perfil, authLoading, navigate]);
+
   const {
     loading,
     step, setStep,
@@ -108,6 +109,7 @@ export function CreateEvent() {
             onSelectComercio={setSelectedComercio}
             caloriasTotales={caloriasTotales}
             caloriasPorPersona={caloriasPorPersona}
+            costoAlcoholTotal={costoAlcoholTotal}
             contextoEvento={contextoEvento}
             seleccionados={seleccionados}
             onBack={() => setStep("config")}

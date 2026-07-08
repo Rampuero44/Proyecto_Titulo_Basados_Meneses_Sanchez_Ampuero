@@ -6,3 +6,6 @@ scraper-basados/.env
 .DS_Store
 *.local
 backend-basados/target/
+lider-test.js
+debug.png
+*.png

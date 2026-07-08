@@ -13,10 +13,11 @@ import { useAuth } from "../context/AuthContext";
 import { obtenerEventosPorUsuario } from "../services/eventosApi";
 import { calcularEdad } from "../utils/age";
 import { supabase } from "../lib/supabase";
+import { apiFetch } from "../utils/apiClient";
 
 export function Profile() {
   const navigate = useNavigate();
-  const { user, loading, logout, cambiarPassword } = useAuth();
+  const { user, perfil, loading, logout, cambiarPassword } = useAuth();
   const [cantidadEventos, setCantidadEventos] = useState(0);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -27,19 +28,19 @@ export function Profile() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [guardandoPassword, setGuardandoPassword] = useState(false);
 
-  const nombre = user?.user_metadata?.nombre ?? user?.email ?? "Usuario";
+  const nombre = perfil?.nombre ?? user?.user_metadata?.nombre ?? user?.email ?? "Usuario";
   const email = user?.email ?? "";
   const fechaNacimiento = user?.user_metadata?.fecha_nacimiento ?? null;
   const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
   const esMayor = edad !== null ? edad >= 18 : null;
-  const rol = user?.user_metadata?.rol ?? "usuario";
+  const rol = perfil?.rol ?? "usuario";
   const esAdmin = rol === "admin";
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !user) return;
     setNuevoNombre(nombre);
     if (!esAdmin) {
-      obtenerEventosPorUsuario(user!.id)
+      obtenerEventosPorUsuario(user.id)
         .then((eventos) => setCantidadEventos(eventos.length))
         .catch(() => {});
     }
@@ -64,14 +65,20 @@ export function Profile() {
     }
     setGuardandoNombre(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { nombre: nombreLimpio },
-      });
-      if (error) throw error;
+      const [supabaseRes, backendRes] = await Promise.all([
+        supabase.auth.updateUser({ data: { nombre: nombreLimpio } }),
+        apiFetch(`${import.meta.env.VITE_API_URL}/api/usuarios/me/nombre`, {
+          method: "PUT",
+          body: JSON.stringify({ nombre: nombreLimpio }),
+        }),
+      ]);
+
+      if (supabaseRes.error) throw supabaseRes.error;
+      if (!backendRes.ok) throw new Error("Error actualizando nombre en BD");
+
       setEditandoNombre(false);
       toast.success("Nombre actualizado");
-    } catch (error) {
-      console.error(error);
+    } catch {
       setNuevoNombre(nombre);
       toast.error("No se pudo actualizar el nombre. Intenta nuevamente.");
     } finally {
@@ -129,7 +136,6 @@ export function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
-
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Nombre</p>
                 {editandoNombre ? (
@@ -207,37 +213,15 @@ export function Profile() {
                   <div className="space-y-3 rounded-lg border p-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="password-actual">Contraseña actual</Label>
-                      <Input
-                        id="password-actual"
-                        type="password"
-                        placeholder="••••••••"
-                        value={passwordActual}
-                        onChange={(e) => setPasswordActual(e.target.value)}
-                        disabled={guardandoPassword}
-                      />
+                      <Input id="password-actual" type="password" placeholder="••••••••" value={passwordActual} onChange={(e) => setPasswordActual(e.target.value)} disabled={guardandoPassword} />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="password-nueva">Nueva contraseña</Label>
-                      <Input
-                        id="password-nueva"
-                        type="password"
-                        placeholder="••••••••"
-                        value={passwordNueva}
-                        onChange={(e) => setPasswordNueva(e.target.value)}
-                        disabled={guardandoPassword}
-                      />
+                      <Input id="password-nueva" type="password" placeholder="••••••••" value={passwordNueva} onChange={(e) => setPasswordNueva(e.target.value)} disabled={guardandoPassword} />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="password-confirm">Confirmar nueva contraseña</Label>
-                      <Input
-                        id="password-confirm"
-                        type="password"
-                        placeholder="••••••••"
-                        value={passwordConfirm}
-                        onChange={(e) => setPasswordConfirm(e.target.value)}
-                        disabled={guardandoPassword}
-                        onKeyDown={(e) => e.key === "Enter" && handleCambiarPassword()}
-                      />
+                      <Input id="password-confirm" type="password" placeholder="••••••••" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} disabled={guardandoPassword} onKeyDown={(e) => e.key === "Enter" && handleCambiarPassword()} />
                     </div>
                     <div className="flex gap-2 pt-1">
                       <Button size="sm" onClick={handleCambiarPassword} disabled={guardandoPassword}>
@@ -271,7 +255,6 @@ export function Profile() {
                   </div>
                 )}
               </div>
-
             </CardContent>
           </Card>
 

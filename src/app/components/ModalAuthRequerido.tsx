@@ -6,6 +6,7 @@ import { Label } from "./ui/label";
 import { Flame } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
+import { calcularEdad } from "../utils/age";
 
 interface Props {
   onAutenticado: () => void;
@@ -25,6 +26,7 @@ export function ModalAuthRequerido({ onAutenticado, onCancelar }: Props) {
 
   const handleSubmit = async () => {
     setCargando(true);
+
     if (modo === "login") {
       const { error } = await login(email, password);
       if (error) {
@@ -33,12 +35,28 @@ export function ModalAuthRequerido({ onAutenticado, onCancelar }: Props) {
         return;
       }
     } else {
+      if (!nombre.trim()) {
+        toast.error("El nombre no puede estar vacío");
+        setCargando(false);
+        return;
+      }
+      if (!fechaNacimiento) {
+        toast.error("Debes ingresar tu fecha de nacimiento");
+        setCargando(false);
+        return;
+      }
+      const edad = calcularEdad(fechaNacimiento);
+      if (edad < 14) {
+        toast.error("Debes tener al menos 14 años para registrarte");
+        setCargando(false);
+        return;
+      }
       if (password.length < 6) {
         toast.error("La contraseña debe tener al menos 6 caracteres");
         setCargando(false);
         return;
       }
-      const { error } = await register(email, password, nombre, fechaNacimiento);
+      const { error } = await register(email, password, nombre.trim(), fechaNacimiento);
       if (error) {
         toast.error(error);
         setCargando(false);
@@ -46,6 +64,7 @@ export function ModalAuthRequerido({ onAutenticado, onCancelar }: Props) {
       }
       toast.success("Cuenta creada. Tu asado ha sido guardado.");
     }
+
     setCargando(false);
     onAutenticado();
   };
@@ -93,14 +112,24 @@ export function ModalAuthRequerido({ onAutenticado, onCancelar }: Props) {
           {modo === "register" && (
             <div className="space-y-2">
               <Label>Fecha de nacimiento</Label>
-              <Input type="date" max={fechaMaxima} value={fechaNacimiento} onChange={(e) => setFechaNacimiento(e.target.value)} />
+              <Input
+                type="date"
+                max={fechaMaxima}
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
+              />
             </div>
           )}
 
           <div className="space-y-2">
             <Label>Contraseña</Label>
-            <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
+            <Input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            />
           </div>
 
           <Button className="w-full" onClick={handleSubmit} disabled={cargando}>

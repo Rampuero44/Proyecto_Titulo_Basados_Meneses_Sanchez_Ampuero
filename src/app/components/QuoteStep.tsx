@@ -9,12 +9,25 @@ import { ProductoSeleccionado } from "./ProductCatalogStep";
 
 const formatCalories = (value: number) => `${Math.round(value).toLocaleString()} kcal`;
 
+interface CotizacionItem {
+  nombreProducto: string;
+  subtotal: number | null;
+  encontrado: boolean;
+}
+
+interface Cotizacion {
+  comercio: string;
+  total: number | string;
+  items: CotizacionItem[];
+}
+
 interface QuoteStepProps {
-  cotizaciones: any[];
-  cotizacionActiva: any | null;
+  cotizaciones: Cotizacion[];
+  cotizacionActiva: Cotizacion | null;
   onSelectComercio: (comercio: string) => void;
   caloriasTotales: number;
   caloriasPorPersona: number;
+  costoAlcoholTotal?: number;
   contextoEvento: ContextoEvento | null;
   seleccionados: ProductoSeleccionado[];
   onBack: () => void;
@@ -27,6 +40,7 @@ export function QuoteStep({
   onSelectComercio,
   caloriasTotales,
   caloriasPorPersona,
+  costoAlcoholTotal = 0,
   contextoEvento,
   seleccionados,
   onBack,
@@ -69,12 +83,14 @@ export function QuoteStep({
                 <div className="rounded-lg bg-muted p-4">
                   <p className="text-sm text-muted-foreground">Total comercio</p>
                   <p className="text-3xl font-bold text-primary">{formatPrice(Math.round(Number(cotizacion.total)))}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Alcohol incluido: {formatPrice(Math.round(0))}
-                  </p>
+                  {costoAlcoholTotal > 0 && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Alcohol incluido: {formatPrice(Math.round(costoAlcoholTotal))}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2 text-sm">
-                  {cotizacion.items.slice(0, 5).map((detalle: any) => (
+                  {cotizacion.items.slice(0, 5).map((detalle) => (
                     <div key={`${cotizacion.comercio}-${detalle.nombreProducto}`} className="flex items-center justify-between">
                       <span className="text-muted-foreground">{detalle.nombreProducto}</span>
                       <span className="font-medium">
