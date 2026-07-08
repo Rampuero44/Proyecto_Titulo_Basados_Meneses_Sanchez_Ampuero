@@ -15,13 +15,21 @@ export function IntroFuego() {
   const [visible, setVisible] = useState(() => {
     return sessionStorage.getItem("basados_intro_vista") !== "1";
   });
+  const [iniciada, setIniciada] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);
 
+  const iniciarIntro = () => {
+    const audio = new Audio("/fuego.wav");
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+    setIniciada(true);
+  };
+
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !iniciada) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -107,7 +115,7 @@ export function IntroFuego() {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
     };
-  }, [visible]);
+  }, [visible, iniciada]);
 
   if (!visible) return null;
 
@@ -127,10 +135,12 @@ export function IntroFuego() {
         pointerEvents: fadeOut ? "none" : "auto",
       }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-      />
+      {iniciada && (
+        <canvas
+          ref={canvasRef}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        />
+      )}
       <div
         ref={glowRef}
         style={{
@@ -159,6 +169,27 @@ export function IntroFuego() {
       <div style={{ fontSize: 13, color: "#E46C0A", letterSpacing: 2, marginTop: 6, zIndex: 1 }}>
         la forma inteligente de hacer asados
       </div>
+
+      {!iniciada && (
+        <button
+          onClick={iniciarIntro}
+          style={{
+            marginTop: 28,
+            zIndex: 1,
+            background: "#E46C0A",
+            color: "#0d0d0d",
+            border: "none",
+            padding: "12px 28px",
+            borderRadius: 10,
+            fontSize: 15,
+            fontWeight: 500,
+            cursor: "pointer",
+            letterSpacing: 1,
+          }}
+        >
+          Toca para encender el fuego
+        </button>
+      )}
     </div>
   );
 }
