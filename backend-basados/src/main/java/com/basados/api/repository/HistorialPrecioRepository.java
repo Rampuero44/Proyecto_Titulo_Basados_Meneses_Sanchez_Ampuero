@@ -11,28 +11,23 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface HistorialPrecioRepository
-        extends JpaRepository<HistorialPrecio, Long> {
+public interface HistorialPrecioRepository extends JpaRepository<HistorialPrecio, Long> {
 
-    Optional<HistorialPrecio>
-    findTopByProductoOrderByFechaScrapingDesc(
-            Producto producto
-    );
+    Optional<HistorialPrecio> findTopByProductoOrderByFechaScrapingDesc(Producto producto);
 
-    List<HistorialPrecio>
-    findByProductoOrderByFechaScrapingDesc(
-            Producto producto
-    );
+    List<HistorialPrecio> findByProductoOrderByFechaScrapingDesc(Producto producto);
 
     @Query("""
         SELECT hp FROM HistorialPrecio hp
         WHERE hp.producto = :producto
           AND hp.comercio = :comercio
+          AND hp.disponible = true
           AND hp.fechaScraping = (
               SELECT MAX(hp2.fechaScraping)
               FROM HistorialPrecio hp2
               WHERE hp2.producto = :producto
                 AND hp2.comercio = :comercio
+                AND hp2.disponible = true
           )
         ORDER BY hp.idHistorial DESC
     """)

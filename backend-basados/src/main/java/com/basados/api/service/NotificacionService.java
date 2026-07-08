@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class NotificacionService {
 
@@ -27,16 +30,14 @@ public class NotificacionService {
     }
 
     public NotificacionResponse enviarResumenEvento(ResumenEventoRequest request) {
-        int enviadosWhatsapp = 0;
-        int enviadosEmail = 0;
-
-        String mensajeWhatsapp = construirMensajeWhatsapp(request);
-
         if (request.getDestinatarios() == null || request.getDestinatarios().isEmpty()) {
             return new NotificacionResponse(0, 0);
         }
 
-        java.util.List<DestinatarioDto> destinatarios = new java.util.ArrayList<>(request.getDestinatarios());
+        int enviadosWhatsapp = 0;
+        int enviadosEmail = 0;
+
+        List<DestinatarioDto> destinatarios = new ArrayList<>(request.getDestinatarios());
 
         if (request.getOrganizadorEmail() != null && !request.getOrganizadorEmail().isBlank()) {
             boolean organizadorIncluido = destinatarios.stream()
@@ -52,36 +53,50 @@ public class NotificacionService {
             }
         }
 
+        // Generar PDF base una sola vez para todos los destinatarios por email
+        byte[] pdfBase = null;
+
         for (DestinatarioDto destinatario : destinatarios) {
-            if (destinatario.getCanal() == null || destinatario.getDestino() == null || destinatario.getDestino().isBlank()) {
+            if (destinatario.getCanal() == null || destinatario.getDestino() == null
+                    || destinatario.getDestino().isBlank()) {
                 continue;
             }
 
             if ("whatsapp".equalsIgnoreCase(destinatario.getCanal())) {
                 try {
-                    whatsAppService.enviarMensaje(destinatario.getDestino(), mensajeWhatsapp);
+                    String mensaje = construirMensajeWhatsapp(request, destinatario);
+                    whatsAppService.enviarMensaje(destinatario.getDestino(), mensaje);
                     enviadosWhatsapp++;
-                    log.info("WhatsApp enviado a {}", destinatario.getDestino());
+                    log.info("WhatsApp enviado correctamente");
                 } catch (Exception e) {
-                    log.error("Error enviando WhatsApp a {}", destinatario.getDestino(), e);
+                    log.error("Error enviando WhatsApp: {}", e.getMessage());
                 }
+
             } else if ("email".equalsIgnoreCase(destinatario.getCanal())) {
                 try {
-                    String cuerpoPersonalizado = construirCorreoPersonalizado(request, destinatario);
-                    byte[] pdf = pdfService.generarPdfResumen(request, destinatario);
+                    if (pdfBase == null) {
+                        DestinatarioDto dtoBase = new DestinatarioDto();
+                        dtoBase.setNombre(destinatario.getNombre());
+                        dtoBase.setMonto(request.getCostoPromedio());
+                        pdfBase = pdfService.generarPdfResumen(request, dtoBase);
+                    }
+
+                    String cuerpo = construirCorreoPersonalizado(request, destinatario);
+                    String nombreArchivo = generarNombreArchivo(request);
 
                     emailService.enviarCorreoConAdjunto(
                             destinatario.getDestino(),
                             "Resumen de tu evento BASADOS",
-                            cuerpoPersonalizado,
-                            pdf
+                            cuerpo,
+                            pdfBase,
+                            nombreArchivo
                     );
 
                     enviadosEmail++;
-                    log.info("Email con PDF enviado a {}", destinatario.getDestino());
+                    log.info("Email con PDF enviado correctamente");
 
                 } catch (Exception e) {
-                    log.error("Error enviando email a {}", destinatario.getDestino(), e);
+                    log.error("Error enviando email: {}", e.getMessage());
                 }
             }
         }
@@ -98,23 +113,31 @@ public class NotificacionService {
                 "Tu aporte: $" + valorNumero(destinatario.getMonto()) + "\n\n" +
                 "Costo total: $" + valorNumero(request.getCostoTotal()) + "\n" +
                 "Promedio por persona: $" + valorNumero(request.getCostoPromedio()) + "\n" +
-                "Calorias por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
+                "Calorías por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
                 "Supermercado: " + valorSeguro(request.getCotizacionSeleccionada()) + "\n\n" +
                 "Organizador: " + valorSeguro(request.getOrganizador()) + "\n\n" +
                 "Adjuntamos tu resumen en PDF.\n\n" +
                 "Gracias por usar BASADOS";
     }
 
-    private String construirMensajeWhatsapp(ResumenEventoRequest request) {
+    private String construirMensajeWhatsapp(ResumenEventoRequest request, DestinatarioDto destinatario) {
         return "Resumen BASADOS\n" +
+                "Hola " + valorSeguro(destinatario.getNombre()) + "!\n" +
                 "Evento: " + valorSeguro(request.getNombreEvento()) + "\n" +
                 "Fecha: " + valorSeguro(request.getFecha()) + "\n" +
                 "Participantes: " + valorNumero(request.getParticipantes()) + "\n" +
+                "Tu aporte: $" + valorNumero(destinatario.getMonto()) + "\n" +
                 "Costo total: $" + valorNumero(request.getCostoTotal()) + "\n" +
                 "Promedio por persona: $" + valorNumero(request.getCostoPromedio()) + "\n" +
-                "Calorias por persona: " + valorNumero(request.getCaloriasPorPersona()) + " kcal\n" +
                 "Supermercado sugerido: " + valorSeguro(request.getCotizacionSeleccionada()) + "\n" +
                 "Organizador: " + valorSeguro(request.getOrganizador());
+    }
+
+    private String generarNombreArchivo(ResumenEventoRequest request) {
+        String nombre = request.getNombreEvento() != null
+            ? request.getNombreEvento().replaceAll("[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]", "").trim().replace(" ", "_")
+            : "evento";
+        return "resumen-" + nombre + ".pdf";
     }
 
     private String valorSeguro(String valor) {

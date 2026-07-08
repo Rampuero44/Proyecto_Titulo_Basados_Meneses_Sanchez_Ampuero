@@ -77,7 +77,7 @@ public class EventoService {
 
     @Transactional(readOnly = true)
     public List<EventoResponseDTO> listarEventos() {
-        return eventoRepository.findAll().stream()
+        return eventoRepository.findByActivoTrue().stream()
             .map(this::toResponseDTO)
             .toList();
     }

@@ -9,7 +9,7 @@ import java.time.LocalDate;
 public class IaUsoInvitado {
 
     @Id
-    @Column(name = "ip", updatable = false, nullable = false)
+    @Column(name = "ip", updatable = false, nullable = false, length = 45)
     private String ip;
 
     @Column(name = "fecha")
@@ -18,8 +18,7 @@ public class IaUsoInvitado {
     @Column(name = "tokens_consumidos")
     private Integer tokensConsumidos;
 
-    public IaUsoInvitado() {
-    }
+    public IaUsoInvitado() {}
 
     public IaUsoInvitado(String ip, LocalDate fecha, Integer tokensConsumidos) {
         this.ip = ip;
@@ -27,27 +26,12 @@ public class IaUsoInvitado {
         this.tokensConsumidos = tokensConsumidos;
     }
 
-    public String getIp() {
-        return ip;
-    }
+    public String getIp() { return ip; }
+    public void setIp(String ip) { this.ip = ip; }
 
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
+    public LocalDate getFecha() { return fecha; }
+    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
 
-    public LocalDate getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
-
-    public Integer getTokensConsumidos() {
-        return tokensConsumidos;
-    }
-
-    public void setTokensConsumidos(Integer tokensConsumidos) {
-        this.tokensConsumidos = tokensConsumidos;
-    }
+    public Integer getTokensConsumidos() { return tokensConsumidos; }
+    public void setTokensConsumidos(Integer tokensConsumidos) { this.tokensConsumidos = tokensConsumidos; }
 }

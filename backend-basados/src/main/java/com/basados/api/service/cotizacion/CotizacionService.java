@@ -7,7 +7,10 @@ import com.basados.api.entity.Producto;
 import com.basados.api.repository.HistorialPrecioRepository;
 import com.basados.api.repository.ProductoRepository;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ public class CotizacionService {
         this.historialPrecioRepository = historialPrecioRepository;
     }
 
+    @Transactional(readOnly = true)
     public CotizacionResponseDTO generarCotizaciones(CotizacionRequestDTO request) {
         List<Comercio> comercios = historialPrecioRepository.findComerciosActivos();
 
@@ -56,19 +60,27 @@ public class CotizacionService {
         int faltantes = 0;
 
         for (CotizacionProductoDTO item : request.getProductos()) {
-            Producto producto = productoRepository.findById(item.getIdProducto()).orElse(null);
 
-            if (producto == null) {
+            if (item.getIdProducto() == null) {
                 faltantes++;
                 continue;
             }
+
+            Producto producto = productoRepository.findById(item.getIdProducto()).orElse(null);
+
+            if (producto == null || !Boolean.TRUE.equals(producto.getActivo())) {
+                faltantes++;
+                continue;
+            }
+
+            int cantidad = item.getCantidad() != null && item.getCantidad() > 0 ? item.getCantidad() : 1;
 
             Optional<HistorialPrecio> historialOpt =
                 historialPrecioRepository.findPrecioMasRecientePorComercio(producto, comercio);
 
             CotizacionItemDTO itemDTO = new CotizacionItemDTO();
             itemDTO.setNombreProducto(producto.getNombre());
-            itemDTO.setCantidad(item.getCantidad());
+            itemDTO.setCantidad(cantidad);
 
             if (historialOpt.isPresent()) {
                 HistorialPrecio historial = historialOpt.get();
@@ -80,7 +92,7 @@ public class CotizacionService {
                     ? historial.getPrecioOferta()
                     : historial.getPrecio();
 
-                BigDecimal subtotal = precio.multiply(BigDecimal.valueOf(item.getCantidad()));
+                BigDecimal subtotal = precio.multiply(BigDecimal.valueOf(cantidad));
 
                 itemDTO.setEncontrado(true);
                 itemDTO.setPrecioUnitario(precio);

@@ -26,43 +26,46 @@ public class IaService {
     private static final String API_URL = "https://api.anthropic.com/v1/messages";
     private static final String MODEL = "claude-haiku-4-5-20251001";
     private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(5))
+            .build();
 
     public IaResponseDTO generarSugerencias(SugerenciasRequest req) {
         boolean tieneProductos = req.getProductos() != null && !req.getProductos().isEmpty();
         boolean tienePresupuesto = req.getPresupuesto() > 0;
 
         String productosTexto = !tieneProductos
-            ? "Ninguno seleccionado aún."
-            : req.getProductos().stream()
-                .map(p -> {
-                    String unidad = p.getPrecioUnitario() != null ? " [" + p.getPrecioUnitario() + "]" : "";
-                    String peso = "";
-                    if (p.getPesoGramos() != null && p.getUnidadFormato() != null) {
-                        if ("g".equals(p.getUnidadFormato())) {
-                            peso = p.getPesoGramos() >= 1000
-                                ? String.format(" [%.1f kg]", p.getPesoGramos() / 1000.0)
-                                : String.format(" [%d g]", p.getPesoGramos());
-                        } else if ("ml".equals(p.getUnidadFormato())) {
-                            peso = p.getPesoGramos() >= 1000
-                                ? String.format(" [%.1f L]", p.getPesoGramos() / 1000.0)
-                                : String.format(" [%d ml]", p.getPesoGramos());
-                        } else if ("un".equals(p.getUnidadFormato())) {
-                            peso = " [unidad/pack]";
-                        }
-                    }
-                    return String.format("- %s (x%d, categoría: %s%s%s)",
-                        p.getNombre(), p.getCantidad(), p.getSlugCategoria(), peso, unidad);
-                })
-                .collect(Collectors.joining("\n"));
+                ? "Ninguno seleccionado aún."
+                : req.getProductos().stream()
+                        .map(p -> {
+                            String unidad = p.getPrecioUnitario() != null ? " [" + p.getPrecioUnitario() + "]" : "";
+                            String peso = "";
+                            if (p.getPesoGramos() != null && p.getUnidadFormato() != null) {
+                                if ("g".equals(p.getUnidadFormato())) {
+                                    peso = p.getPesoGramos() >= 1000
+                                            ? String.format(" [%.1f kg]", p.getPesoGramos() / 1000.0)
+                                            : String.format(" [%d g]", p.getPesoGramos());
+                                } else if ("ml".equals(p.getUnidadFormato())) {
+                                    peso = p.getPesoGramos() >= 1000
+                                            ? String.format(" [%.1f L]", p.getPesoGramos() / 1000.0)
+                                            : String.format(" [%d ml]", p.getPesoGramos());
+                                } else if ("un".equals(p.getUnidadFormato())) {
+                                    peso = " [unidad/pack]";
+                                }
+                            }
+                            return String.format("- %s (x%d, categoría: %s%s%s)",
+                                    p.getNombre(), p.getCantidad(), p.getSlugCategoria(), peso, unidad);
+                        })
+                        .collect(Collectors.joining("\n"));
 
         String contextoPresupuesto = tienePresupuesto
                 ? String.format("$%s CLP", String.format("%,d", req.getPresupuesto()))
                 : "no definido";
 
         String instruccionPresupuesto = tienePresupuesto
-                ? String.format("""
-                        • PRESUPUESTO: Indica en un punto separado y directo si el presupuesto de $%s CLP alcanza para lo seleccionado o si se va a quedar corto. Si sobra harto, dilo también. Solo el dato, sin rodeos.""",
+                ? String.format(
+                        """
+                                • PRESUPUESTO: Indica en un punto separado y directo si el presupuesto de $%s CLP alcanza para lo seleccionado o si se va a quedar corto. Si sobra harto, dilo también. Solo el dato, sin rodeos.""",
                         String.format("%,d", req.getPresupuesto()))
                 : "";
 
@@ -70,52 +73,52 @@ public class IaService {
 
         if (!tieneProductos && !tienePresupuesto) {
             prompt = String.format(
-                """
-                        Eres un maestro asador chileno con años de experiencia. Hablas directo y cercano, como un amigo que sabe lo que hace.
+                    """
+                            Eres un maestro asador chileno con años de experiencia. Hablas directo y cercano, como un amigo que sabe lo que hace.
 
-                        El usuario está armando un asado para %d personas (%s) pero todavía no ha agregado ningún producto.
+                            El usuario está armando un asado para %d personas (%s) pero todavía no ha agregado ningún producto.
 
-                        Escribe UN solo mensaje motivacional corto (máximo 3 líneas) invitándolo a empezar por la carne. Sé específico: sugiere un corte concreto para comenzar. Usa viñeta (•). Sin markdown, solo texto plano.
-                        """,
+                            Escribe UN solo mensaje motivacional corto (máximo 3 líneas) invitándolo a empezar por la carne. Sé específico: sugiere un corte concreto para comenzar. Usa viñeta (•). Sin markdown, solo texto plano.
+                            """,
                     req.getAsistentes(),
                     req.getTipoAsado());
 
         } else if (!tieneProductos && tienePresupuesto) {
             prompt = String.format(
-                """
-                        Eres un maestro asador chileno con años de experiencia. Hablas directo y cercano, como un amigo que sabe lo que hace.
+                    """
+                            Eres un maestro asador chileno con años de experiencia. Hablas directo y cercano, como un amigo que sabe lo que hace.
 
-                        El usuario está armando un asado para %d personas (%s) con un presupuesto de $%s CLP, pero todavía no ha agregado ningún producto.
+                            El usuario está armando un asado para %d personas (%s) con un presupuesto de $%s CLP, pero todavía no ha agregado ningún producto.
 
-                        Responde con 2 puntos usando viñetas (•). Sin markdown, solo texto plano:
-                        • Primero, dile si el presupuesto parece suficiente, justo o ajustado para esa cantidad de personas en un asado chileno estándar. Sé directo con los números.
-                        • Luego, invítalo a empezar agregando la carne y sugiere un corte concreto para comenzar.
-                        """,
+                            Responde con 2 puntos usando viñetas (•). Sin markdown, solo texto plano:
+                            • Primero, dile si el presupuesto parece suficiente, justo o ajustado para esa cantidad de personas en un asado chileno estándar. Sé directo con los números.
+                            • Luego, invítalo a empezar agregando la carne y sugiere un corte concreto para comenzar.
+                            """,
                     req.getAsistentes(),
                     req.getTipoAsado(),
                     String.format("%,d", req.getPresupuesto()));
 
         } else {
             prompt = String.format(
-                """
-                        Eres un maestro asador chileno con años de experiencia. Hablas de forma directa y cercana, como si le aconsejaras a un amigo que está organizando su asado. Usas algún modismo chileno de vez en cuando pero sin exagerar. Sin rodeos, sin formalidades.
+                    """
+                            Eres un maestro asador chileno con años de experiencia. Hablas de forma directa y cercana, como si le aconsejaras a un amigo que está organizando su asado. Usas algún modismo chileno de vez en cuando pero sin exagerar. Sin rodeos, sin formalidades.
 
-                        Evento:
-                        - Asistentes: %d personas
-                        - Tipo de asado: %s
-                        - Presupuesto: %s
+                            Evento:
+                            - Asistentes: %d personas
+                            - Tipo de asado: %s
+                            - Presupuesto: %s
 
-                        Productos seleccionados hasta ahora:
-                        %s
+                            Productos seleccionados hasta ahora:
+                            %s
 
-                        CÁLCULO DE CARNE: Para evaluar si alcanza la carne, suma (cantidad × peso_gramos) de cada producto cárnico y divídelo por el número de asistentes. El estándar chileno es 300-400g por persona. Si el resultado está bajo ese rango, dilo con los números concretos. Ojo que el vacuno se encoge bastante en la parrilla. Para carnes sin peso indicado, asume 1000g por unidad.
+                            CÁLCULO DE CARNE: Para evaluar si alcanza la carne, suma (cantidad × peso_gramos) de cada producto cárnico y divídelo por el número de asistentes. El estándar chileno es 300-400g por persona. Si el resultado está bajo ese rango, dilo con los números concretos. Ojo que el vacuno se encoge bastante en la parrilla. Para carnes sin peso indicado, asume 1000g por unidad.
 
-                        Responde con máximo 4 puntos cortos usando viñetas (•). Sin markdown, solo texto plano. Indica:
-                        • Si la carne alcanza para todos — calcula los gramos por persona y dilo directo.
-                        • Si falta algo que no puede faltar en un asado (bebidas, pan, ensalada, insumos) — específico, no genérico.
-                        • Un consejo concreto y accionable para mejorar este asado en particular.
-                        %s
-                        """,
+                            Responde con máximo 4 puntos cortos usando viñetas (•). Sin markdown, solo texto plano. Indica:
+                            • Si la carne alcanza para todos — calcula los gramos por persona y dilo directo.
+                            • Si falta algo que no puede faltar en un asado (bebidas, pan, ensalada, insumos) — específico, no genérico.
+                            • Un consejo concreto y accionable para mejorar este asado en particular.
+                            %s
+                            """,
                     req.getAsistentes(),
                     req.getTipoAsado(),
                     contextoPresupuesto,
@@ -135,26 +138,25 @@ public class IaService {
 
         String productosTexto = req.getProductos() == null || req.getProductos().isEmpty()
 
-
-            ? "Sin detalle."
-            : req.getProductos().stream()
-                .map(p -> {
-                    String peso = "";
-                    if (p.getPesoGramos() != null && p.getUnidadFormato() != null) {
-                        if ("g".equals(p.getUnidadFormato())) {
-                            peso = p.getPesoGramos() >= 1000
-                                ? String.format(" [%.1f kg]", p.getPesoGramos() / 1000.0)
-                                : String.format(" [%d g]", p.getPesoGramos());
-                        } else if ("ml".equals(p.getUnidadFormato())) {
-                            peso = p.getPesoGramos() >= 1000
-                                ? String.format(" [%.1f L]", p.getPesoGramos() / 1000.0)
-                                : String.format(" [%d ml]", p.getPesoGramos());
-                        }
-                    }
-                    return String.format("- %s x%d (%s%s)", p.getNombre(), p.getCantidad(), p.getSlugCategoria(), peso);
-                })
-                .collect(Collectors.joining("\n"));
-
+                ? "Sin detalle."
+                : req.getProductos().stream()
+                        .map(p -> {
+                            String peso = "";
+                            if (p.getPesoGramos() != null && p.getUnidadFormato() != null) {
+                                if ("g".equals(p.getUnidadFormato())) {
+                                    peso = p.getPesoGramos() >= 1000
+                                            ? String.format(" [%.1f kg]", p.getPesoGramos() / 1000.0)
+                                            : String.format(" [%d g]", p.getPesoGramos());
+                                } else if ("ml".equals(p.getUnidadFormato())) {
+                                    peso = p.getPesoGramos() >= 1000
+                                            ? String.format(" [%.1f L]", p.getPesoGramos() / 1000.0)
+                                            : String.format(" [%d ml]", p.getPesoGramos());
+                                }
+                            }
+                            return String.format("- %s x%d (%s%s)", p.getNombre(), p.getCantidad(),
+                                    p.getSlugCategoria(), peso);
+                        })
+                        .collect(Collectors.joining("\n"));
 
         boolean tienePresupuesto = req.getPresupuesto() > 0;
         String contextoPresupuesto = tienePresupuesto
@@ -219,10 +221,13 @@ public class IaService {
                     return new IaResponseDTO("Servicio de IA no disponible: credenciales inválidas.", false);
                 } else if (statusCode == 429) {
                     log.error("Error al llamar a la API de Anthropic: límite de uso alcanzado (429)");
-                    return new IaResponseDTO("El servicio de IA está saturado en este momento. Intenta nuevamente en unos minutos.", false);
+                    return new IaResponseDTO(
+                            "El servicio de IA está saturado en este momento. Intenta nuevamente en unos minutos.",
+                            false);
                 } else if (statusCode >= 500) {
                     log.error("Error al llamar a la API de Anthropic: error del servicio ({})", statusCode);
-                    return new IaResponseDTO("El servicio de IA no está disponible en este momento. Intenta más tarde.", false);
+                    return new IaResponseDTO("El servicio de IA no está disponible en este momento. Intenta más tarde.",
+                            false);
                 } else {
                     log.error("Error al llamar a la API de Anthropic: status {}", statusCode);
                     return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);
@@ -231,8 +236,12 @@ public class IaService {
 
             Map<?, ?> responseMap = mapper.readValue(response.body(), Map.class);
             List<?> content = (List<?>) responseMap.get("content");
+            if (content == null || content.isEmpty()) {
+                log.error("Respuesta de Claude sin contenido");
+                return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);
+            }
             Map<?, ?> firstBlock = (Map<?, ?>) content.get(0);
-            String texto = (String) firstBlock.get("text");
+            String texto = firstBlock.get("text") != null ? (String) firstBlock.get("text") : "";
 
             int tokensConsumidos = 0;
             Object usageObj = responseMap.get("usage");
@@ -254,7 +263,8 @@ public class IaService {
             return new IaResponseDTO("El servicio de IA demoró demasiado en responder. Intenta nuevamente.", false);
         } catch (java.io.IOException e) {
             log.error("Error de red al llamar a la API de Anthropic", e);
-            return new IaResponseDTO("No fue posible conectarse al servicio de IA. Verifica tu conexión e intenta nuevamente.", false);
+            return new IaResponseDTO(
+                    "No fue posible conectarse al servicio de IA. Verifica tu conexión e intenta nuevamente.", false);
         } catch (Exception e) {
             log.error("Error al generar recomendaciones con Claude", e);
             return new IaResponseDTO("No se pudo obtener recomendaciones en este momento.", false);

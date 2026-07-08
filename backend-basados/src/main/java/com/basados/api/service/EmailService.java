@@ -30,24 +30,24 @@ public class EmailService {
         message.setTo(destinatario);
         message.setSubject(asunto);
         message.setText(contenido);
-
         mailSender.send(message);
-        log.info("Correo enviado a: {}", destinatario);
+        log.info("Correo enviado correctamente");
     }
 
-    public void enviarCorreoConAdjunto(String destinatario, String asunto, String contenido, byte[] pdf) {
+    public void enviarCorreoConAdjunto(String destinatario, String asunto, String contenido,
+                                        byte[] pdf, String nombreArchivo) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(from);
             helper.setTo(destinatario);
             helper.setSubject(asunto);
             helper.setText(contenido);
-            helper.addAttachment("resumen_evento_basados.pdf", new ByteArrayResource(pdf));
+            helper.addAttachment(nombreArchivo, new ByteArrayResource(pdf));
 
             mailSender.send(message);
-            log.info("Correo con PDF enviado a: {}", destinatario);
+            log.info("Correo con PDF enviado correctamente");
 
         } catch (Exception e) {
             throw new RuntimeException("Error enviando correo con adjunto", e);

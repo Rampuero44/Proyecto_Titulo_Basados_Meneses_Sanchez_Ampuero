@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -13,6 +14,7 @@ import java.util.Map;
 public class WhatsAppService {
 
     private static final Logger log = LoggerFactory.getLogger(WhatsAppService.class);
+    private static final int TELEFONO_MIN_LENGTH = 8;
 
     @Value("${meta.whatsapp.token:#{null}}")
     private String token;
@@ -20,7 +22,14 @@ public class WhatsAppService {
     @Value("${meta.whatsapp.phone-number-id:#{null}}")
     private String phoneNumberId;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    public WhatsAppService() {
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setConnectionRequestTimeout(10000);
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     public void enviarMensaje(String numero, String mensaje) {
         if (token == null || token.isEmpty() || phoneNumberId == null || phoneNumberId.isEmpty()) {
@@ -28,11 +37,14 @@ public class WhatsAppService {
             return;
         }
 
+        String numeroNormalizado = normalizarNumero(numero);
+
+        if (numeroNormalizado.length() < TELEFONO_MIN_LENGTH) {
+            log.warn("Número de teléfono inválido, omitiendo envío de WhatsApp");
+            return;
+        }
+
         try {
-            String numeroNormalizado = normalizarNumero(numero);
-
-            log.info("Enviando WhatsApp a número normalizado: {}", numeroNormalizado);
-
             String url = "https://graph.facebook.com/v23.0/" + phoneNumberId + "/messages";
 
             HttpHeaders headers = new HttpHeaders();
@@ -49,10 +61,10 @@ public class WhatsAppService {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
-            log.info("Respuesta WhatsApp: {}", response.getStatusCode());
+            log.info("WhatsApp enviado correctamente. Status: {}", response.getStatusCode());
 
         } catch (Exception e) {
-            log.error("Error enviando WhatsApp a {}: {}", numero, e.getMessage(), e);
+            log.error("Error enviando WhatsApp: {}", e.getMessage());
         }
     }
 

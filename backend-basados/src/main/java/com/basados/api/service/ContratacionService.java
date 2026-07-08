@@ -34,6 +34,10 @@ public class ContratacionService {
         MaestroParrillero maestro = maestroRepository.findById(request.getIdMaestro())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Maestro asador no encontrado"));
 
+        if (!"APROBADO".equals(maestro.getEstadoSolicitud()) || !Boolean.TRUE.equals(maestro.getDisponibilidad())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El maestro asador no está disponible para contrataciones");
+        }
+
         ContratacionAsador contratacion = new ContratacionAsador();
         contratacion.setMaestro(maestro);
         contratacion.setValorAcordado(request.getValorAcordado() != null
@@ -45,8 +49,8 @@ public class ContratacionService {
         if (request.getIdEvento() != null && !request.getIdEvento().isBlank()) {
             try {
                 contratacion.setIdEvento(UUID.fromString(request.getIdEvento()));
-            } catch (IllegalArgumentException ignored) {
-                // idEvento con formato inválido: se guarda la contratación sin asociar a un evento
+            } catch (IllegalArgumentException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El formato del idEvento no es válido");
             }
         }
 

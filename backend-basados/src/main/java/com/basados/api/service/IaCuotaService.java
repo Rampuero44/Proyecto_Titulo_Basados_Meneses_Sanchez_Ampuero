@@ -29,48 +29,58 @@ public class IaCuotaService {
     }
 
     @Transactional
-    public boolean tieneCuotaDisponible(String ip) {
+    public boolean verificarYReservarCuota(String ip, int tokensEstimados) {
         Optional<UUID> userId = obtenerUsuarioAutenticado();
 
         if (userId.isPresent()) {
             Usuario usuario = usuarioRepository.findById(userId.get()).orElse(null);
             if (usuario == null) {
-                return true;
+                return false;
             }
             reiniciarSiCorrespondeUsuario(usuario);
+            if (usuario.getIaTokensConsumidos() + tokensEstimados > LIMITE_TOKENS_USUARIO) {
+                usuarioRepository.save(usuario);
+                return false;
+            }
+            usuario.setIaTokensConsumidos(usuario.getIaTokensConsumidos() + tokensEstimados);
             usuarioRepository.save(usuario);
-            return usuario.getIaTokensConsumidos() < LIMITE_TOKENS_USUARIO;
+            return true;
         }
 
-        IaUsoInvitado uso = obtenerOCrearUsoInvitado(ip);
+        String ipLimitada = ip != null && ip.length() > 45 ? ip.substring(0, 45) : ip;
+        IaUsoInvitado uso = obtenerOCrearUsoInvitado(ipLimitada);
         reiniciarSiCorrespondeInvitado(uso);
+        if (uso.getTokensConsumidos() + tokensEstimados > LIMITE_TOKENS_INVITADO) {
+            iaUsoInvitadoRepository.save(uso);
+            return false;
+        }
+        uso.setTokensConsumidos(uso.getTokensConsumidos() + tokensEstimados);
         iaUsoInvitadoRepository.save(uso);
-        return uso.getTokensConsumidos() < LIMITE_TOKENS_INVITADO;
+        return true;
     }
 
     @Transactional
-    public void registrarConsumo(String ip, int tokensConsumidos) {
-        if (tokensConsumidos <= 0) {
-            return;
-        }
+    public void ajustarConsumoReal(String ip, int tokensEstimados, int tokensReales) {
+        int diferencia = tokensReales - tokensEstimados;
+        if (diferencia == 0) return;
 
         Optional<UUID> userId = obtenerUsuarioAutenticado();
 
         if (userId.isPresent()) {
-            Usuario usuario = usuarioRepository.findById(userId.get()).orElse(null);
-            if (usuario == null) {
-                return;
-            }
-            reiniciarSiCorrespondeUsuario(usuario);
-            usuario.setIaTokensConsumidos(usuario.getIaTokensConsumidos() + tokensConsumidos);
-            usuarioRepository.save(usuario);
+            usuarioRepository.findById(userId.get()).ifPresent(usuario -> {
+                int nuevoTotal = Math.max(0, usuario.getIaTokensConsumidos() + diferencia);
+                usuario.setIaTokensConsumidos(nuevoTotal);
+                usuarioRepository.save(usuario);
+            });
             return;
         }
 
-        IaUsoInvitado uso = obtenerOCrearUsoInvitado(ip);
-        reiniciarSiCorrespondeInvitado(uso);
-        uso.setTokensConsumidos(uso.getTokensConsumidos() + tokensConsumidos);
-        iaUsoInvitadoRepository.save(uso);
+        String ipLimitada = ip != null && ip.length() > 45 ? ip.substring(0, 45) : ip;
+        iaUsoInvitadoRepository.findById(ipLimitada).ifPresent(uso -> {
+            int nuevoTotal = Math.max(0, uso.getTokensConsumidos() + diferencia);
+            uso.setTokensConsumidos(nuevoTotal);
+            iaUsoInvitadoRepository.save(uso);
+        });
     }
 
     private IaUsoInvitado obtenerOCrearUsoInvitado(String ip) {

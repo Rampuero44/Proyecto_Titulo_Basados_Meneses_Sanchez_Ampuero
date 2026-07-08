@@ -2,6 +2,7 @@ package com.basados.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
@@ -23,9 +24,13 @@ public class EventoRequestDTO {
 
     @Positive(message = "La cantidad de personas debe ser mayor a cero")
     private Integer cantidadPersonas;
+
+    @Pattern(
+        regexp = "BORRADOR|PLANIFICANDO|CONFIRMADO|FINALIZADO",
+        message = "Estado inválido. Valores permitidos: BORRADOR, PLANIFICANDO, CONFIRMADO, FINALIZADO"
+    )
     private String estado;
 
-    @NotBlank(message = "El idOrganizador es obligatorio")
     private String idOrganizador;
 
     public EventoRequestDTO() {}
