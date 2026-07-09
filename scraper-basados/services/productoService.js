@@ -1,60 +1,27 @@
 const pool = require('../config/database');
 
 async function obtenerCategoriaId(slugCategoria) {
-
     const result = await pool.query(
-        `
-        SELECT id_categoria
-        FROM categorias_producto
-        WHERE slug = $1
-        LIMIT 1
-        `,
+        `SELECT id_categoria FROM categorias_producto WHERE slug = $1 LIMIT 1`,
         [slugCategoria]
     );
-
-    if (result.rows.length === 0) {
-        return null;
-    }
-
-    return result.rows[0].id_categoria;
+    return result.rows.length > 0 ? result.rows[0].id_categoria : null;
 }
 
 async function obtenerComercioId(nombreComercio) {
-
     const result = await pool.query(
-        `
-        SELECT id_comercio
-        FROM comercios
-        WHERE LOWER(nombre) = LOWER($1)
-        LIMIT 1
-        `,
+        `SELECT id_comercio FROM comercios WHERE LOWER(nombre) = LOWER($1) LIMIT 1`,
         [nombreComercio]
     );
-
-    if (result.rows.length === 0) {
-        return null;
-    }
-
-    return result.rows[0].id_comercio;
+    return result.rows.length > 0 ? result.rows[0].id_comercio : null;
 }
 
 async function buscarProductoPorSku(sku) {
-
     const result = await pool.query(
-        `
-        SELECT id_producto
-        FROM productos
-        WHERE sku_scraping = $1
-        LIMIT 1
-        `,
+        `SELECT id_producto FROM productos WHERE sku_scraping = $1 LIMIT 1`,
         [sku]
     );
-
-    if (result.rows.length === 0) {
-        return null;
-    }
-
-    return result.rows[0];
+    return result.rows.length > 0 ? result.rows[0] : null;
 }
 
 function extraerPesoGramos(nombre) {
@@ -83,98 +50,15 @@ async function obtenerOCrearFormato(pesoGramos) {
 }
 
 async function registrarAuditoriaProducto(idProducto, accion, datosAnteriores, datosNuevos, usuarioResponsable) {
-
     await pool.query(
-        `
-        INSERT INTO auditoria_productos (
-            id_producto,
-            accion,
-            datos_anteriores,
-            datos_nuevos,
-            fecha_cambio,
-            usuario_responsable
-        )
-        VALUES (
-            $1, $2, $3, $4, CURRENT_TIMESTAMP, $5
-        )
-        `,
-        [
-            idProducto,
-            accion,
-            datosAnteriores ? JSON.stringify(datosAnteriores) : null,
-            JSON.stringify(datosNuevos),
-            usuarioResponsable
-        ]
+        `INSERT INTO auditoria_productos (id_producto, accion, datos_anteriores, datos_nuevos, fecha_cambio, usuario_responsable)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)`,
+        [idProducto, accion, datosAnteriores ? JSON.stringify(datosAnteriores) : null, JSON.stringify(datosNuevos), usuarioResponsable]
     );
-}
-
-async function insertarProducto(producto) {
-
-    const idCategoria = await obtenerCategoriaId(
-        producto.categoriaBasados
-    );
-
-    if (!idCategoria) {
-        throw new Error(
-            `Categoría no encontrada: ${producto.categoriaBasados}`
-        );
-    }
-
-    const pesoGramos = extraerPesoGramos(producto.nombre);
-    const idFormato = await obtenerOCrearFormato(pesoGramos);
-
-    const result = await pool.query(
-        `
-        INSERT INTO productos (
-            nombre,
-            id_categoria,
-            imagen_url,
-            alcoholico,
-            sku_scraping,
-            url_imagen_original,
-            id_formato,
-            enriquecido,
-            fecha_actualizacion
-        )
-        VALUES (
-            $1, $2, $3, $4, $5, $6, $7, false, CURRENT_TIMESTAMP
-        )
-        RETURNING id_producto
-        `,
-        [
-            producto.nombre,
-            idCategoria,
-            producto.imagenUrl,
-            ['bebidas-y-licores'].includes(producto.categoriaBasados),
-            producto.skuScraping,
-            producto.imagenUrl,
-            idFormato
-        ]
-    );
-
-    const idProducto = result.rows[0].id_producto;
-
-    try {
-        await registrarAuditoriaProducto(idProducto, 'creado', null, {
-            nombre: producto.nombre,
-            categoria: producto.categoriaBasados,
-            comercio: producto.comercio,
-            skuScraping: producto.skuScraping
-        }, 'scraper');
-    } catch (error) {
-        console.log('[AUDITORIA] Error registrando creación de producto');
-        console.log(error.message);
-    }
-
-    return idProducto;
 }
 
 function limpiarPrecio(precioTexto) {
-
-    if (!precioTexto) {
-        return null;
-    }
-
+    if (!precioTexto) return null;
     return Number(
         precioTexto
             .replace(/\$/g, '')
@@ -185,98 +69,94 @@ function limpiarPrecio(precioTexto) {
     );
 }
 
-async function insertarHistorialPrecio(
-    idProducto,
-    producto
-) {
-
-    const idComercio = await obtenerComercioId(
-        producto.comercio
+async function precioHaCambiado(idProducto, idComercio, nuevoPrecio) {
+    const result = await pool.query(
+        `SELECT precio FROM historial_precios
+         WHERE id_producto = $1 AND id_comercio = $2
+         ORDER BY fecha_scraping DESC
+         LIMIT 1`,
+        [idProducto, idComercio]
     );
-
-    if (!idComercio) {
-        throw new Error(
-            `Comercio no encontrado: ${producto.comercio}`
-        );
-    }
-
-    // Validar precio antes de insertar
-    const precioLimpio = limpiarPrecio(producto.precio);
-    const precioNumerico = parseFloat(precioLimpio);
-    
-    if (isNaN(precioNumerico) || precioNumerico <= 0) {
-        console.log(`[DB] Precio inválido para producto ${producto.nombre} (${precioLimpio}), omitiendo historial`);
-        return;
-    }
-
-    await pool.query(
-        `
-        INSERT INTO historial_precios (
-            id_producto,
-            id_comercio,
-            precio,
-            url_producto,
-            fecha_scraping,
-            precio_unitario,
-            disponible
-        )
-        VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            CURRENT_TIMESTAMP,
-            $5,
-            true
-        )
-        `,
-        [
-            idProducto,
-            idComercio,
-            precioNumerico,
-            producto.url,
-            producto.precioUnitario
-        ]
-    );
+    if (result.rows.length === 0) return true;
+    return Math.abs(result.rows[0].precio - nuevoPrecio) > 0.01;
 }
 
 async function guardarProducto(producto) {
-
     if (!producto.skuScraping) {
-        console.log(
-            '[DB] Producto sin SKU, ignorado'
-        );
-
+        console.log('[DB] Producto sin SKU, ignorado');
         return;
     }
 
-    let productoExistente = await buscarProductoPorSku(
-        producto.skuScraping
-    );
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-    let idProducto;
+        let productoExistente = await buscarProductoPorSku(producto.skuScraping);
+        let idProducto;
 
-    if (!productoExistente) {
+        if (!productoExistente) {
+            console.log(`[DB] Insertando producto: ${producto.nombre}`);
 
-        console.log(
-            `[DB] Insertando producto: ${producto.nombre}`
-        );
+            const idCategoria = await obtenerCategoriaId(producto.categoriaBasados);
+            if (!idCategoria) {
+                throw new Error(`Categoría no encontrada: ${producto.categoriaBasados}`);
+            }
 
-        idProducto = await insertarProducto(producto);
+            const pesoGramos = extraerPesoGramos(producto.nombre);
+            const idFormato = await obtenerOCrearFormato(pesoGramos);
 
-    } else {
+            const result = await client.query(
+                `INSERT INTO productos (nombre, id_categoria, imagen_url, alcoholico, sku_scraping, url_imagen_original, id_formato, enriquecido, fecha_actualizacion)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, false, CURRENT_TIMESTAMP)
+                 RETURNING id_producto`,
+                [producto.nombre, idCategoria, producto.imagenUrl, ['bebidas-y-licores'].includes(producto.categoriaBasados), producto.skuScraping, producto.imagenUrl, idFormato]
+            );
 
-        idProducto = productoExistente.id_producto;
+            idProducto = result.rows[0].id_producto;
+
+            try {
+                await registrarAuditoriaProducto(idProducto, 'creado', null, {
+                    nombre: producto.nombre, categoria: producto.categoriaBasados,
+                    comercio: producto.comercio, skuScraping: producto.skuScraping
+                }, 'scraper');
+            } catch {
+                console.log('[AUDITORIA] Error registrando creación de producto');
+            }
+        } else {
+            idProducto = productoExistente.id_producto;
+        }
+
+        const precioLimpio = limpiarPrecio(producto.precio);
+        const precioNumerico = parseFloat(precioLimpio);
+
+        if (isNaN(precioNumerico) || precioNumerico <= 0) {
+            console.log(`[DB] Precio inválido para ${producto.nombre} (${precioLimpio}), omitiendo historial`);
+            await client.query('COMMIT');
+            return;
+        }
+
+        const idComercio = await obtenerComercioId(producto.comercio);
+        if (!idComercio) {
+            throw new Error(`Comercio no encontrado: ${producto.comercio}`);
+        }
+
+        const cambio = await precioHaCambiado(idProducto, idComercio, precioNumerico);
+        if (cambio) {
+            await client.query(
+                `INSERT INTO historial_precios (id_producto, id_comercio, precio, url_producto, fecha_scraping, precio_unitario, disponible)
+                 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5, true)`,
+                [idProducto, idComercio, precioNumerico, producto.url, producto.precioUnitario]
+            );
+        }
+
+        await client.query('COMMIT');
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
     }
-
-    await insertarHistorialPrecio(
-        idProducto,
-        producto
-    );
 }
 
-module.exports = {
-    guardarProducto,
-    obtenerComercioId,
-    registrarAuditoriaProducto
-};
+module.exports = { guardarProducto, obtenerComercioId, registrarAuditoriaProducto };

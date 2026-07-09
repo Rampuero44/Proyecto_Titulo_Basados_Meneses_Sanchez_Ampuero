@@ -2,8 +2,6 @@ require('dotenv').config();
 
 if (!process.env.ANTHROPIC_API_KEY) {
     console.error('[SERVER] ERROR FATAL: falta la variable de entorno ANTHROPIC_API_KEY');
-    console.error('[SERVER] El enriquecimiento de productos no funcionará sin esta key.');
-    console.error('[SERVER] Defínela en scraper-basados/.env antes de iniciar el servidor.');
     process.exit(1);
 }
 
@@ -11,22 +9,11 @@ const express = require('express');
 const { chromium } = require('playwright');
 
 const pool = require('./config/database');
-
-const {
-    extraerProductosCategoria
-} = require('./scrapers/lider/scraperCategoria');
-
-const {
-    extraerProductosCategoria: extraerProductosCategoriaTottus
-} = require('./scrapers/tottus/scraperCategoria');
-
-const {
-    extraerProductosCategoria: extraerProductosCategoriaJumbo
-} = require('./scrapers/jumbo/scraperCategoria');
-
-const {
-    enriquecerProductosNuevos
-} = require('./services/enriquecimientoService');
+const { extraerProductosCategoria } = require('./scrapers/lider/scraperCategoria');
+const { extraerProductosCategoria: extraerProductosCategoriaTottus } = require('./scrapers/tottus/scraperCategoria');
+const { extraerProductosCategoria: extraerProductosCategoriaJumbo } = require('./scrapers/jumbo/scraperCategoria');
+const { enriquecerProductosNuevos } = require('./services/enriquecimientoService');
+const { adquirirLock, liberarLock, marcarLockFallido } = require('./services/lockService');
 
 const app = express();
 const PORT = 3001;
@@ -35,14 +22,14 @@ const INACTIVIDAD_MS = 5 * 60 * 1000;
 const TECHO_ABSOLUTO_MS = 3 * 60 * 60 * 1000;
 const INTERVALO_CHEQUEO_MS = 30 * 1000;
 
+const COMERCIOS = { lider: 1, tottus: 2, jumbo: 3 };
+
 function ejecutarConVigilancia(factory, { inactividadMs, techoMs }) {
     return new Promise((resolve, reject) => {
         let terminado = false;
         let ultimaActividad = Date.now();
 
-        const marcarActividad = () => {
-            ultimaActividad = Date.now();
-        };
+        const marcarActividad = () => { ultimaActividad = Date.now(); };
 
         const finalizar = (callback, valor) => {
             if (terminado) return;
@@ -73,13 +60,33 @@ function ejecutarConVigilancia(factory, { inactividadMs, techoMs }) {
     });
 }
 
+async function ejecutarScraping(res, nombreComercio, slug, scraperFn) {
+    const idComercio = COMERCIOS[nombreComercio.toLowerCase()];
+    const idLog = await adquirirLock(idComercio, slug);
+
+    if (!idLog) {
+        return res.status(409).json({ error: `Scraping de ${nombreComercio} ya está en curso` });
+    }
+
+    try {
+        const productos = await ejecutarConVigilancia(
+            (marcarActividad) => scraperFn(slug, marcarActividad),
+            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
+        );
+        await liberarLock(idLog, { detectados: productos.length, actualizados: productos.length });
+        res.json({ comercio: nombreComercio, categoria: slug, total: productos.length, productos });
+    } catch (error) {
+        await marcarLockFallido(idLog, error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
 app.use(express.json());
 
 pool.query('SELECT NOW()')
     .then(() => console.log('POSTGRESQL CONNECTED'))
     .catch((error) => {
-        console.log('POSTGRESQL ERROR');
-        console.log(error.message);
+        console.error('POSTGRESQL ERROR:', error.message);
     });
 
 app.get('/buscar', async (req, res) => {
@@ -91,17 +98,16 @@ app.get('/buscar', async (req, res) => {
 
     try {
         const url = `https://super.lider.cl/search?query=${query}`;
-        console.log(`[BUSCAR] ${url}`);
         await page.goto(url, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(5000);
 
         const productos = [];
         const links = await page.locator('a[href*="/ip/"]').all();
 
-        for (let i = 0; i < links.length; i++) {
+        for (const link of links) {
             try {
-                const nombre = await links[i].innerText();
-                const href = await links[i].getAttribute('href');
+                const nombre = await link.innerText();
+                const href = await link.getAttribute('href');
                 if (!href || !nombre) continue;
                 productos.push({
                     nombre: nombre.trim(),
@@ -114,68 +120,26 @@ app.get('/buscar', async (req, res) => {
 
         res.json(productos);
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: error.message });
     } finally {
         await browser.close();
     }
 });
 
-app.get('/categoria/:slug', async (req, res) => {
-    const slug = req.params.slug;
-    try {
-        const productos = await ejecutarConVigilancia(
-            (marcarActividad) => extraerProductosCategoria(slug, marcarActividad),
-            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
-        );
-        res.json({ comercio: 'Lider', categoria: slug, total: productos.length, productos });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
-    }
+app.get('/lider/:slug', async (req, res) => {
+    await ejecutarScraping(res, 'Lider', req.params.slug, extraerProductosCategoria);
 });
 
-app.get('/lider/:slug', async (req, res) => {
-    const slug = req.params.slug;
-    try {
-        const productos = await ejecutarConVigilancia(
-            (marcarActividad) => extraerProductosCategoria(slug, marcarActividad),
-            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
-        );
-        res.json({ comercio: 'Lider', categoria: slug, total: productos.length, productos });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
-    }
+app.get('/categoria/:slug', async (req, res) => {
+    await ejecutarScraping(res, 'Lider', req.params.slug, extraerProductosCategoria);
 });
 
 app.get('/tottus/:slug', async (req, res) => {
-    const slug = req.params.slug;
-    try {
-        const productos = await ejecutarConVigilancia(
-            (marcarActividad) => extraerProductosCategoriaTottus(slug, marcarActividad),
-            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
-        );
-        res.json({ categoria: slug, total: productos.length, productos });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
-    }
+    await ejecutarScraping(res, 'Tottus', req.params.slug, extraerProductosCategoriaTottus);
 });
 
 app.get('/jumbo/:slug', async (req, res) => {
-    const slug = req.params.slug;
-    try {
-        console.log(`[SERVER] Iniciando scraping Jumbo — categoría: ${slug}`);
-        const productos = await ejecutarConVigilancia(
-            (marcarActividad) => extraerProductosCategoriaJumbo(slug, marcarActividad),
-            { inactividadMs: INACTIVIDAD_MS, techoMs: TECHO_ABSOLUTO_MS }
-        );
-        res.json({ comercio: 'Jumbo', categoria: slug, total: productos.length, productos });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
-    }
+    await ejecutarScraping(res, 'Jumbo', req.params.slug, extraerProductosCategoriaJumbo);
 });
 
 app.post('/enriquecer', async (req, res) => {

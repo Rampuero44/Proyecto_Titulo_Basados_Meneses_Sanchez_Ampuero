@@ -4,6 +4,7 @@ const { registrarAuditoriaProducto } = require('./productoService');
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const BATCH_SIZE = Number(process.env.ENRIQUECIMIENTO_BATCH_SIZE) || 20;
 const DELAY_MS = 1000;
+const MODEL = 'claude-haiku-4-5-20251001';
 
 async function obtenerProductosSinEnriquecer() {
     const result = await pool.query(`
@@ -33,22 +34,15 @@ Formato exacto requerido:
   {
     "index": 1,
     "marca": "nombre de la marca comercial registrada o null. REGLAS ESTRICTAS: (1) Solo devuelve una marca si es claramente un nombre comercial registrado (ej: Agrosuper, Don Pollo, Ariztía, Sopraval, Miraflores, Belmont, Sureña, Natura, Chef, Super Cerdo, Cuisine & Co). (2) Los nombres de supermercados NO son marcas de producto: 'Tottus' y 'Lider' son tiendas, no marcas — usa null si el producto no tiene otra marca identificable. (3) NO devuelvas cortes, tipos o ingredientes como marca: 'Trutro', 'Vacuno', 'Pechuga', 'Maravilla', 'Canola', 'Oliva', 'Coco', 'Entero', 'Trozado' NO son marcas. (4) Capitaliza correctamente: primera letra mayúscula, resto minúsculas (ej: 'AGROSUPER' → 'Agrosuper', 'DON POLLO' → 'Don Pollo')",
-    "peso_gramos": número entero en gramos o ml según unidad, o null. Reglas estrictas: (1) Si el nombre incluye peso fijo (ej: '850 g', '2 kg', '500 ml', '1 L'), conviértelo a la unidad base (gramos para sólidos, ml para líquidos). (2) Si es una CARNE DE RES, AVE, CERDO O PESCADO sin peso indicado (se vende al corte por kilo), usa 1000. (3) Si es un líquido (aceite, bebida, salsa, vinagre) sin volumen indicado, usa null. (4) Para packs múltiples (ej: '6 unidades', '12 pack'), usa null en peso_gramos y registra la cantidad en cantidad_pack. (5) Para cualquier otro producto sin peso indicado, usa null,
-    "unidad_formato": "g" para sólidos (carnes, embutidos, verduras, quesos), "ml" para líquidos (aceites, bebidas, salsas, vinagres) o "un" para productos contables (packs de cerveza, cartones de huevos, paquetes múltiples). Si es líquido sin volumen indicado usa "ml". Para packs múltiples usa "un",
-    "cantidad_pack": número entero de unidades en el pack (ej: cerveza 6 pack → 6, cartón 12 huevos → 12) o null si es unidad individual,
-    "calorias_100g": número entero de calorías por 100g o null. Rango válido: 0 a 900,
-    "proteinas_100g": número con decimales de proteínas por 100g o null. Rango válido: 0 a 100,
-    "grasas_100g": número con decimales de grasas por 100g o null. Rango válido: 0 a 100,
-    "carbohidratos_100g": número con decimales de carbohidratos por 100g o null. Rango válido: 0 a 100
+    "peso_gramos": número entero en gramos o ml según unidad, o null,
+    "unidad_formato": "g" para sólidos, "ml" para líquidos o "un" para packs,
+    "cantidad_pack": número entero de unidades en el pack o null,
+    "calorias_100g": número entero de calorías por 100g o null,
+    "proteinas_100g": número con decimales de proteínas por 100g o null,
+    "grasas_100g": número con decimales de grasas por 100g o null,
+    "carbohidratos_100g": número con decimales de carbohidratos por 100g o null
   }
-]
-
-Reglas adicionales:
-- Para carnes sin marca visible, usa null en marca
-- Líquidos con volumen indicado (ej: '1 L', '500 ml'): usa ese valor en ml en peso_gramos con unidad_formato 'ml'
-- Líquidos sin volumen indicado: peso_gramos = null, unidad_formato = 'ml'
-- Para packs múltiples: detecta 'pack', 'unidades', 'cartón', 'display' y registra cantidad en cantidad_pack, peso_gramos = null
-- Si no puedes determinar un valor con confianza razonable, usa null`;
+]`;
 
     const response = await fetch(ANTHROPIC_API_URL, {
         method: 'POST',
@@ -58,7 +52,7 @@ Reglas adicionales:
             'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-            model: 'claude-haiku-4-5',
+            model: MODEL,
             max_tokens: 2000,
             messages: [{ role: 'user', content: prompt }]
         })
@@ -69,90 +63,59 @@ Reglas adicionales:
     }
 
     const data = await response.json();
+
+    if (!data.content || data.content.length === 0 || !data.content[0].text) {
+        throw new Error('Respuesta de Claude sin contenido');
+    }
+
     const texto = data.content[0].text.trim();
 
-    // Intentar parsear directamente
     try {
         return JSON.parse(texto);
     } catch {}
 
-    // Limpiar markdown y reintentar
     try {
-        const limpio = texto
-            .replace(/```json\s*/gi, '')
-            .replace(/```\s*/g, '')
-            .trim();
+        const limpio = texto.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         return JSON.parse(limpio);
     } catch {}
 
-    // Extraer array con regex
-    try {
-        const match = texto.match(/\[[\s\S]*\]/);
-        if (match) return JSON.parse(match[0]);
-    } catch {}
-
-    // Si todo falla, retornar array vacío para no bloquear el proceso
-    console.warn('[ENRIQUECIMIENTO] JSON inválido, saltando batch');
-    return [];
+    throw new Error('No se pudo parsear la respuesta de Claude como JSON');
 }
 
 function validarDatos(datos) {
-    const unidad = ['g', 'ml', 'un'].includes(datos.unidad_formato) ? datos.unidad_formato : 'g';
-    
-    // Capitalizar marca correctamente (primera letra mayúscula, resto minúsculas)
-    let marcaNormalizada = null;
-    if (datos.marca && datos.marca.length > 0 && datos.marca.length <= 100) {
-        marcaNormalizada = datos.marca
-            .toLowerCase()
-            .split(' ')
-            .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1))
-            .join(' ');
-    }
-    
+    if (!datos) return {};
+
     return {
-        calorias: datos.calorias_100g >= 0 && datos.calorias_100g <= 900
-            ? datos.calorias_100g : null,
-        proteinas: datos.proteinas_100g >= 0 && datos.proteinas_100g <= 100
-            ? datos.proteinas_100g : null,
-        grasas: datos.grasas_100g >= 0 && datos.grasas_100g <= 100
-            ? datos.grasas_100g : null,
-        carbohidratos: datos.carbohidratos_100g >= 0 && datos.carbohidratos_100g <= 100
-            ? datos.carbohidratos_100g : null,
-        peso_gramos: datos.peso_gramos > 0 && datos.peso_gramos <= 50000
-            ? datos.peso_gramos : null,
-        marca: marcaNormalizada,
-        unidad_formato: unidad,
-        cantidad_pack: datos.cantidad_pack > 0 ? datos.cantidad_pack : null
+        marca: typeof datos.marca === 'string' ? datos.marca : null,
+        peso_gramos: Number.isInteger(datos.peso_gramos) && datos.peso_gramos > 0 ? datos.peso_gramos : null,
+        unidad_formato: ['g', 'ml', 'un'].includes(datos.unidad_formato) ? datos.unidad_formato : 'g',
+        cantidad_pack: Number.isInteger(datos.cantidad_pack) && datos.cantidad_pack > 0 ? datos.cantidad_pack : null,
+        calorias: Number.isInteger(datos.calorias_100g) && datos.calorias_100g >= 0 && datos.calorias_100g <= 900 ? datos.calorias_100g : null,
+        proteinas: typeof datos.proteinas_100g === 'number' && datos.proteinas_100g >= 0 && datos.proteinas_100g <= 100 ? datos.proteinas_100g : null,
+        grasas: typeof datos.grasas_100g === 'number' && datos.grasas_100g >= 0 && datos.grasas_100g <= 100 ? datos.grasas_100g : null,
+        carbohidratos: typeof datos.carbohidratos_100g === 'number' && datos.carbohidratos_100g >= 0 && datos.carbohidratos_100g <= 100 ? datos.carbohidratos_100g : null,
     };
 }
 
 async function obtenerOCrearMarca(nombreMarca) {
-    if (!nombreMarca) return null;
-
-    const existing = await pool.query(
-        'SELECT id_marca FROM marcas WHERE LOWER(nombre) = LOWER($1)',
-        [nombreMarca]
-    );
-
+    if (!nombreMarca || typeof nombreMarca !== 'string' || !nombreMarca.trim()) return null;
+    const nombre = nombreMarca.trim();
+    const existing = await pool.query('SELECT id_marca FROM marcas WHERE LOWER(nombre) = LOWER($1)', [nombre]);
     if (existing.rows.length > 0) return existing.rows[0].id_marca;
-
-    const inserted = await pool.query(
-        'INSERT INTO marcas (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING RETURNING id_marca',
-        [nombreMarca]
-    );
-
-    if (inserted.rows.length > 0) return inserted.rows[0].id_marca;
-
-    const retry = await pool.query(
-        'SELECT id_marca FROM marcas WHERE LOWER(nombre) = LOWER($1)',
-        [nombreMarca]
-    );
-    return retry.rows[0]?.id_marca ?? null;
+    try {
+        const inserted = await pool.query(
+            'INSERT INTO marcas (nombre) VALUES ($1) ON CONFLICT (nombre) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id_marca',
+            [nombre]
+        );
+        return inserted.rows[0]?.id_marca ?? null;
+    } catch {
+        const retry = await pool.query('SELECT id_marca FROM marcas WHERE LOWER(nombre) = LOWER($1)', [nombre]);
+        return retry.rows[0]?.id_marca ?? null;
+    }
 }
 
 async function obtenerOCrearFormato(cantidad, unidad = 'g') {
     if (!cantidad) return null;
-
     let nombre;
     if (unidad === 'ml') {
         nombre = cantidad >= 1000 ? `${(cantidad / 1000).toFixed(1)} L` : `${cantidad} ml`;
@@ -161,13 +124,8 @@ async function obtenerOCrearFormato(cantidad, unidad = 'g') {
     } else {
         nombre = cantidad >= 1000 ? `${(cantidad / 1000).toFixed(1)} kg` : `${cantidad} g`;
     }
-
-    const existing = await pool.query(
-        'SELECT id_formato FROM formatos WHERE nombre = $1 AND unidad = $2',
-        [nombre, unidad]
-    );
+    const existing = await pool.query('SELECT id_formato FROM formatos WHERE nombre = $1 AND unidad = $2', [nombre, unidad]);
     if (existing.rows.length > 0) return existing.rows[0].id_formato;
-
     const inserted = await pool.query(
         'INSERT INTO formatos (nombre, peso_gramos, unidad) VALUES ($1, $2, $3) ON CONFLICT (nombre, unidad) DO UPDATE SET nombre = EXCLUDED.nombre RETURNING id_formato',
         [nombre, unidad === 'g' ? cantidad : null, unidad]
@@ -177,13 +135,8 @@ async function obtenerOCrearFormato(cantidad, unidad = 'g') {
 
 async function obtenerEstadoActual(idProducto) {
     const result = await pool.query(`
-        SELECT
-            p.calorias,
-            p.proteinas,
-            p.grasas,
-            p.carbohidratos,
-            m.nombre AS marca,
-            f.nombre AS formato
+        SELECT p.calorias, p.proteinas, p.grasas, p.carbohidratos,
+               m.nombre AS marca, f.nombre AS formato
         FROM productos p
         LEFT JOIN marcas m ON m.id_marca = p.id_marca
         LEFT JOIN formatos f ON f.id_formato = p.id_formato
@@ -194,7 +147,6 @@ async function obtenerEstadoActual(idProducto) {
 
 async function actualizarProducto(idProducto, datos) {
     const estadoAnterior = await obtenerEstadoActual(idProducto);
-
     const idMarca = await obtenerOCrearMarca(datos.marca);
     const idFormato = await obtenerOCrearFormato(datos.peso_gramos, datos.unidad_formato ?? 'g');
 
@@ -210,29 +162,16 @@ async function actualizarProducto(idProducto, datos) {
             enriquecimiento_exitoso = true,
             fecha_actualizacion = CURRENT_TIMESTAMP
         WHERE id_producto = $7
-    `, [
-        datos.calorias,
-        datos.proteinas,
-        datos.grasas,
-        datos.carbohidratos,
-        idMarca,
-        idFormato,
-        idProducto
-    ]);
+    `, [datos.calorias, datos.proteinas, datos.grasas, datos.carbohidratos, idMarca, idFormato, idProducto]);
 
     try {
         await registrarAuditoriaProducto(idProducto, 'enriquecido', estadoAnterior, {
-            calorias: datos.calorias,
-            proteinas: datos.proteinas,
-            grasas: datos.grasas,
-            carbohidratos: datos.carbohidratos,
-            marca: datos.marca,
-            peso_gramos: datos.peso_gramos,
-            unidad_formato: datos.unidad_formato
+            calorias: datos.calorias, proteinas: datos.proteinas,
+            grasas: datos.grasas, carbohidratos: datos.carbohidratos,
+            marca: datos.marca, peso_gramos: datos.peso_gramos, unidad_formato: datos.unidad_formato
         }, 'enriquecimiento-ia');
-    } catch (error) {
+    } catch {
         console.log('[AUDITORIA] Error registrando enriquecimiento de producto');
-        console.log(error.message);
     }
 }
 
@@ -273,6 +212,8 @@ async function enriquecerProductosNuevos() {
                 fallidos++;
                 console.error(`[ENRIQUECIMIENTO] Error actualizando ${producto.nombre}: ${error.message}`);
             }
+
+            await new Promise(r => setTimeout(r, DELAY_MS));
         }
 
         const noRespondidos = productos.filter(
