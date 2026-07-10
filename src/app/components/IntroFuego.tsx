@@ -16,16 +16,34 @@ export function IntroFuego() {
     return sessionStorage.getItem("basados_intro_vista") !== "1";
   });
   const [iniciada, setIniciada] = useState(false);
+  const [encendiendo, setEncendiendo] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);
 
   const iniciarIntro = () => {
-    const audio = new Audio("/fuego.wav");
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
-    setIniciada(true);
+    setEncendiendo(true);
+
+    const fosforo = new Audio("/fosforo.wav");
+    fosforo.volume = 0.7;
+    fosforo.currentTime = 7;
+    fosforo.play().catch(() => {});
+
+    const detener = () => {
+      if (fosforo.currentTime >= 11) {
+        fosforo.pause();
+        fosforo.removeEventListener("timeupdate", detener);
+      }
+    };
+    fosforo.addEventListener("timeupdate", detener);
+
+    window.setTimeout(() => {
+      const fuego = new Audio("/fuego.wav");
+      fuego.volume = 0.5;
+      fuego.play().catch(() => {});
+      setIniciada(true);
+    }, 4000);
   };
 
   useEffect(() => {
@@ -173,21 +191,22 @@ export function IntroFuego() {
       {!iniciada && (
         <button
           onClick={iniciarIntro}
+          disabled={encendiendo}
           style={{
             marginTop: 28,
             zIndex: 1,
-            background: "#E46C0A",
+            background: encendiendo ? "#8a4208" : "#E46C0A",
             color: "#0d0d0d",
             border: "none",
             padding: "12px 28px",
             borderRadius: 10,
             fontSize: 15,
             fontWeight: 500,
-            cursor: "pointer",
+            cursor: encendiendo ? "default" : "pointer",
             letterSpacing: 1,
           }}
         >
-          Toca para encender el fuego
+          {encendiendo ? "Encendiendo..." : "Toca para encender el fuego"}
         </button>
       )}
     </div>
