@@ -44,7 +44,7 @@ export function Footer() {
             <p className="text-sm font-medium">Proyecto</p>
             <div className="flex flex-col gap-1 text-sm text-muted-foreground">
               <span>Proyecto de Título {year}</span>
-              <span>Ingeniería en Informática</span>
+              <span>Analista Programador</span>
               <span>Meneses · Sánchez · Ampuero</span>
             </div>
           </div>
