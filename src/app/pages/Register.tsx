@@ -62,7 +62,7 @@ export function Register() {
       return;
     }
 
-    toast.success("Registro exitoso. Revisa tu email para confirmar tu cuenta.");
+    toast.success("¡Te has registrado correctamente en BASADOS!");
     navigate("/login");
   };
 
