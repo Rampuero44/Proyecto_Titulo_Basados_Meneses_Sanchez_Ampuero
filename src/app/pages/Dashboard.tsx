@@ -19,9 +19,12 @@ export function Dashboard() {
   const [eventos, setEventos] = useState<EventoResponse[]>([]);
   const [cargando, setCargando] = useState(true);
 
-  useEffect(() => {
-    if (loading || !user) return;
-
+useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      setCargando(false);
+      return;
+    }
     obtenerEventosPorUsuario(user.id)
       .then(setEventos)
       .catch(() => toast.error("Error cargando eventos"))

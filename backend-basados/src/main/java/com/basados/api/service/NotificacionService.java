@@ -95,8 +95,8 @@ public class NotificacionService {
                     enviadosEmail++;
                     log.info("Email con PDF enviado correctamente");
 
-                } catch (Exception e) {
-                    log.error("Error enviando email: {}", e.getMessage());
+		} catch (Exception e) {
+                    log.error("Error enviando email: {}", e.getMessage(), e);
                 }
             }
         }

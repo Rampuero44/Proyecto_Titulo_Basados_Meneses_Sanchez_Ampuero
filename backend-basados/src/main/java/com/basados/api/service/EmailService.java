@@ -1,55 +1,66 @@
 package com.basados.api.service;
 
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.Attachment;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.util.Base64;
 
 @Service
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
-    private final JavaMailSender mailSender;
+    @Value("${resend.api.key}")
+    private String resendApiKey;
 
-    @Value("${spring.mail.username}")
+    @Value("${resend.from.email}")
     private String from;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
     public void enviarCorreo(String destinatario, String asunto, String contenido) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(from);
-        message.setTo(destinatario);
-        message.setSubject(asunto);
-        message.setText(contenido);
-        mailSender.send(message);
-        log.info("Correo enviado correctamente");
+        try {
+            Resend resend = new Resend(resendApiKey);
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from(from)
+                    .to(destinatario)
+                    .subject(asunto)
+                    .text(contenido)
+                    .build();
+            CreateEmailResponse response = resend.emails().send(params);
+            log.info("Correo enviado correctamente. ID: {}", response.getId());
+        } catch (Exception e) {
+            log.error("Error enviando correo: {}", e.getMessage(), e);
+            throw new RuntimeException("Error enviando correo", e);
+        }
     }
 
     public void enviarCorreoConAdjunto(String destinatario, String asunto, String contenido,
                                         byte[] pdf, String nombreArchivo) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            Resend resend = new Resend(resendApiKey);
 
-            helper.setFrom(from);
-            helper.setTo(destinatario);
-            helper.setSubject(asunto);
-            helper.setText(contenido);
-            helper.addAttachment(nombreArchivo, new ByteArrayResource(pdf));
+            Attachment attachment = Attachment.builder()
+                    .fileName(nombreArchivo)
+                    .content(Base64.getEncoder().encodeToString(pdf))
+                    .build();
 
-            mailSender.send(message);
-            log.info("Correo con PDF enviado correctamente");
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from(from)
+                    .to(destinatario)
+                    .subject(asunto)
+                    .text(contenido)
+                    .attachments(attachment)
+                    .build();
 
+            CreateEmailResponse response = resend.emails().send(params);
+            log.info("Correo con PDF enviado correctamente. ID: {}", response.getId());
         } catch (Exception e) {
+            log.error("Error enviando correo con adjunto: {}", e.getMessage(), e);
             throw new RuntimeException("Error enviando correo con adjunto", e);
         }
     }
