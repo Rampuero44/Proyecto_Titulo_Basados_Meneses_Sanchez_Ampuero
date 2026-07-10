@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Navbar } from "../components/Navbar";
+import { IntroFuego } from "../components/IntroFuego";
 import { obtenerBorrador } from "../services/eventosApi";
 
 export function Home() {
@@ -28,8 +29,10 @@ export function Home() {
       .catch(() => setTieneBorrador(false));
   }, [estaLogueado, user]);
 
-  return (
-    <div className="min-h-screen bg-background">
+return (
+    <>
+      <IntroFuego />
+      <div className="min-h-screen bg-background">
       {estaLogueado ? (
         <Navbar />
       ) : (
@@ -261,9 +264,9 @@ export function Home() {
             </Button>
           </CardContent>
         </Card>
-      </section>
-
+     </section>
       <Footer />
     </div>
+    </>
   );
 }
