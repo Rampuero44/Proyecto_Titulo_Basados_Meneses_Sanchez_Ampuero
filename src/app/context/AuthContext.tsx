@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+﻿import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
@@ -80,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) return { error: error?.message ?? null, user: null };
+    setSession(data.session);
+    setUser(data.user);
     await cargarPerfil(data.session?.access_token);
     return { error: null, user: data.user };
   };
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       const msg = error.message.toLowerCase();
       if (msg.includes("already registered") || msg.includes("user already exists")) {
-        return { error: "Este correo ya está registrado. Intenta iniciar sesión." };
+        return { error: "Este correo ya estÃ¡ registrado. Intenta iniciar sesiÃ³n." };
       }
       return { error: error.message };
     }
@@ -110,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: passwordActual,
     });
     if (loginError) {
-      return { error: "La contraseña actual es incorrecta" };
+      return { error: "La contraseÃ±a actual es incorrecta" };
     }
     const { error } = await supabase.auth.updateUser({ password: passwordNueva });
     if (error) return { error: error.message };
@@ -134,3 +136,4 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return ctx;
 }
+
