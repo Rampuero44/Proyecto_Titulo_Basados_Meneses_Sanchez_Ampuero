@@ -1,30 +1,3 @@
--- ============================================================================
--- SCRIPT DE BASE DE DATOS - Creación del esquema
--- Proyecto: Organizador de asados / comparador de precios de supermercados
--- ============================================================================
--- Este script se generó a partir de un export de esquema de Supabase que
--- venía marcado como "solo para contexto, no ejecutable". Se corrigió y
--- completó para que se pueda correr de principio a fin en una base de datos
--- PostgreSQL vacía. Cambios respecto al archivo original:
---
---   1. Se agregó la extensión pgcrypto (requerida por gen_random_uuid() en
---      versiones de PostgreSQL anteriores a la 13).
---   2. Se crearon explícitamente todas las secuencias (CREATE SEQUENCE) que
---      las columnas usaban vía nextval('...') pero que no estaban definidas
---      en el archivo original.
---   3. Se reordenó la tabla "tipos": en el original se definía después de
---      "productos", pero productos.id_tipo la referencia mediante una
---      llave foránea, lo que producía un error de ejecución ("relation
---      tipos does not exist"). Ahora "tipos" se crea antes que "productos".
---   4. Se agregó ALTER SEQUENCE ... OWNED BY para vincular cada secuencia
---      a su columna (buena práctica: si se elimina la tabla, se elimina
---      también la secuencia).
---
--- Todo el resto de la estructura (nombres de tablas, columnas, tipos de
--- datos, valores por defecto, llaves primarias y foráneas) se mantuvo
--- exactamente igual al archivo original.
--- ============================================================================
-
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

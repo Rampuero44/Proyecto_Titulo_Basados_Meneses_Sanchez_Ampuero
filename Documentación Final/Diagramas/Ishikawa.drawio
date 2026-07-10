@@ -1,0 +1,124 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Ishikawa BASADOS Espina" id="0">
+    <mxGraphModel dx="1488" dy="732" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="CVkqmRQJTIg_xt64Bz1h-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="" vertex="1">
+          <mxGeometry height="60" width="160" x="755" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="CVkqmRQJTIg_xt64Bz1h-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="" vertex="1">
+          <mxGeometry height="60" width="160" x="450" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="CVkqmRQJTIg_xt64Bz1h-9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="" vertex="1">
+          <mxGeometry height="60" width="160" x="180" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="CVkqmRQJTIg_xt64Bz1h-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="" vertex="1">
+          <mxGeometry height="60" width="160" x="190" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="CVkqmRQJTIg_xt64Bz1h-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="" vertex="1">
+          <mxGeometry height="60" width="160" x="435" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="CVkqmRQJTIg_xt64Bz1h-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="" vertex="1">
+          <mxGeometry height="60" width="160" x="730" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="problema" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;" value="Desorganización en la planificación de asados grupales" vertex="1">
+          <mxGeometry height="120" width="290" x="1190" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="espina_central" edge="1" parent="1" source="nodo_inicio" style="endArrow=block;endFill=1;strokeWidth=3;" target="problema" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nodo_inicio" parent="1" style="ellipse;html=1;fillColor=#ffffff;strokeColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="10" width="10" x="180" y="392" as="geometry" />
+        </mxCell>
+        <mxCell id="r_personas" edge="1" parent="1" source="b_personas" style="endArrow=none;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="390" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b_personas" parent="1" style="text;html=1;fontSize=14;fontStyle=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Personas&lt;/font&gt;" vertex="1">
+          <mxGeometry height="45" width="120" x="230" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="personas_1" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Falta de coordinación&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="170" x="100" y="222.5" as="geometry" />
+        </mxCell>
+        <mxCell id="personas_2" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Diferentes hábitos de consumo&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="220" x="85" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="r_metodos" edge="1" parent="1" source="CVkqmRQJTIg_xt64Bz1h-5" style="endArrow=none;strokeWidth=2;exitX=0.648;exitY=1.05;exitDx=0;exitDy=0;exitPerimeter=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="670" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b_metodos" parent="1" style="text;html=1;fontSize=14;fontStyle=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Métodos&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="100" x="475" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="metodos_1" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;No hay planificación estructurada&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="230" x="340" y="222.5" as="geometry" />
+        </mxCell>
+        <mxCell id="metodos_2" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Cálculo manual de insumos&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="190" x="360" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="r_info" edge="1" parent="1" source="CVkqmRQJTIg_xt64Bz1h-2" style="endArrow=none;strokeWidth=2;exitX=0.585;exitY=1.05;exitDx=0;exitDy=0;exitPerimeter=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="840" y="210" as="sourcePoint" />
+            <mxPoint x="940" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b_info" parent="1" style="text;html=1;fontSize=14;fontStyle=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Información&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="110" x="760" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="info_1" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Precios dispersos&lt;/b&gt;" vertex="1">
+          <mxGeometry height="5" width="130" x="680" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="info_2" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Sin comparación de precios&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="180" x="665" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="r_materiales" edge="1" parent="1" source="CVkqmRQJTIg_xt64Bz1h-9" style="endArrow=none;strokeWidth=2;exitX=0.44;exitY=0.022;exitDx=0;exitDy=0;exitPerimeter=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="390" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b_materiales" parent="1" style="text;html=1;fontSize=14;fontStyle=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Materiales&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="100" x="210" y="625" as="geometry" />
+        </mxCell>
+        <mxCell id="materiales_1" parent="1" style="text;html=1;fontSize=12;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;Compra incorrecta de insumos&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="20" width="210" x="85" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="materiales_2" parent="1" style="text;html=1;fontSize=12;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b&gt;Desbalance de bebidas y carne&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="20" width="230" x="75" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="r_gestion" edge="1" parent="1" style="endArrow=none;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="610" as="sourcePoint" />
+            <mxPoint x="640" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b_gestion" parent="1" style="text;html=1;fontSize=14;fontStyle=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Gestión&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="90" x="485" y="625" as="geometry" />
+        </mxCell>
+        <mxCell id="gestion_1" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Mala división de gastos&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="180" x="415" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="gestion_2" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Confusión en pagos&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="150" x="435" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="r_entorno" edge="1" parent="1" style="endArrow=none;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="830" y="610" as="sourcePoint" />
+            <mxPoint x="920" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b_entorno" parent="1" style="text;html=1;fontSize=14;fontStyle=1;" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Entorno&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="90" x="790" y="625" as="geometry" />
+        </mxCell>
+        <mxCell id="entorno_1" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Compras de última hora&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="170" x="700" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="entorno_2" parent="1" style="text;html=1;fontSize=12;" value="&lt;b&gt;Variación de precios&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="140" x="720" y="470" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
